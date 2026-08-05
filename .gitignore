@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.Python
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+*.cover
+coverage.xml
+
+# Environment & Secrets
+.env
+.env.local
+.env.production
+*.pem
+*.key
+firebase-service-account.json
+
+# Alembic
+# (keep versions tracked, exclude compiled)
+
+# IDE
+.vscode/
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Docker
+*.log
+
+# Flutter / Dart
+apps/mobile/.dart_tool/
+apps/mobile/build/
+apps/mobile/.packages
+apps/mobile/.flutter-plugins
+apps/mobile/.flutter-plugins-dependencies
+apps/mobile/pubspec.lock
+
+# AWS / Cloud
+.aws/
+*.tfstate
+*.tfvars
+terraform.tfstate.backup
+
+docs
+FeatTracking

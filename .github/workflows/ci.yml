@@ -1,0 +1,116 @@
+name: Grahvani CI Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # ─────────────────────────────────────────────────────────────
+  # Backend: Lint, Type Check & Test
+  # ─────────────────────────────────────────────────────────────
+  backend-ci:
+    name: Backend (Python 3.12 + FastAPI)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: grahvani_test
+          POSTGRES_USER: grahvani_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    defaults:
+      run:
+        working-directory: services/api
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pip install poetry==1.8.3
+
+      - name: Install dependencies
+        run: poetry install --with dev
+
+      - name: Lint with Ruff
+        run: poetry run ruff check app/ tests/
+
+      - name: Type check with mypy
+        run: poetry run mypy app/ --ignore-missing-imports
+
+      - name: Run Alembic migrations on test DB
+        env:
+          DATABASE_URL: postgresql+asyncpg://grahvani_user:test_password@localhost:5432/grahvani_test
+        run: poetry run alembic upgrade head
+
+      - name: Run unit & integration tests with coverage
+        env:
+          DATABASE_URL: postgresql+asyncpg://grahvani_user:test_password@localhost:5432/grahvani_test
+          REDIS_URL: redis://localhost:6379/0
+          APP_ENV: test
+          FIREBASE_SERVICE_ACCOUNT_PATH: ""
+          GEMINI_API_KEY: ""
+        run: poetry run pytest tests/ --cov=app --cov-report=xml --cov-fail-under=80
+
+  # ─────────────────────────────────────────────────────────────
+  # Flutter: Analyze & Test
+  # ─────────────────────────────────────────────────────────────
+  flutter-ci:
+    name: Flutter Mobile (Dart / Flutter)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/mobile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.x"
+          channel: "stable"
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run Flutter analyzer
+        run: flutter analyze
+
+      - name: Run Flutter unit & widget tests
+        run: flutter test --coverage
+
+  # ─────────────────────────────────────────────────────────────
+  # Docker Build Validation
+  # ─────────────────────────────────────────────────────────────
+  docker-build:
+    name: Docker Image Build Check
+    runs-on: ubuntu-latest
+    needs: [backend-ci]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build API Docker image
+        run: docker build -t grahvani-api:ci ./services/api

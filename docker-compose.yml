@@ -1,0 +1,86 @@
+version: "3.9"
+
+services:
+  # ============================================================
+  # PostgreSQL 16 with pgvector extension
+  # ============================================================
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: grahvani_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-grahvani}
+      POSTGRES_USER: ${POSTGRES_USER:-grahvani_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-grahvani_pass}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-grahvani_user} -d ${POSTGRES_DB:-grahvani}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================================
+  # Redis 7 — Rate limiting & Dramatiq message broker
+  # ============================================================
+  redis:
+    image: redis:7-alpine
+    container_name: grahvani_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================================
+  # FastAPI Backend API Server
+  # ============================================================
+  api:
+    build:
+      context: ./services/api
+      dockerfile: Dockerfile
+    container_name: grahvani_api
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./services/api:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # ============================================================
+  # Dramatiq Background Worker (Ephemeris calculations, PDF gen)
+  # ============================================================
+  worker:
+    build:
+      context: ./services/api
+      dockerfile: Dockerfile
+    container_name: grahvani_worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./services/api:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: dramatiq app.tasks.worker --processes 2 --threads 4
+
+volumes:
+  postgres_data:
+  redis_data:
