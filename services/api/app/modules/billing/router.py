@@ -23,6 +23,8 @@ from app.modules.billing.schemas import (
     SubscriptionResponse,
     WebhookEventResponse,
 )
+from app.modules.billing.google_play_webhook import google_play_handler
+from app.modules.billing.apple_webhook import apple_app_store_handler
 from app.modules.identity.models import User
 
 router = APIRouter()
@@ -224,20 +226,34 @@ async def razorpay_webhook(
     response_model=WebhookEventResponse,
     status_code=status.HTTP_200_OK,
 )
-async def google_play_webhook(request: Request, db: AsyncSession = Depends(get_db)):
-    """Webhook receiver for Google Play Real-Time Developer Notifications."""
-    # TODO: Implement Google Play RTDN webhook handler (Phase 2)
-    payload = await request.body()
-    event = WebhookEvent(
-        provider=SubscriptionProvider.GOOGLE_PLAY,
-        event_type="unimplemented",
-        external_id="unknown",
-        payload={"raw": payload.decode()},
-        signature_valid=False,
-    )
-    db.add(event)
-    await db.commit()
-    return WebhookEventResponse.model_validate(event)
+async def google_play_webhook(
+    request: Request,
+    message_id: str = Header(..., alias="messageId"),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Webhook receiver for Google Play Real-Time Developer Notifications (RTDN).
+    
+    Google Play sends Pub/Sub messages with base64-encoded JSON.
+    Expected headers:
+    - messageId: Unique message ID from Pub/Sub
+    
+    Subscription notification types:
+    - SUBSCRIPTION_RECOVERED (1)
+    - SUBSCRIPTION_RENEWED (2)
+    - SUBSCRIPTION_CANCELED (3)
+    - SUBSCRIPTION_PURCHASED (4)
+    - SUBSCRIPTION_ON_HOLD (5)
+    - SUBSCRIPTION_IN_GRACE_PERIOD (6)
+    - SUBSCRIPTION_RESTARTED (7)
+    - SUBSCRIPTION_PRICE_CHANGE_CONFIRMED (8)
+    - SUBSCRIPTION_DEFERRED (9)
+    - SUBSCRIPTION_PAUSED (10)
+    - SUBSCRIPTION_PAUSE_SCHEDULE_CHANGED (11)
+    - SUBSCRIPTION_REVOKED (12)
+    - SUBSCRIPTION_EXPIRED (13)
+    """
+    return await google_play_handler.process_webhook(request, message_id, db)
 
 
 @router.post(
@@ -245,19 +261,45 @@ async def google_play_webhook(request: Request, db: AsyncSession = Depends(get_d
     response_model=WebhookEventResponse,
     status_code=status.HTTP_200_OK,
 )
-async def apple_store_webhook(request: Request, db: AsyncSession = Depends(get_db)):
-    """Webhook receiver for Apple App Store Server Notifications v2."""
-    # TODO: Implement Apple App Store signed JWS notification handler (Phase 2)
-    payload = await request.body()
-    event = WebhookEvent(
-        provider=SubscriptionProvider.APPLE,
-        event_type="unimplemented",
-        external_id="unknown",
-        payload={"raw": payload.decode()},
-        signature_valid=False,
+async def apple_store_webhook(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Webhook receiver for Apple App Store Server Notifications v2.
+    
+    Apple sends JWS (JSON Web Signature) signed payloads.
+    The payload contains signedTransactionInfo and signedRenewalInfo.
+    
+    Notification types:
+    - INITIAL_BUY
+    - RENEWAL
+    - CANCEL
+    - DID_CHANGE_RENEWAL_PREF
+    - DID_CHANGE_RENEWAL_STATUS
+    - EXPIRED
+    - GRACE_PERIOD_EXPIRED
+    - PRICE_INCREASE
+    - REFUND
+    - REFUND_DECLINED
+    - RENEWAL_EXTENDED
+    - REVOKE
+    - SUBSCRIBED
+    - OFFER_REDEEMED
+    """
+    payload = await request.json()
+    signed_payload = payload.get("signedPayload")
+    
+    if not signed_payload:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No signedPayload in Apple notification",
+        )
+    
+    event = await apple_app_store_handler.process_notification(
+        {"signedPayload": signed_payload}, db
     )
-    db.add(event)
-    await db.commit()
+    
     return WebhookEventResponse.model_validate(event)
 
 
