@@ -2,15 +2,11 @@
 /// Local offline cache for birth profiles with reactive queries.
 library;
 
-import 'dart:io';
-
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import 'package:grahvani/core/database/connection/connection.dart';
 import 'package:grahvani/features/profile/domain/profile_model.dart';
 
 part 'app_database.g.dart';
@@ -53,7 +49,7 @@ class ChartCaches extends Table {
 /// Database access class.
 @DriftDatabase(tables: [ProfileCaches, ChartCaches])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+  AppDatabase() : super(openConnection());
 
   @override
   int get schemaVersion => 2;
@@ -223,15 +219,6 @@ class AppDatabase extends _$AppDatabase {
       isPrimary: row.isPrimary,
     );
   }
-}
-
-/// Opens a native SQLite connection using path_provider.
-LazyDatabase _openConnection() {
-  return LazyDatabase(() async {
-    final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'grahvani.sqlite'));
-    return NativeDatabase.createInBackground(file);
-  });
 }
 
 /// Riverpod provider for the database instance.

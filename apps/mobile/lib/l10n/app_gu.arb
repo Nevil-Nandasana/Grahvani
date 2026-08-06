@@ -1,0 +1,128 @@
+{
+  "@@locale": "gu",
+  "appName": "ગ્રહવાણી",
+  "@appName": {"description": "Application name"},
+
+  "welcomeBack": "પુનઃ સ્વાગત",
+  "@welcomeBack": {},
+
+  "birthChart": "જન્મ કુંડળી",
+  "@birthChart": {},
+
+  "dashas": "દશાઓ",
+  "@dashas": {},
+
+  "chart": "કુંડળી",
+  "@chart": {},
+
+  "askAI": "AI ને પૂછો",
+  "@askAI": {},
+
+  "exportPDF": "PDF નિકાસ",
+  "@exportPDF": {},
+
+  "switchAyanamsa": "અયનાંશ બદલો",
+  "@switchAyanamsa": {},
+
+  "sadeSatiTracker": "સાડેસાતી",
+  "@sadeSatiTracker": {},
+
+  "notifications": "સૂચનાઓ",
+  "@notifications": {},
+
+  "markAllRead": "બધું વાંચ્યું ચિહ્નિત કરો",
+  "@markAllRead": {},
+
+  "clearAll": "બધું સાફ કરો",
+  "@clearAll": {},
+
+  "kundaliMilan": "કુંડળી મિલન",
+  "@kundaliMilan": {},
+
+  "selectPerson": "વ્યક્તિ પસંદ કરો",
+  "@selectPerson": {},
+
+  "varshaphal": "વર્ષફળ",
+  "@varshaphal": {},
+
+  "solarReturn": "સૌર વાપસ",
+  "@solarReturn": {},
+
+  "synastry": "સિનેસ્ટ્રી",
+  "@synastry": {},
+
+  "voiceAI": "વૉઇસ AI",
+  "@voiceAI": {},
+
+  "tapMicToAsk": "માઇક દબાવો અને તમારી કુંડળી વિશે કંઈ પણ પૂછો",
+  "@tapMicToAsk": {},
+
+  "listening": "સાંભળી રહ્યા છીએ…",
+  "@listening": {},
+
+  "processing": "ગ્રહવાણી AI વિચારી રહ્યો છે…",
+  "@processing": {},
+
+  "speaking": "જવાબ આપી રહ્યા છે…",
+  "@speaking": {},
+
+  "upgrade": "અપગ્રેડ",
+  "@upgrade": {},
+
+  "unlockPremium": "ગ્રહવાણી પ્રીમિયમ અનલૉક કરો",
+  "@unlockPremium": {},
+
+  "monthly": "માસિક",
+  "@monthly": {},
+
+  "yearly": "વાર્ષિક",
+  "@yearly": {},
+
+  "cancelAnytime": "ગમે ત્યારે રદ કરો. કોઈ છુપી ફી નહીં.",
+  "@cancelAnytime": {},
+
+  "northStyle": "ઉત્તર",
+  "@northStyle": {},
+
+  "southStyle": "દક્ષિણ",
+  "@southStyle": {},
+
+  "annualChart": "વાર્ષિક કુંડળી",
+  "@annualChart": {},
+
+  "predictions": "ભવિષ્ય",
+  "@predictions": {},
+
+  "aspects": "ગ્રહ યોગ",
+  "@aspects": {},
+
+  "charts": "કુંડળીઓ",
+  "@charts": {},
+
+  "birthProfiles": "જન્મ પ્રોફાઇલ",
+  "@birthProfiles": {},
+
+  "addProfile": "પ્રોફાઇલ ઉમેરો",
+  "@addProfile": {},
+
+  "consentTitle": "તમારી ગોપનીયતા, અમારું વચન",
+  "@consentTitle": {},
+
+  "person1": "વ્યક્તિ 1",
+  "@person1": {},
+
+  "person2": "વ્યક્તિ 2",
+  "@person2": {},
+
+  "totalScore": "કુલ",
+  "@totalScore": {},
+
+  "harmonious": "અનુકૂળ",
+  "@harmonious": {},
+
+  "tense": "તણાવકારક",
+  "@tense": {},
+
+  "keyAspects": "મુખ્ય ગ્રહ યોગ",
+  "@keyAspects": {}
+}

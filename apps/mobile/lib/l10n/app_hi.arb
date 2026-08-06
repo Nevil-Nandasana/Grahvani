@@ -1,0 +1,128 @@
+{
+  "@@locale": "hi",
+  "appName": "ग्रहवाणी",
+  "@appName": {"description": "Application name"},
+
+  "welcomeBack": "वापस स्वागत है",
+  "@welcomeBack": {},
+
+  "birthChart": "जन्म कुंडली",
+  "@birthChart": {},
+
+  "dashas": "दशाएँ",
+  "@dashas": {},
+
+  "chart": "कुंडली",
+  "@chart": {},
+
+  "askAI": "AI से पूछें",
+  "@askAI": {},
+
+  "exportPDF": "PDF निर्यात करें",
+  "@exportPDF": {},
+
+  "switchAyanamsa": "अयनांश बदलें",
+  "@switchAyanamsa": {},
+
+  "sadeSatiTracker": "साढ़े साती",
+  "@sadeSatiTracker": {},
+
+  "notifications": "सूचनाएँ",
+  "@notifications": {},
+
+  "markAllRead": "सभी पढ़ा चिह्नित करें",
+  "@markAllRead": {},
+
+  "clearAll": "सभी हटाएं",
+  "@clearAll": {},
+
+  "kundaliMilan": "कुंडली मिलान",
+  "@kundaliMilan": {},
+
+  "selectPerson": "व्यक्ति चुनें",
+  "@selectPerson": {},
+
+  "varshaphal": "वर्षफल",
+  "@varshaphal": {},
+
+  "solarReturn": "सौर वापसी",
+  "@solarReturn": {},
+
+  "synastry": "सिनेस्ट्री",
+  "@synastry": {},
+
+  "voiceAI": "वॉयस AI",
+  "@voiceAI": {},
+
+  "tapMicToAsk": "माइक दबाएँ और अपनी कुंडली के बारे में कुछ भी पूछें",
+  "@tapMicToAsk": {},
+
+  "listening": "सुन रहे हैं…",
+  "@listening": {},
+
+  "processing": "ग्रहवाणी AI सोच रहा है…",
+  "@processing": {},
+
+  "speaking": "उत्तर दे रहे हैं…",
+  "@speaking": {},
+
+  "upgrade": "अपग्रेड",
+  "@upgrade": {},
+
+  "unlockPremium": "ग्रहवाणी प्रीमियम अनलॉक करें",
+  "@unlockPremium": {},
+
+  "monthly": "मासिक",
+  "@monthly": {},
+
+  "yearly": "वार्षिक",
+  "@yearly": {},
+
+  "cancelAnytime": "कभी भी रद्द करें। कोई छुपी फीस नहीं।",
+  "@cancelAnytime": {},
+
+  "northStyle": "उत्तर",
+  "@northStyle": {},
+
+  "southStyle": "दक्षिण",
+  "@southStyle": {},
+
+  "annualChart": "वार्षिक कुंडली",
+  "@annualChart": {},
+
+  "predictions": "भविष्यफल",
+  "@predictions": {},
+
+  "aspects": "ग्रह योग",
+  "@aspects": {},
+
+  "charts": "कुंडलियाँ",
+  "@charts": {},
+
+  "birthProfiles": "जन्म प्रोफ़ाइल",
+  "@birthProfiles": {},
+
+  "addProfile": "प्रोफ़ाइल जोड़ें",
+  "@addProfile": {},
+
+  "consentTitle": "आपकी गोपनीयता, हमारा वादा",
+  "@consentTitle": {},
+
+  "person1": "व्यक्ति 1",
+  "@person1": {},
+
+  "person2": "व्यक्ति 2",
+  "@person2": {},
+
+  "totalScore": "कुल",
+  "@totalScore": {},
+
+  "harmonious": "अनुकूल",
+  "@harmonious": {},
+
+  "tense": "तनावपूर्ण",
+  "@tense": {},
+
+  "keyAspects": "मुख्य ग्रह योग",
+  "@keyAspects": {}
+}

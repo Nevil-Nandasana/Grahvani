@@ -12,8 +12,13 @@ import '../features/auth/domain/auth_state.dart';
 import '../features/auth/presentation/consent_screen.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/chart/presentation/chart_screen.dart';
+import '../features/chart/presentation/kundali_milan_screen.dart';
 import '../features/chart/presentation/sade_sati_screen.dart';
+import '../features/chart/presentation/synastry_screen.dart';
+import '../features/chart/presentation/varshaphal_screen.dart';
 import '../features/chat/presentation/chat_screen.dart';
+import '../features/chat/presentation/voice_qa_screen.dart';
+import '../features/notifications/presentation/notification_center_screen.dart';
 import '../features/notifications/presentation/notification_settings_screen.dart';
 import '../features/profile/presentation/add_profile_screen.dart';
 import '../features/profile/presentation/profiles_screen.dart';
@@ -22,7 +27,7 @@ import '../features/auth/data/auth_repository.dart';
 
 part 'app_router.g.dart';
 
-// ─── Route Paths ──────────────────────────────────────────────────────────────
+// ─── Route Paths ──────────────────────────────────────────────────────────────────────────────
 class AppRoutes {
   static const splash               = '/';
   static const login                = '/login';
@@ -34,6 +39,11 @@ class AppRoutes {
   static const chat                 = '/home/chat/:chartId';
   static const sadeSati             = '/home/sade-sati/:profileId';
   static const notificationSettings = '/home/notifications/settings/:profileId';
+  static const notificationCenter   = '/home/notifications/center';
+  static const kundaliMilan         = '/home/kundali-milan';
+  static const varshaphal           = '/home/varshaphal/:profileId';
+  static const synastry             = '/home/synastry';
+  static const voiceQA              = '/home/voice-qa/:chartId';
 }
 
 @riverpod
@@ -156,6 +166,45 @@ GoRouter appRouter(Ref ref) {
             builder: (BuildContext context, GoRouterState state) {
               final String profileId = state.pathParameters['profileId']!;
               return NotificationSettingsScreen(profileId: profileId);
+            },
+          ),
+
+          // Notification Center History
+          GoRoute(
+            path: 'notifications/center',
+            builder: (BuildContext context, GoRouterState state) =>
+                const NotificationCenterScreen(),
+          ),
+
+          // Kundali Milan Matchmaking
+          GoRoute(
+            path: 'kundali-milan',
+            builder: (BuildContext context, GoRouterState state) =>
+                const KundaliMilanScreen(),
+          ),
+
+          // Varshaphal (Solar Return)
+          GoRoute(
+            path: 'varshaphal/:profileId',
+            builder: (BuildContext context, GoRouterState state) {
+              final String profileId = state.pathParameters['profileId']!;
+              return VarshaphalScreen(profileId: profileId);
+            },
+          ),
+
+          // Synastry Dual-Chart Overlay
+          GoRoute(
+            path: 'synastry',
+            builder: (BuildContext context, GoRouterState state) =>
+                const SynastryScreen(),
+          ),
+
+          // Voice AI Q&A
+          GoRoute(
+            path: 'voice-qa/:chartId',
+            builder: (BuildContext context, GoRouterState state) {
+              final String chartId = state.pathParameters['chartId']!;
+              return VoiceQAScreen(chartId: chartId);
             },
           ),
 
@@ -291,6 +340,12 @@ class _HomeScreen extends ConsumerWidget {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.notifications_outlined,
+                color: Color(0xFF9B93CC)),
+            tooltip: 'Notification Center',
+            onPressed: () => context.push('/home/notifications/center'),
+          ),
+          IconButton(
             icon: const Icon(Icons.workspace_premium, color: Color(0xFF7C6EFA)),
             tooltip: 'Upgrade',
             onPressed: () => context.push('/home/upgrade'),
@@ -327,6 +382,27 @@ class _HomeScreen extends ConsumerWidget {
                 icon: '💬',
                 title: 'AI Interpretation',
                 subtitle: 'Chat with Grahvani AI',
+                onTap: () => context.push('/home/profiles'),
+              ),
+              const SizedBox(height: 14),
+              _HomeCard(
+                icon: '❤️',
+                title: 'Kundali Milan',
+                subtitle: 'Ashtakoot compatibility matching',
+                onTap: () => context.push('/home/kundali-milan'),
+              ),
+              const SizedBox(height: 14),
+              _HomeCard(
+                icon: '🔭',
+                title: 'Synastry',
+                subtitle: 'Dual-chart aspect overlay',
+                onTap: () => context.push('/home/synastry'),
+              ),
+              const SizedBox(height: 14),
+              _HomeCard(
+                icon: '☀️',
+                title: 'Varshaphal',
+                subtitle: 'Annual Solar Return chart',
                 onTap: () => context.push('/home/profiles'),
               ),
               const SizedBox(height: 14),

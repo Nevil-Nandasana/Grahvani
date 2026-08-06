@@ -38,7 +38,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
         ],
       ),
       body: preferencesAsync.when(
-        loading: () => const Center(child: LoadingIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
           child: Text('Error: $error', style: theme.textTheme.bodyMedium),
         ),
@@ -162,7 +162,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
                         label: 'Start Time',
                         value: status.preferences.quietHoursStart,
                         onChanged: (value) => notifier.updatePreferences(
-                          profile.id,
+                          profileId,
                           status.preferences.copyWith(quietHoursStart: value),
                         ),
                       ),
@@ -174,7 +174,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
                         label: 'End Time',
                         value: status.preferences.quietHoursEnd,
                         onChanged: (value) => notifier.updatePreferences(
-                          profile.id,
+                          profileId,
                           status.preferences.copyWith(quietHoursEnd: value),
                         ),
                       ),
@@ -214,9 +214,9 @@ class NotificationSettingsScreen extends ConsumerWidget {
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: SwitchTile(
-        title: title,
-        subtitle: subtitle,
+      child: SwitchListTile(
+        title: Text(title),
+        subtitle: Text(subtitle),
         value: value,
         onChanged: onChanged,
       ),
@@ -323,11 +323,11 @@ class NotificationSettingsScreen extends ConsumerWidget {
 
   Future<void> _sendTestNotification(BuildContext context, WidgetRef ref) async {
     final notifier = ref.read(
-      notificationPreferencesProvider(profile.id).notifier,
+      notificationPreferencesProvider(profileId).notifier,
     );
     
     try {
-      await notifier.sendTestNotification(profile.id);
+      await notifier.sendTestNotification(profileId);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

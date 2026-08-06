@@ -1,0 +1,47 @@
+# -----------------------------------------------------------------------------
+# Grahvani Terraform Variables Example
+# -----------------------------------------------------------------------------
+# Copy this file to `terraform.tfvars` before running `terraform apply`.
+# Do NOT commit `terraform.tfvars` to version control!
+# -----------------------------------------------------------------------------
+
+# AWS Region to deploy all resources
+aws_region = "ap-south-1"
+
+# Database Credentials
+db_master_username = "grahvani_admin"
+db_master_password = "CHANGE_ME_TO_A_SECURE_PASSWORD" # Must be at least 8 chars
+
+# Redis Authentication
+redis_auth_token = "CHANGE_ME_TO_A_SECURE_TOKEN_MIN_16_CHARS" # Min 16 chars
+
+# Application Secret Key (for JWTs and Session Crypto)
+app_secret_key = "CHANGE_ME_TO_A_32_CHAR_RANDOM_STRING_FOR_JWT_SIGNING"
+
+# Third-Party APIs
+gemini_api_key        = "YOUR_GEMINI_API_KEY"
+google_places_api_key = "YOUR_GOOGLE_PLACES_API_KEY"
+
+# Razorpay (India Payments)
+razorpay_key_id         = "rzp_live_xxxxxxxxxxxxxx"
+razorpay_key_secret     = "YOUR_RAZORPAY_SECRET"
+razorpay_webhook_secret = "YOUR_RAZORPAY_WEBHOOK_SECRET"
+
+# Apple App Store (In-App Purchases)
+apple_bundle_id     = "com.grahvani.app"
+apple_shared_secret = "YOUR_APPLE_SHARED_SECRET"
+apple_key_id        = "YOUR_APPLE_KEY_ID"
+apple_issuer_id     = "YOUR_APPLE_ISSUER_ID"
+# Note: Provide the contents of the PEM file as a single line string with \n or use a HEREDOC
+apple_private_key   = "-----BEGIN PRIVATE KEY-----\nMIIE... \n-----END PRIVATE KEY-----"
+
+# Google Play (In-App Purchases)
+google_service_account_path = "./google-play-service-account.json"
+
+# Firebase (Authentication)
+firebase_service_account_path = "./firebase-service-account.json"
+
+# Langfuse (AI Observability)
+langfuse_secret_key = "sk-lf-..."
+langfuse_public_key = "pk-lf-..."
+langfuse_host       = "https://cloud.langfuse.com"

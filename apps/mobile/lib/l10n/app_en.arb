@@ -1,0 +1,128 @@
+{
+  "@@locale": "en",
+  "appName": "Grahvani",
+  "@appName": {"description": "Application name"},
+
+  "welcomeBack": "Welcome back",
+  "@welcomeBack": {"description": "Home screen greeting"},
+
+  "birthChart": "Birth Chart",
+  "@birthChart": {"description": "Chart screen title"},
+
+  "dashas": "Dashas",
+  "@dashas": {"description": "Dasha tab label"},
+
+  "chart": "Chart",
+  "@chart": {"description": "Chart tab label"},
+
+  "askAI": "Ask AI",
+  "@askAI": {"description": "AI chat button tooltip"},
+
+  "exportPDF": "Export PDF",
+  "@exportPDF": {"description": "PDF export button tooltip"},
+
+  "switchAyanamsa": "Switch Ayanamsa",
+  "@switchAyanamsa": {"description": "Ayanamsa selector tooltip"},
+
+  "sadeSatiTracker": "Sade Sati Tracker",
+  "@sadeSatiTracker": {"description": "Sade Sati button tooltip"},
+
+  "notifications": "Notifications",
+  "@notifications": {"description": "Notifications screen title"},
+
+  "markAllRead": "Mark all read",
+  "@markAllRead": {"description": "Mark all notifications read button"},
+
+  "clearAll": "Clear all",
+  "@clearAll": {"description": "Clear all notifications"},
+
+  "kundaliMilan": "Kundali Milan",
+  "@kundaliMilan": {"description": "Kundali Milan screen title"},
+
+  "selectPerson": "Select person",
+  "@selectPerson": {"description": "Profile picker placeholder"},
+
+  "varshaphal": "Varshaphal",
+  "@varshaphal": {"description": "Varshaphal screen title"},
+
+  "solarReturn": "Solar Return",
+  "@solarReturn": {"description": "Solar Return subtitle"},
+
+  "synastry": "Synastry",
+  "@synastry": {"description": "Synastry screen title"},
+
+  "voiceAI": "Voice AI",
+  "@voiceAI": {"description": "Voice AI screen title"},
+
+  "tapMicToAsk": "Tap the mic and ask anything about your chart",
+  "@tapMicToAsk": {"description": "Voice AI idle hint"},
+
+  "listening": "Listening…",
+  "@listening": {"description": "Voice AI listening state"},
+
+  "processing": "Grahvani AI is thinking…",
+  "@processing": {"description": "Voice AI processing state"},
+
+  "speaking": "Speaking response…",
+  "@speaking": {"description": "Voice AI speaking state"},
+
+  "upgrade": "Upgrade",
+  "@upgrade": {"description": "Upgrade/premium button"},
+
+  "unlockPremium": "Unlock Grahvani Premium",
+  "@unlockPremium": {"description": "Paywall title"},
+
+  "monthly": "Monthly",
+  "@monthly": {"description": "Monthly subscription option"},
+
+  "yearly": "Yearly",
+  "@yearly": {"description": "Yearly subscription option"},
+
+  "cancelAnytime": "Cancel anytime. No hidden fees.",
+  "@cancelAnytime": {"description": "Paywall fine print"},
+
+  "northStyle": "North",
+  "@northStyle": {"description": "North Indian chart style toggle"},
+
+  "southStyle": "South",
+  "@southStyle": {"description": "South Indian chart style toggle"},
+
+  "annualChart": "Annual Chart",
+  "@annualChart": {"description": "Varshaphal annual chart tab"},
+
+  "predictions": "Predictions",
+  "@predictions": {"description": "Varshaphal predictions tab"},
+
+  "aspects": "Aspects",
+  "@aspects": {"description": "Synastry aspects tab"},
+
+  "charts": "Charts",
+  "@charts": {"description": "Synastry charts tab"},
+
+  "birthProfiles": "Birth Profiles",
+  "@birthProfiles": {"description": "Profiles screen title"},
+
+  "addProfile": "Add Profile",
+  "@addProfile": {"description": "Add profile FAB label"},
+
+  "consentTitle": "Your Privacy, Our Promise",
+  "@consentTitle": {"description": "Consent screen title"},
+
+  "person1": "Person 1",
+  "@person1": {"description": "First person in Kundali Milan"},
+
+  "person2": "Person 2",
+  "@person2": {"description": "Second person in Kundali Milan"},
+
+  "totalScore": "TOTAL",
+  "@totalScore": {"description": "Kundali Milan total score label"},
+
+  "harmonious": "Harmonious",
+  "@harmonious": {"description": "Synastry harmonious aspect"},
+
+  "tense": "Tense",
+  "@tense": {"description": "Synastry tense aspect"},
+
+  "keyAspects": "Key Aspects",
+  "@keyAspects": {"description": "Synastry key aspects heading"}
+}

@@ -1,10 +1,13 @@
 # Terraform Variables for Grahvani Infrastructure
 # All configurable values for the AWS infrastructure deployment.
+# Set sensitive values via environment variables (TF_VAR_<name>) or
+# a terraform.tfvars file that is NOT committed to version control.
 
+# ─── Region & Networking ──────────────────────────────────────────────────────
 variable "aws_region" {
-  description = "AWS region for deployment"
+  description = "AWS region for all resource deployment (Mumbai for India latency)"
   type        = string
-  default     = "ap-south-1"  # Mumbai
+  default     = "ap-south-1"
 }
 
 variable "vpc_cidr" {
@@ -13,60 +16,59 @@ variable "vpc_cidr" {
   default     = "10.0.0.0/16"
 }
 
+variable "bastion_allowed_cidrs" {
+  description = "CIDR blocks allowed to SSH into the bastion host. Restrict to your office IP in production."
+  type        = list(string)
+  default     = ["0.0.0.0/0"] # IMPORTANT: restrict this before going live!
+}
+
+# ─── Database ────────────────────────────────────────────────────────────────
 variable "db_master_username" {
-  description = "Master username for RDS database"
+  description = "Master username for the RDS Aurora PostgreSQL cluster"
   type        = string
   default     = "grahvani_admin"
 }
 
 variable "db_master_password" {
-  description = "Master password for RDS database (should be set via environment variable)"
+  description = "Master password for the RDS Aurora cluster. Set via TF_VAR_db_master_password."
   type        = string
   sensitive   = true
 }
 
+# ─── Redis ───────────────────────────────────────────────────────────────────
 variable "redis_auth_token" {
-  description = "Redis auth token for ElastiCache (should be set via environment variable)"
+  description = "Redis AUTH token for ElastiCache TLS. Set via TF_VAR_redis_auth_token. Min 16 chars."
   type        = string
   sensitive   = true
 }
 
+# ─── Google AI ───────────────────────────────────────────────────────────────
 variable "gemini_api_key" {
-  description = "Google Gemini API key for AI interpretation (should be set via environment variable)"
+  description = "Google Gemini API key for AI interpretation. Set via TF_VAR_gemini_api_key."
   type        = string
   sensitive   = true
 }
 
+# ─── Razorpay ────────────────────────────────────────────────────────────────
 variable "razorpay_key_id" {
-  description = "Razorpay Key ID (should be set via environment variable)"
+  description = "Razorpay Key ID for payment processing. Set via TF_VAR_razorpay_key_id."
   type        = string
   sensitive   = true
 }
 
 variable "razorpay_key_secret" {
-  description = "Razorpay Key Secret (should be set via environment variable)"
+  description = "Razorpay Key Secret. Set via TF_VAR_razorpay_key_secret."
   type        = string
   sensitive   = true
 }
 
 variable "razorpay_webhook_secret" {
-  description = "Razorpay Webhook Secret for HMAC validation (should be set via environment variable)"
+  description = "Razorpay Webhook HMAC secret for validating webhook payloads."
   type        = string
   sensitive   = true
 }
 
-variable "google_service_account_path" {
-  description = "Path to Google Play service account JSON file"
-  type        = string
-  default     = "./google-play-service-account.json"
-}
-
-variable "firebase_service_account_path" {
-  description = "Path to Firebase service account JSON file"
-  type        = string
-  default     = "./firebase-service-account.json"
-}
-
+# ─── Apple App Store ─────────────────────────────────────────────────────────
 variable "apple_bundle_id" {
   description = "Apple App Store Bundle ID"
   type        = string
@@ -74,7 +76,7 @@ variable "apple_bundle_id" {
 }
 
 variable "apple_shared_secret" {
-  description = "Apple App Store Shared Secret (should be set via environment variable)"
+  description = "Apple App Store Shared Secret. Set via TF_VAR_apple_shared_secret."
   type        = string
   sensitive   = true
 }
@@ -92,75 +94,60 @@ variable "apple_issuer_id" {
 }
 
 variable "apple_private_key" {
-  description = "Apple App Store Connect API Private Key (should be set via environment variable)"
+  description = "Apple App Store Connect API Private Key PEM. Set via TF_VAR_apple_private_key."
   type        = string
   sensitive   = true
 }
 
+# ─── Google Play ─────────────────────────────────────────────────────────────
+variable "google_service_account_path" {
+  description = "Local path to Google Play service account JSON (only needed for initial tf apply)"
+  type        = string
+  default     = "./google-play-service-account.json"
+}
+
+variable "firebase_service_account_path" {
+  description = "Local path to Firebase service account JSON (only needed for initial tf apply)"
+  type        = string
+  default     = "./firebase-service-account.json"
+}
+
+# ─── Application ─────────────────────────────────────────────────────────────
 variable "app_secret_key" {
-  description = "Application secret key for JWT signing (should be set via environment variable)"
+  description = "Application secret key for JWT signing and session encryption. 32+ random chars."
   type        = string
   sensitive   = true
 }
 
 variable "google_places_api_key" {
-  description = "Google Places API key for geocoding (should be set via environment variable)"
+  description = "Google Places API key for birth place geocoding"
   type        = string
   sensitive   = true
 }
 
+# ─── AI Observability ────────────────────────────────────────────────────────
+variable "langfuse_secret_key" {
+  description = "Langfuse secret key for AI trace logging. Set via TF_VAR_langfuse_secret_key."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "langfuse_public_key" {
+  description = "Langfuse public key for AI trace logging."
+  type        = string
+  default     = ""
+}
+
+variable "langfuse_host" {
+  description = "Langfuse host URL (e.g. https://cloud.langfuse.com)"
+  type        = string
+  default     = "https://cloud.langfuse.com"
+}
+
+# ─── S3 ──────────────────────────────────────────────────────────────────────
 variable "aws_s3_bucket_prefix" {
-  description = "Prefix for S3 bucket names (must be globally unique)"
+  description = "Globally unique prefix for S3 bucket names (e.g. grahvani-prod)"
   type        = string
   default     = "grahvani-prod"
-}
-
-variable "bastion_allowed_cidrs" {
-  description = "CIDR blocks allowed to access bastion host via SSH"
-  type        = list(string)
-  default     = ["0.0.0.0/0"]  # Restrict in production!
-}
-
-# Output variables
-output "vpc_id" {
-  description = "ID of the main VPC"
-  value       = aws_vpc.main.id
-}
-
-output "rds_endpoint" {
-  description = "RDS cluster endpoint"
-  value       = aws_rds_cluster.grahvani.endpoint
-  sensitive   = true
-}
-
-output "redis_primary_endpoint" {
-  description = "ElastiCache Redis primary endpoint"
-  value       = aws_elasticache_replication_group.grahvani.primary_endpoint_address
-  sensitive   = true
-}
-
-output "redis_reader_endpoint" {
-  description = "ElastiCache Redis reader endpoint"
-  value       = aws_elasticache_replication_group.grahvani.reader_endpoint_address
-  sensitive   = true
-}
-
-output "s3_curated_sources_bucket" {
-  description = "S3 bucket for curated sources"
-  value       = aws_s3_bucket.curated_sources.id
-}
-
-output "s3_pdf_exports_bucket" {
-  description = "S3 bucket for PDF exports"
-  value       = aws_s3_bucket.pdf_exports.id
-}
-
-output "ecr_repository_url" {
-  description = "ECR repository URL"
-  value       = aws_ecr_repository.grahvani.repository_url
-}
-
-output "apprunner_service_url" {
-  description = "App Runner service URL"
-  value       = aws_apprunner_service.grahvani_api.service_url
 }

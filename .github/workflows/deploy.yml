@@ -1,0 +1,95 @@
+name: Grahvani Production Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write  # Required for OIDC authentication
+  contents: read   # Required for actions/checkout
+
+env:
+  AWS_REGION: ap-south-1
+  ECR_REPOSITORY: grahvani
+  API_SERVICE_NAME: grahvani-api
+  WORKER_SERVICE_NAME: grahvani-worker
+
+jobs:
+  deploy:
+    name: Build & Deploy to App Runner
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # Note: Set up an OIDC Identity Provider in IAM first!
+          # role-to-assume: arn:aws:iam::ACCOUNT_ID:role/GitHubActionsRole
+          # For this template we will fall back to secrets if OIDC isn't set
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        
+      - name: Build, tag, and push API image to ECR
+        id: build-api
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          cd services/api
+          docker build -f Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          
+      - name: Build, tag, and push Worker image to ECR
+        id: build-worker
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: worker-${{ github.sha }}
+        run: |
+          cd services/api
+          docker build -f Dockerfile.worker -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:worker-latest .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:worker-latest
+          
+      - name: Deploy API to App Runner
+        id: deploy-api
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          # The App Runner service relies on the :latest tag for its SourceConfiguration
+          # However, to force a new deployment, we use the StartDeployment API.
+          echo "Starting App Runner API deployment..."
+          SERVICE_ARN=$(aws apprunner list-services --query "ServiceSummaryList[?ServiceName=='${{ env.API_SERVICE_NAME }}'].ServiceArn" --output text)
+          
+          if [ -n "$SERVICE_ARN" ]; then
+            aws apprunner start-deployment --service-arn $SERVICE_ARN
+            echo "Deployment started for $SERVICE_ARN"
+          else
+            echo "API service not found! Please ensure Terraform has applied."
+            exit 1
+          fi
+          
+      - name: Deploy Worker to App Runner
+        id: deploy-worker
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          echo "Starting App Runner Worker deployment..."
+          SERVICE_ARN=$(aws apprunner list-services --query "ServiceSummaryList[?ServiceName=='${{ env.WORKER_SERVICE_NAME }}'].ServiceArn" --output text)
+          
+          if [ -n "$SERVICE_ARN" ]; then
+            aws apprunner start-deployment --service-arn $SERVICE_ARN
+            echo "Deployment started for $SERVICE_ARN"
+          else
+            echo "Worker service not found! Please ensure Terraform has applied."
+            exit 1
+          fi

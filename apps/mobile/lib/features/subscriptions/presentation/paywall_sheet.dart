@@ -1,10 +1,36 @@
 /// Paywall Sheet — Premium upgrade bottom sheet
+/// Integrates with in_app_purchase for Google Play / App Store purchases.
 library;
+
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 
 import '../domain/subscription_provider.dart';
+
+// ─── IAP Product IDs ──────────────────────────────────────────────────────────
+const _kMonthlyId = 'grahvani_premium_monthly';
+const _kYearlyId  = 'grahvani_premium_yearly';
+
+// ─── IAP Products Provider ────────────────────────────────────────────────────
+final _iapProductsProvider =
+    FutureProvider<List<ProductDetails>>((ref) async {
+  final iap = InAppPurchase.instance;
+  final bool available = await iap.isAvailable();
+  if (!available) return [];
+
+  final response = await iap.queryProductDetails(
+      {_kMonthlyId, _kYearlyId});
+  return response.productDetails;
+});
+
+// ─── Purchase Stream Notifier ─────────────────────────────────────────────────
+final _purchaseProvider =
+    StreamProvider<List<PurchaseDetails>>((ref) {
+  return InAppPurchase.instance.purchaseStream;
+});
 
 class PaywallSheet extends ConsumerWidget {
   const PaywallSheet({super.key});
@@ -16,6 +42,58 @@ class PaywallSheet extends ConsumerWidget {
       backgroundColor: Colors.transparent,
       builder: (_) => const PaywallSheet(),
     );
+  }
+
+  /// Initiates an in-app purchase for the given product ID.
+  /// Falls back to a SnackBar if the store is unavailable (e.g. emulator).
+  Future<void> _purchase(
+      BuildContext context, WidgetRef ref, String productId) async {
+    final iap = InAppPurchase.instance;
+    final bool available = await iap.isAvailable();
+    if (!available) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Store not available. Check your connection.'),
+            backgroundColor: Color(0xFF3B2FBE),
+          ),
+        );
+      }
+      return;
+    }
+
+    final productsAsync = ref.read(_iapProductsProvider);
+    final products = productsAsync.valueOrNull ?? [];
+    final product = products.where((p) => p.id == productId).firstOrNull;
+
+    if (product == null) {
+      // Product not found in store catalogue — log and show message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Product $productId not found. '
+                'Ensure it is configured in the developer console.'),
+            backgroundColor: const Color(0xFF3B2FBE),
+          ),
+        );
+      }
+      return;
+    }
+
+    final purchaseParam = PurchaseParam(productDetails: product);
+    try {
+      await iap.buyNonConsumable(purchaseParam: purchaseParam);
+      // Purchase result arrives via _purchaseProvider stream (listen in main.dart or here).
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Purchase failed: ${e.toString()}'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -89,14 +167,7 @@ class PaywallSheet extends ConsumerWidget {
               price: '₹299',
               period: '/month',
               isPopular: false,
-              onTap: () {
-                // TODO: Initiate Razorpay / Google Play subscription
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Redirecting to payment...')),
-                );
-              },
+              onTap: () => _purchase(context, ref, _kMonthlyId),
             ),
             const SizedBox(height: 12),
             _PriceCard(
@@ -105,13 +176,7 @@ class PaywallSheet extends ConsumerWidget {
               period: '/year',
               savings: 'Save ₹1,589',
               isPopular: true,
-              onTap: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Redirecting to payment...')),
-                );
-              },
+              onTap: () => _purchase(context, ref, _kYearlyId),
             ),
 
             const SizedBox(height: 20),

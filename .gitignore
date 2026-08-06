@@ -55,7 +55,7 @@ apps/mobile/pubspec.lock
 *.tfvars
 terraform.tfstate.backup
 
-docs
 FeatTracking
 description_plan.md
 Simple_des.md
+docs

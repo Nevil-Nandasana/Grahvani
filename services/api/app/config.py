@@ -26,6 +26,7 @@ class Settings(BaseSettings):
 
     # Firebase
     FIREBASE_SERVICE_ACCOUNT_PATH: str = "./firebase-service-account.json"
+    FIREBASE_SERVICE_ACCOUNT_JSON: str = "" # Fallback if injected as raw string
     FIREBASE_PROJECT_ID: str = ""
 
     # Google AI
@@ -42,6 +43,9 @@ class Settings(BaseSettings):
     # Apple App Store
     APPLE_BUNDLE_ID: str = "com.grahvani.app"
     APPLE_SHARED_SECRET: str = ""
+    APPLE_KEY_ID: str = ""
+    APPLE_ISSUER_ID: str = ""
+    APPLE_PRIVATE_KEY: str = ""
 
     # Google Play
     GOOGLE_PLAY_PACKAGE_NAME: str = "com.grahvani.app"
@@ -50,11 +54,27 @@ class Settings(BaseSettings):
     # AWS
     AWS_REGION: str = "ap-south-1"
     AWS_S3_BUCKET_NAME: str = "grahvani-private-assets"
+    
+    # Langfuse
+    LANGFUSE_SECRET_KEY: str = ""
+    LANGFUSE_PUBLIC_KEY: str = ""
+    LANGFUSE_HOST: str = "https://cloud.langfuse.com"
 
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    from app.core.aws_secrets import load_secrets_from_aws
+    
+    settings = Settings()
+    
+    # In production, parse any JSON secrets injected by App Runner
+    if settings.APP_ENV == "production":
+        overrides = load_secrets_from_aws()
+        for key, value in overrides.items():
+            if hasattr(settings, key):
+                setattr(settings, key, value)
+                
+    return settings
 
 
 settings = get_settings()

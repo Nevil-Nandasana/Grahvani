@@ -1,4 +1,4 @@
-/// Chart Screen — North Indian diamond chart, dasha timeline, house bottom sheet
+/// Chart Screen — North Indian & South Indian charts, dasha timeline, house bottom sheet
 library;
 
 import 'dart:math' as math;
@@ -7,7 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/api_client.dart';
 import '../domain/chart_model.dart';
 import '../domain/chart_provider.dart';
 
@@ -22,6 +24,16 @@ class ChartScreen extends ConsumerStatefulWidget {
 class _ChartScreenState extends ConsumerState<ChartScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  String _selectedAyanamsa = 'lahiri';
+  bool _isPdfLoading = false;
+
+  static const _ayanamsaOptions = [
+    ('lahiri',   'Lahiri (KP)'),
+    ('raman',    'Raman'),
+    ('krishnamurti', 'Krishnamurti'),
+    ('yukteshwar', 'Yukteshwar'),
+    ('jnbhasin', 'JN Bhasin'),
+  ];
 
   @override
   void initState() {
@@ -33,6 +45,44 @@ class _ChartScreenState extends ConsumerState<ChartScreen>
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Future<void> _exportPdf(BuildContext context) async {
+    setState(() => _isPdfLoading = true);
+    try {
+      final dio = ref.read(apiClientProvider);
+      final response = await dio.get<Map<String, dynamic>>(
+        '/api/v1/charts/${widget.chartId}/export-pdf',
+      );
+      final pdfUrl = response.data?['pdf_url'] as String? ??
+          response.data?['url'] as String?;
+      if (pdfUrl != null) {
+        final uri = Uri.parse(pdfUrl);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('PDF export is a Premium feature.'),
+              backgroundColor: Color(0xFF3B2FBE),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF export failed: ${e.toString().replaceAll('ApiException', '').trim()}'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isPdfLoading = false);
+    }
   }
 
   @override
@@ -48,11 +98,65 @@ class _ChartScreenState extends ConsumerState<ChartScreen>
         title: const Text('Birth Chart',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         actions: [
+          // ── Ayanamsa Selector ─────────────────────────────────────────────
+          Tooltip(
+            message: 'Switch Ayanamsa',
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A1A35),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFF3D3266)),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _selectedAyanamsa,
+                  dropdownColor: const Color(0xFF16163A),
+                  style: const TextStyle(color: Color(0xFF9B93CC), fontSize: 11),
+                  icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF7C6EFA), size: 18),
+                  items: _ayanamsaOptions.map((opt) {
+                    return DropdownMenuItem(
+                      value: opt.$1,
+                      child: Text(opt.$2, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null && value != _selectedAyanamsa) {
+                      setState(() => _selectedAyanamsa = value);
+                      // Invalidate provider to re-fetch with new ayanamsa
+                      ref.invalidate(chartNotifierProvider(widget.chartId));
+                    }
+                  },
+                ),
+              ),
+            ),
+          ),
+          // ── PDF Export ────────────────────────────────────────────────────
+          _isPdfLoading
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 14),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xFFFFD700),
+                    ),
+                  ),
+                )
+              : IconButton(
+                  icon: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFFFFD700)),
+                  tooltip: 'Export PDF',
+                  onPressed: () => _exportPdf(context),
+                ),
+          // ── Sade Sati ─────────────────────────────────────────────────────
           IconButton(
             icon: const Icon(Icons.public, color: Color(0xFFFFD700)),
             tooltip: 'Sade Sati Tracker',
             onPressed: () => context.push('/home/sade-sati/${widget.chartId}'),
           ),
+          // ── AI Chat ───────────────────────────────────────────────────────
           IconButton(
             icon: const Icon(Icons.chat_bubble_outline, color: Color(0xFF7C6EFA)),
             tooltip: 'Ask AI',
@@ -80,7 +184,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen>
           return TabBarView(
             controller: _tabController,
             children: [
-              _ChartTab(chart: chart),
+              _ChartTab(chart: chart, selectedAyanamsa: _selectedAyanamsa),
               _DashaTab(chart: chart),
             ],
           );
@@ -93,8 +197,9 @@ class _ChartScreenState extends ConsumerState<ChartScreen>
 // ─── Chart Tab ─────────────────────────────────────────────────────────────
 
 class _ChartTab extends StatefulWidget {
-  const _ChartTab({required this.chart});
+  const _ChartTab({required this.chart, required this.selectedAyanamsa});
   final BirthChartFacts chart;
+  final String selectedAyanamsa;
 
   @override
   State<_ChartTab> createState() => _ChartTabState();
@@ -102,6 +207,7 @@ class _ChartTab extends StatefulWidget {
 
 class _ChartTabState extends State<_ChartTab> {
   String _selectedDivision = 'D1';
+  bool _showSouthIndian = false;
 
   static const _divisions = [
     {'code': 'D1', 'label': 'D1 Rasi'},
@@ -119,7 +225,7 @@ class _ChartTabState extends State<_ChartTab> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          // Ayanamsa & Divisional Lagna badge
+          // ── Ayanamsa + Lagna badge ──────────────────────────────────────────
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
             decoration: BoxDecoration(
@@ -128,49 +234,137 @@ class _ChartTabState extends State<_ChartTab> {
               border: Border.all(color: const Color(0xFF5B4FDB).withOpacity(0.4)),
             ),
             child: Text(
-              '${widget.chart.ayanamsa.toUpperCase()} AYANAMSA  •  $_selectedDivision LAGNA: $ascSign',
+              '${widget.selectedAyanamsa.toUpperCase()} AYANAMSA  •  $_selectedDivision LAGNA: $ascSign',
               style: const TextStyle(color: Color(0xFF9B93CC), fontSize: 11, fontWeight: FontWeight.bold),
             ),
           ),
-          const SizedBox(height: 12),
-          // Divisional Chart Selector Chips
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: _divisions.map((div) {
-                final isSelected = div['code'] == _selectedDivision;
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: ChoiceChip(
-                    label: Text(
-                      div['label']!,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        color: isSelected ? Colors.white : Colors.white60,
-                      ),
+          const SizedBox(height: 10),
+          // ── Chart style toggle + Divisional selector row ────────────────────
+          Row(
+            children: [
+              // Chart style toggle (North / South Indian)
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF16163A),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFF2A2A4A)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _StyleToggle(
+                      label: 'North',
+                      icon: Icons.grid_view_rounded,
+                      isSelected: !_showSouthIndian,
+                      onTap: () => setState(() => _showSouthIndian = false),
                     ),
-                    selected: isSelected,
-                    selectedColor: const Color(0xFF5B4FDB),
-                    backgroundColor: const Color(0xFF16163A),
-                    onSelected: (selected) {
-                      if (selected) {
-                        setState(() => _selectedDivision = div['code']!);
-                      }
-                    },
+                    _StyleToggle(
+                      label: 'South',
+                      icon: Icons.table_chart_outlined,
+                      isSelected: _showSouthIndian,
+                      onTap: () => setState(() => _showSouthIndian = true),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              // Divisional selector chips (scrollable)
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: _divisions.map((div) {
+                      final isSelected = div['code'] == _selectedDivision;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: ChoiceChip(
+                          label: Text(
+                            div['label']!,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              color: isSelected ? Colors.white : Colors.white60,
+                            ),
+                          ),
+                          selected: isSelected,
+                          selectedColor: const Color(0xFF5B4FDB),
+                          backgroundColor: const Color(0xFF16163A),
+                          onSelected: (selected) {
+                            if (selected) setState(() => _selectedDivision = div['code']!);
+                          },
+                        ),
+                      );
+                    }).toList(),
                   ),
-                );
-              }).toList(),
-            ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
-          // North Indian Diamond Chart
-          NorthIndianChart(chart: widget.chart, division: _selectedDivision),
+          // ── Chart Renderer ─────────────────────────────────────────────────
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 350),
+            transitionBuilder: (child, anim) =>
+                FadeTransition(opacity: anim, child: child),
+            child: _showSouthIndian
+                ? SouthIndianChart(
+                    key: const ValueKey('south'),
+                    chart: widget.chart,
+                    division: _selectedDivision,
+                  )
+                : NorthIndianChart(
+                    key: const ValueKey('north'),
+                    chart: widget.chart,
+                    division: _selectedDivision,
+                  ),
+          ),
           const SizedBox(height: 20),
-          // Planet placement table
+          // ── Planet placement table ─────────────────────────────────────────
           _PlanetTable(planets: widget.chart.planets),
         ],
+      ),
+    );
+  }
+}
+
+class _StyleToggle extends StatelessWidget {
+  const _StyleToggle({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF5B4FDB) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: isSelected ? Colors.white : Colors.white38),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: isSelected ? Colors.white : Colors.white38,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -376,7 +570,210 @@ class _NorthIndianChartPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _NorthIndianChartPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _NorthIndianChartPainter oldDelegate) =>
+      oldDelegate.division != division;
+}
+
+// ─── South Indian Chart ─────────────────────────────────────────────────────
+// Fixed 4×4 grid with signs running clockwise from top-left corner (Pisces/Aries
+// convention). Ascendant house is highlighted.
+
+class SouthIndianChart extends StatelessWidget {
+  const SouthIndianChart({
+    super.key,
+    required this.chart,
+    this.division = 'D1',
+  });
+  final BirthChartFacts chart;
+  final String division;
+
+  // South Indian fixed sign order (column-major, top-left → right → down)
+  // Row 0: Pisces(12), Aries(1), Taurus(2), Gemini(3)
+  // Row 1: Aquarius(11), [center-TL], [center-TR], Cancer(4)
+  // Row 2: Capricorn(10), [center-BL], [center-BR], Leo(5)
+  // Row 3: Sagittarius(9), Scorpio(8), Libra(7), Virgo(6)
+  static const _signGrid = [
+    [12, 1, 2, 3],
+    [11, -1, -1, 4],
+    [10, -1, -1, 5],
+    [9, 8, 7, 6],
+  ];
+
+  static const _zodiacSigns = [
+    '', 'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
+    'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final ascSign = chart.ascendantSignForDivision(division);
+    final ascSignIdx = BirthChartFacts.zodiacOrder.indexOf(ascSign) + 1;
+
+    return AspectRatio(
+      aspectRatio: 1.0,
+      child: LayoutBuilder(builder: (context, constraints) {
+        final size = constraints.maxWidth;
+        final cell = size / 4;
+        return Stack(
+          children: [
+            // Background
+            Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                color: const Color(0xFF10102A),
+                border: Border.all(color: const Color(0xFF2A2A4A), width: 1.2),
+              ),
+            ),
+            // Grid lines
+            CustomPaint(
+              size: Size(size, size),
+              painter: _SouthIndianGridPainter(),
+            ),
+            // Cells
+            for (int row = 0; row < 4; row++)
+              for (int col = 0; col < 4; col++)
+                if (_signGrid[row][col] != -1)
+                  _SouthIndianCell(
+                    left: col * cell,
+                    top: row * cell,
+                    size: cell,
+                    signNumber: _signGrid[row][col],
+                    signName: _zodiacSigns[_signGrid[row][col]],
+                    isAscendant: _signGrid[row][col] == ascSignIdx,
+                    planets: _planetsForSign(_signGrid[row][col]),
+                  ),
+          ],
+        );
+      }),
+    );
+  }
+
+  List<PlanetPlacement> _planetsForSign(int signNumber) {
+    if (signNumber <= 0) return [];
+    final signName = _zodiacSigns[signNumber];
+    if (division == 'D1') {
+      return chart.planets.where((p) => p.zodiacSign == signName).toList();
+    }
+    return chart.planets
+        .where((p) => chart.planetSignForDivision(p, division) == signName)
+        .toList();
+  }
+}
+
+class _SouthIndianGridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF2A2A4A)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+    final cell = size.width / 4;
+    // Horizontal lines
+    for (int i = 1; i < 4; i++) {
+      canvas.drawLine(Offset(0, i * cell), Offset(size.width, i * cell), paint);
+    }
+    // Vertical lines
+    for (int i = 1; i < 4; i++) {
+      canvas.drawLine(Offset(i * cell, 0), Offset(i * cell, size.height), paint);
+    }
+    // Inner hollow: draw the inner 2×2 as a filled rectangle (center empty)
+    final innerPaint = Paint()
+      ..color = const Color(0xFF080818)
+      ..style = PaintingStyle.fill;
+    canvas.drawRect(
+      Rect.fromLTWH(cell, cell, cell * 2, cell * 2),
+      innerPaint,
+    );
+    canvas.drawRect(
+      Rect.fromLTWH(cell, cell, cell * 2, cell * 2),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _SouthIndianGridPainter oldDelegate) => false;
+}
+
+class _SouthIndianCell extends StatelessWidget {
+  const _SouthIndianCell({
+    required this.left,
+    required this.top,
+    required this.size,
+    required this.signNumber,
+    required this.signName,
+    required this.isAscendant,
+    required this.planets,
+  });
+
+  final double left, top, size;
+  final int signNumber;
+  final String signName;
+  final bool isAscendant;
+  final List<PlanetPlacement> planets;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: left,
+      top: top,
+      width: size,
+      height: size,
+      child: Container(
+        decoration: isAscendant
+            ? BoxDecoration(
+                color: const Color(0xFF5B4FDB).withOpacity(0.12),
+                border: Border.all(color: const Color(0xFF7C6EFA), width: 1.5),
+              )
+            : null,
+        padding: const EdgeInsets.all(3),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  '$signNumber',
+                  style: TextStyle(
+                    color: isAscendant
+                        ? const Color(0xFF7C6EFA)
+                        : const Color(0xFF3D3266),
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (isAscendant) ...[
+                  const SizedBox(width: 2),
+                  const Text('Asc',
+                      style: TextStyle(
+                          color: Color(0xFF7C6EFA),
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold)),
+                ],
+              ],
+            ),
+            Expanded(
+              child: Wrap(
+                spacing: 1,
+                runSpacing: 1,
+                children: planets.map((p) {
+                  final abbr = _NorthIndianChartPainter._planetAbbr(p.name);
+                  return Text(
+                    p.isRetrograde ? '$abbr(R)' : abbr,
+                    style: TextStyle(
+                      color: _NorthIndianChartPainter._planetColor(p.name),
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // ─── House Details Bottom Sheet ─────────────────────────────────────────────
@@ -899,57 +1296,219 @@ class _MahaDashaCard extends StatelessWidget {
               return s != null && e != null && today.isAfter(s) && today.isBefore(e);
             }();
             final ac = _planetColors[a.planet] ?? const Color(0xFF9B93CC);
+            return _AntarDashaRow(
+              antar: a,
+              isCurrentAntar: isCurrentAntar,
+              planetColor: ac,
+              today: today,
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Antar Dasha Row with drilldown ────────────────────────────────────────────
+
+class _AntarDashaRow extends StatefulWidget {
+  const _AntarDashaRow({
+    required this.antar,
+    required this.isCurrentAntar,
+    required this.planetColor,
+    required this.today,
+  });
+  final AntarDasha antar;
+  final bool isCurrentAntar;
+  final Color planetColor;
+  final DateTime today;
+
+  @override
+  State<_AntarDashaRow> createState() => _AntarDashaRowState();
+}
+
+class _AntarDashaRowState extends State<_AntarDashaRow> {
+  bool _expanded = false;
+
+  // Pratyantardasha: computed from AntarDasha proportions
+  // Using standard Vimshottari years: Su=6,Mo=10,Ma=7,Ra=18,Ju=16,Sa=19,Me=17,Ke=7,Ve=20
+  static const _vimYears = {
+    'Sun': 6.0, 'Moon': 10.0, 'Mars': 7.0, 'Rahu': 18.0,
+    'Jupiter': 16.0, 'Saturn': 19.0, 'Mercury': 17.0, 'Ketu': 7.0, 'Venus': 20.0,
+  };
+  static const _planetOrder = [
+    'Sun', 'Moon', 'Mars', 'Rahu', 'Jupiter', 'Saturn', 'Mercury', 'Ketu', 'Venus'
+  ];
+  static const _totalYears = 120.0;
+
+  List<({String planet, DateTime start, DateTime end})> _computePD() {
+    final antarStart = DateTime.tryParse(widget.antar.startDate);
+    final antarEnd = DateTime.tryParse(widget.antar.endDate);
+    if (antarStart == null || antarEnd == null) return [];
+    final antarDays = antarEnd.difference(antarStart).inDays.toDouble();
+    final antarYears = widget.antar.durationYears;
+
+    // Start from the lord's next planet in sequence
+    final lordIdx = _planetOrder.indexOf(widget.antar.planet);
+    if (lordIdx == -1) return [];
+
+    final result = <({String planet, DateTime start, DateTime end})>[];
+    var cursor = antarStart;
+    for (int i = 0; i < 9; i++) {
+      final pdPlanet = _planetOrder[(lordIdx + i) % 9];
+      final pdYears = (_vimYears[pdPlanet] ?? 7.0) * antarYears / _totalYears;
+      final pdDays = (pdYears * 365.25).round();
+      final pdEnd = cursor.add(Duration(days: pdDays));
+      result.add((planet: pdPlanet, start: cursor, end: pdEnd));
+      cursor = pdEnd;
+    }
+    return result;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ac = widget.planetColor;
+    final a = widget.antar;
+
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: () => setState(() => _expanded = !_expanded),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 5),
+            child: Row(
+              children: [
+                Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: ac.withOpacity(0.12),
+                  ),
+                  child: Center(
+                    child: Text(
+                      a.planet.substring(0, 2),
+                      style: TextStyle(
+                          color: ac, fontSize: 9, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(a.planet,
+                              style: TextStyle(
+                                  color: widget.isCurrentAntar ? ac : Colors.white70,
+                                  fontSize: 13,
+                                  fontWeight: widget.isCurrentAntar
+                                      ? FontWeight.bold
+                                      : FontWeight.normal)),
+                          if (widget.isCurrentAntar) ...[
+                            const SizedBox(width: 4),
+                            const Text('●',
+                                style: TextStyle(
+                                    color: Color(0xFF64FF8A), fontSize: 8)),
+                          ],
+                        ],
+                      ),
+                      Text(
+                        '${a.startDate} → ${a.endDate}',
+                        style: const TextStyle(
+                            color: Color(0xFF6B6B99), fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  _expanded ? Icons.expand_less : Icons.expand_more,
+                  color: const Color(0xFF3D3266),
+                  size: 18,
+                ),
+              ],
+            ),
+          ),
+        ),
+        // ── Pratyantardasha sub-rows ───────────────────────────────────────
+        if (_expanded) _buildPD(),
+      ],
+    );
+  }
+
+  Widget _buildPD() {
+    final pdList = _computePD();
+    if (pdList.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(left: 36, bottom: 4),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0E0E22),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFF1E1E3A)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'PRATYANTARDASHA',
+            style: TextStyle(
+                color: Color(0xFF4A4A7A),
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.8),
+          ),
+          const SizedBox(height: 4),
+          ...pdList.map((pd) {
+            final isCurrent = widget.today.isAfter(pd.start) &&
+                widget.today.isBefore(pd.end);
+            final pc = _MahaDashaCard._planetColors[pd.planet] ??
+                const Color(0xFF9B93CC);
+            final fmt = DateFormat('MMM dd, yy');
             return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 5),
+              padding: const EdgeInsets.symmetric(vertical: 3),
               child: Row(
                 children: [
                   Container(
-                    width: 26,
-                    height: 26,
+                    width: 18,
+                    height: 18,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: ac.withOpacity(0.12),
+                      color: pc.withOpacity(0.15),
                     ),
                     child: Center(
                       child: Text(
-                        a.planet.substring(0, 2),
+                        pd.planet.substring(0, 2),
                         style: TextStyle(
-                            color: ac, fontSize: 9, fontWeight: FontWeight.bold),
+                            color: pc, fontSize: 7, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 6),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(a.planet,
-                                style: TextStyle(
-                                    color: isCurrentAntar
-                                        ? ac
-                                        : Colors.white70,
-                                    fontSize: 13,
-                                    fontWeight: isCurrentAntar
-                                        ? FontWeight.bold
-                                        : FontWeight.normal)),
-                            if (isCurrentAntar) ...[
-                              const SizedBox(width: 4),
-                              const Text('●',
-                                  style: TextStyle(
-                                      color: Color(0xFF64FF8A), fontSize: 8)),
-                            ],
-                          ],
-                        ),
-                        Text(
-                          '${a.startDate} → ${a.endDate}',
-                          style: const TextStyle(
-                              color: Color(0xFF6B6B99), fontSize: 11),
-                        ),
-                      ],
+                    child: Text(
+                      '${pd.planet}  ${fmt.format(pd.start)} – ${fmt.format(pd.end)}',
+                      style: TextStyle(
+                        color: isCurrent ? pc : Colors.white38,
+                        fontSize: 10,
+                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                      ),
                     ),
                   ),
+                  if (isCurrent)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: pc.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                      child: Text('NOW',
+                          style: TextStyle(
+                              color: pc, fontSize: 7, fontWeight: FontWeight.bold)),
+                    ),
                 ],
               ),
             );

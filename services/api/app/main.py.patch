@@ -1,0 +1,20 @@
+*** Begin Patch ***
+--- main.py	2026-08-06 19:45:00.000000000 +0530
++++ main.py.new	2026-08-06 20:15:00.000000000 +0530
+@@ -15,6 +15,7 @@
+ from app.modules.birth_chart import router as birth_chart_router
+ from app.modules.identity import router as identity_router
+ from app.modules.notifications import router as notifications_router
++from app.modules.transits import router as transits_router
+ from app.core.middleware import add_middleware
+ 
+ 
+@@ -35,6 +36,7 @@
+     identity_router,
+     birth_chart_router,
+     notifications_router,
++    transits_router,
+ ], prefix="/api/v1")
+ 
+ 
+*** End Patch ***
