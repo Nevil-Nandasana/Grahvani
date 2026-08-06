@@ -2,7 +2,7 @@
 Identity Module — Pydantic v2 Schemas (Request / Response)
 """
 import uuid
-from datetime import date, time
+from datetime import date, datetime, time
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -46,3 +46,13 @@ class UserResponse(BaseModel):
     role: str
     tier: str
     is_new_user: bool
+    consent_given_at: datetime | None = None
+
+
+class ConsentGrantRequest(BaseModel):
+    """DPDP Act 2023 — explicit consent record payload."""
+    consent_version: str = Field(
+        default="1.0",
+        description="Version of the consent notice shown to the user.",
+        examples=["1.0"],
+    )

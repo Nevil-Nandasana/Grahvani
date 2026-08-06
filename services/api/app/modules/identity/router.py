@@ -3,10 +3,12 @@ Identity Module — API Router
 Routes: /auth, /profiles
 """
 import uuid
+from datetime import timezone as _tz
 
 from fastapi import APIRouter, Depends, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql import func as sql_func
 
 from app.core.exceptions import EntitlementError, NotFoundError
 from app.core.security import CurrentUser
@@ -14,6 +16,7 @@ from app.db.session import get_db
 from app.modules.identity.models import BirthProfile, User
 from app.modules.identity.schemas import (
     AuthVerifyRequest,
+    ConsentGrantRequest,
     CreateProfileRequest,
     ProfileResponse,
     UserResponse,
@@ -30,6 +33,8 @@ async def verify_token(
     """
     Exchange Firebase ID token for an authenticated user session.
     Creates a new user record on first login.
+    Response includes `consent_given_at` so the client knows whether
+    to show the DPDP consent gate before routing to Home.
     """
     firebase_uid = current_user.get("uid")
     email = current_user.get("email")
@@ -53,7 +58,44 @@ async def verify_token(
             role=user.role,
             tier=user.tier,
             is_new_user=is_new_user,
-        ).model_dump(),
+            consent_given_at=user.consent_given_at,
+        ).model_dump(mode="json"),
+    }
+
+
+@router.post("/auth/consent", response_model=dict, status_code=status.HTTP_200_OK)
+async def grant_consent(
+    body: ConsentGrantRequest,
+    current_user: CurrentUser,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    DPDP Act 2023 — Record explicit user consent.
+
+    Records the UTC timestamp at which the user granted informed consent
+    for data processing. This endpoint is idempotent: calling it again
+    updates the timestamp (models re-consent on policy version changes).
+
+    The `consent_version` field tracks which version of the privacy notice
+    the user agreed to, enabling future re-consent flows when the policy changes.
+    """
+    firebase_uid = current_user.get("uid")
+    result = await db.execute(select(User).where(User.firebase_uid == firebase_uid))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise NotFoundError("User")
+
+    user.consent_given_at = sql_func.now()
+    await db.flush()
+
+    return {
+        "success": True,
+        "data": {
+            "consent_given_at": user.consent_given_at,
+            "consent_version": body.consent_version,
+            "message": "Consent recorded. Thank you.",
+        },
     }
 
 

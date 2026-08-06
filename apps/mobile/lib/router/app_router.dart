@@ -1,122 +1,418 @@
+/// Grahvani — App Router
+/// Wires all feature screens to go_router routes with Firebase auth guard.
+library;
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../features/auth/domain/auth_state.dart';
+import '../features/auth/presentation/consent_screen.dart';
+import '../features/auth/presentation/login_screen.dart';
+import '../features/chart/presentation/chart_screen.dart';
+import '../features/chat/presentation/chat_screen.dart';
+import '../features/profile/presentation/add_profile_screen.dart';
+import '../features/profile/presentation/profiles_screen.dart';
+import '../features/subscriptions/presentation/paywall_sheet.dart';
+import '../features/auth/data/auth_repository.dart';
+
 part 'app_router.g.dart';
 
 // ─── Route Paths ──────────────────────────────────────────────────────────────
 class AppRoutes {
-  static const splash    = '/';
-  static const login     = '/login';
-  static const home      = '/home';
-  static const profiles  = '/profiles';
-  static const addProfile = '/profiles/add';
-  static const chart     = '/charts/:chartId';
-  static const chat      = '/chat/:sessionId';
-  static const settings  = '/settings';
+  static const splash     = '/';
+  static const login      = '/login';
+  static const consent    = '/consent';
+  static const home       = '/home';
+  static const profiles   = '/home/profiles';
+  static const addProfile = '/home/profiles/add';
+  static const chart      = '/home/charts/:chartId';
+  static const chat       = '/home/chat/:chartId';
 }
 
 @riverpod
 GoRouter appRouter(Ref ref) {
+  // Listen to Firebase auth state for redirect guard.
+  final authNotifier = ValueNotifier<User?>(
+    FirebaseAuth.instance.currentUser,
+  );
+  FirebaseAuth.instance.authStateChanges().listen((user) {
+    authNotifier.value = user;
+  });
+
+  // Listen to consent state changes from repository.
+  final consentNotifier = ref.read(authRepositoryProvider).consentStateNotifier;
+
   return GoRouter(
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
-    routes: [
+    refreshListenable: Listenable.merge([authNotifier, consentNotifier]),
+
+    // ── Auth Redirect Guard ──────────────────────────────────────────────────
+    redirect: (BuildContext context, GoRouterState state) {
+      final bool isLoggedIn = FirebaseAuth.instance.currentUser != null;
+      final String loc = state.matchedLocation;
+      
+      // Consent state from backend cache (null = unknown, false = no consent, true = consent given)
+      final bool? hasConsent = consentNotifier.value;
+
+      if (loc == AppRoutes.splash) {
+        if (!isLoggedIn) return AppRoutes.login;
+        if (hasConsent == false) return AppRoutes.consent;
+        if (hasConsent == true) return AppRoutes.home;
+        return null; // Stay on splash while loading/verifying
+      }
+
+      if (!isLoggedIn && loc != AppRoutes.login) {
+        return AppRoutes.login;
+      }
+
+      if (isLoggedIn) {
+        if (loc == AppRoutes.login) {
+          return (hasConsent == true) ? AppRoutes.home : AppRoutes.consent;
+        }
+        
+        // If logged in, but backend returned consent_given_at=null, force consent gate
+        if (hasConsent == false && loc != AppRoutes.consent) {
+          return AppRoutes.consent;
+        }
+      }
+
+      return null; // No redirect
+    },
+
+    routes: <RouteBase>[
+      // ── Splash ──────────────────────────────────────────────────────────────
       GoRoute(
         path: AppRoutes.splash,
-        builder: (context, state) => const SplashScreen(),
+        builder: (context, state) => const _SplashScreen(),
       ),
+
+      // ── Login ───────────────────────────────────────────────────────────────
       GoRoute(
         path: AppRoutes.login,
         builder: (context, state) => const LoginScreen(),
       ),
+      
+      // ── Consent ─────────────────────────────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.consent,
+        builder: (context, state) => const ConsentScreen(),
+      ),
+
+      // ── Home (shell with nested routes) ────────────────────────────────────
       GoRoute(
         path: AppRoutes.home,
-        builder: (context, state) => const HomeScreen(),
+        builder: (context, state) => const _HomeScreen(),
         routes: [
+          // Birth Profiles
           GoRoute(
             path: 'profiles',
-            builder: (context, state) => const ProfilesScreen(),
+            builder: (BuildContext context, GoRouterState state) =>
+                const ProfilesScreen(),
           ),
           GoRoute(
             path: 'profiles/add',
-            builder: (context, state) => const AddProfileScreen(),
+            builder: (BuildContext context, GoRouterState state) =>
+                const AddProfileScreen(),
           ),
+
+          // Birth Chart (uses profileId to trigger/load chart)
           GoRoute(
             path: 'charts/:chartId',
-            builder: (context, state) => ChartScreen(chartId: state.pathParameters['chartId']!),
+            builder: (BuildContext context, GoRouterState state) =>
+                ChartScreen(
+                  chartId: state.pathParameters['chartId']!,
+                ),
           ),
+
+          // AI Chat (chartId passed to create a session)
           GoRoute(
-            path: 'chat/:sessionId',
-            builder: (context, state) => ChatScreen(sessionId: state.pathParameters['sessionId']!),
+            path: 'chat/:chartId',
+            builder: (BuildContext context, GoRouterState state) {
+              final String chartId = state.pathParameters['chartId']!;
+              return ChatScreen(chartId: chartId);
+            },
+          ),
+
+          // Paywall (presented as a full-screen sheet)
+          GoRoute(
+            path: 'upgrade',
+            builder: (BuildContext context, GoRouterState state) =>
+                const _PaywallPage(),
           ),
         ],
       ),
     ],
+
     errorBuilder: (context, state) => Scaffold(
-      body: Center(child: Text('Page not found: ${state.uri}')),
+      backgroundColor: const Color(0xFF0A0A1A),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('🌑', style: TextStyle(fontSize: 48)),
+            const SizedBox(height: 12),
+            Text(
+              'Page not found',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: Colors.white,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              state.uri.toString(),
+              style: const TextStyle(color: Color(0xFF6B6B99), fontSize: 12),
+            ),
+            const SizedBox(height: 20),
+            TextButton(
+              onPressed: () => context.go(AppRoutes.home),
+              child: const Text('Go Home'),
+            ),
+          ],
+        ),
+      ),
     ),
   );
 }
 
-// ─── Placeholder Screens (to be replaced with actual feature screens) ─────────
+// ─── Splash Screen ─────────────────────────────────────────────────────────
 
-class SplashScreen extends StatelessWidget {
-  const SplashScreen({super.key});
+class _SplashScreen extends StatelessWidget {
+  const _SplashScreen();
+
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: const Color(0xFF0D0D1A),
-    body: Center(
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        const Text('🪐', style: TextStyle(fontSize: 72)),
-        const SizedBox(height: 16),
-        Text('Grahvani', style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-          color: Colors.white, fontWeight: FontWeight.bold,
-        )),
-        const SizedBox(height: 8),
-        Text('Vedic Astrology, Precisely.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: Colors.white60,
-        )),
-      ]),
-    ),
-  );
+        backgroundColor: const Color(0xFF0D0D1A),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const RadialGradient(
+                    colors: [Color(0xFF7C6EFA), Color(0xFF3B2FBE)],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF5B4FDB).withValues(alpha: 0.5),
+                      blurRadius: 30,
+                      spreadRadius: 4,
+                    )
+                  ],
+                ),
+                child: const Center(
+                  child: Text('🪐', style: TextStyle(fontSize: 38)),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Grahvani',
+                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Vedic Astrology, Precisely.',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: Colors.white60),
+              ),
+              const SizedBox(height: 32),
+              const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Color(0xFF7C6EFA),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
 }
 
-class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
+// ─── Home Dashboard ─────────────────────────────────────────────────────────
+
+class _HomeScreen extends ConsumerWidget {
+  const _HomeScreen();
+
   @override
-  Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('Login Screen')));
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A0A1A),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF0A0A1A),
+        elevation: 0,
+        title: const Row(
+          children: [
+            Text('🪐', style: TextStyle(fontSize: 22)),
+            SizedBox(width: 8),
+            Text(
+              'Grahvani',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.workspace_premium, color: Color(0xFF7C6EFA)),
+            tooltip: 'Upgrade',
+            onPressed: () => context.push('/home/upgrade'),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Welcome back',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Your Vedic birth chart awaits.',
+                style: TextStyle(color: Color(0xFF6B6B99)),
+              ),
+              const SizedBox(height: 32),
+              _HomeCard(
+                icon: '🌙',
+                title: 'Birth Profiles',
+                subtitle: 'Manage and view saved charts',
+                onTap: () => context.push('/home/profiles'),
+              ),
+              const SizedBox(height: 14),
+              _HomeCard(
+                icon: '💬',
+                title: 'AI Interpretation',
+                subtitle: 'Chat with Grahvani AI',
+                onTap: () => context.push('/home/profiles'),
+              ),
+              const SizedBox(height: 14),
+              _HomeCard(
+                icon: '⭐',
+                title: 'Upgrade to Premium',
+                subtitle: '100 daily AI interpretations',
+                highlight: true,
+                onTap: () => PaywallSheet.show(context),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class _HomeCard extends StatelessWidget {
+  const _HomeCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.highlight = false,
+  });
+
+  final String icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final bool highlight;
+
   @override
-  Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('Home Dashboard')));
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: highlight
+              ? const LinearGradient(
+                  colors: [Color(0xFF3B2FBE), Color(0xFF5B4FDB)],
+                )
+              : null,
+          color: highlight ? null : const Color(0xFF12122A),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: highlight
+                ? const Color(0xFF7C6EFA)
+                : const Color(0xFF2A2A4A),
+          ),
+        ),
+        child: Row(
+          children: [
+            Text(icon, style: const TextStyle(fontSize: 28)),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15)),
+                  const SizedBox(height: 3),
+                  Text(subtitle,
+                      style: const TextStyle(
+                          color: Color(0xFF9B93CC), fontSize: 12)),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: Color(0xFF3D3266)),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class ProfilesScreen extends StatelessWidget {
-  const ProfilesScreen({super.key});
-  @override
-  Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('My Profiles')));
-}
+// ─── Paywall Wrapper Page ──────────────────────────────────────────────────
 
-class AddProfileScreen extends StatelessWidget {
-  const AddProfileScreen({super.key});
-  @override
-  Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('Add Birth Profile')));
-}
+class _PaywallPage extends StatelessWidget {
+  const _PaywallPage();
 
-class ChartScreen extends StatelessWidget {
-  final String chartId;
-  const ChartScreen({super.key, required this.chartId});
   @override
-  Widget build(BuildContext context) => Scaffold(body: Center(child: Text('Chart: $chartId')));
-}
-
-class ChatScreen extends StatelessWidget {
-  final String sessionId;
-  const ChatScreen({super.key, required this.sessionId});
-  @override
-  Widget build(BuildContext context) => Scaffold(body: Center(child: Text('Chat: $sessionId')));
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A0A1A),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () => context.pop(),
+                  ),
+                ],
+              ),
+            ),
+            const Expanded(child: PaywallSheet()),
+          ],
+        ),
+      ),
+    );
+  }
 }

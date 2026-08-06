@@ -45,6 +45,7 @@ class Settings(BaseSettings):
 
     # Google Play
     GOOGLE_PLAY_PACKAGE_NAME: str = "com.grahvani.app"
+    GOOGLE_SERVICE_ACCOUNT_PATH: str = ""
 
     # AWS
     AWS_REGION: str = "ap-south-1"
