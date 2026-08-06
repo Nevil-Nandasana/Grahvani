@@ -20,14 +20,23 @@ class ChartNotifier extends _$ChartNotifier {
   Future<BirthChartFacts?> _loadOrTrigger(String profileId) async {
     final repo = ref.read(chartRepositoryProvider);
 
-    // Step 1: Trigger calculation (returns immediately with chart_id)
-    final chartId = await repo.triggerCalculation(profileId);
+    // Step 0: Try loading cached chart facts for instant offline rendering
+    final cached = await repo.getCachedChartForProfile(profileId);
 
-    // Step 2: Poll until complete
-    await _pollUntilComplete(repo, chartId);
+    try {
+      // Step 1: Trigger calculation (returns immediately with chart_id)
+      final chartId = await repo.triggerCalculation(profileId);
 
-    // Step 3: Fetch completed chart facts
-    return await repo.getChart(chartId);
+      // Step 2: Poll until complete
+      await _pollUntilComplete(repo, chartId);
+
+      // Step 3: Fetch completed chart facts & cache locally
+      return await repo.getChart(chartId, profileId: profileId);
+    } catch (_) {
+      // If network is offline or request fails, return cached chart facts
+      if (cached != null) return cached;
+      rethrow;
+    }
   }
 
   Future<void> _pollUntilComplete(

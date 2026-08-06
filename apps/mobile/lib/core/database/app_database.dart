@@ -36,13 +36,27 @@ class ProfileCaches extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Drift table for cached birth charts.
+@DataClassName('ChartCache')
+class ChartCaches extends Table {
+  TextColumn get chartId => text().named('chart_id')();
+  TextColumn get profileId => text().named('profile_id')();
+  TextColumn get ayanamsa => text()();
+  TextColumn get houseSystem => text().named('house_system')();
+  TextColumn get chartFactsJson => text().named('chart_facts_json')();
+  DateTimeColumn get calculatedAt => dateTime().named('calculated_at')();
+
+  @override
+  Set<Column> get primaryKey => {chartId};
+}
+
 /// Database access class.
-@DriftDatabase(tables: [ProfileCaches])
+@DriftDatabase(tables: [ProfileCaches, ChartCaches])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -147,9 +161,52 @@ class AppDatabase extends _$AppDatabase {
     await (delete(profileCaches)..where((t) => t.id.equals(id))).go();
   }
 
-  /// Clear all cached profiles (used on sign out).
+  /// Clear all cached profiles and charts (used on sign out).
   Future<void> clearAll() async {
     await delete(profileCaches).go();
+    await delete(chartCaches).go();
+  }
+
+  // ─── Chart Cache Operations ──────────────────────────────────────────────
+
+  /// Insert or update chart facts in local cache.
+  Future<void> upsertChart({
+    required String chartId,
+    required String profileId,
+    required String ayanamsa,
+    required String houseSystem,
+    required String chartFactsJson,
+  }) async {
+    final now = DateTime.now();
+    await into(chartCaches).insertOnConflictUpdate(
+      ChartCachesCompanion.insert(
+        chartId: chartId,
+        profileId: profileId,
+        ayanamsa: ayanamsa,
+        houseSystem: houseSystem,
+        chartFactsJson: chartFactsJson,
+        calculatedAt: now,
+      ),
+    );
+  }
+
+  /// Get cached chart by chartId.
+  Future<ChartCache?> getChart(String chartId) async {
+    return (select(chartCaches)..where((t) => t.chartId.equals(chartId))).getSingleOrNull();
+  }
+
+  /// Get cached chart by profileId.
+  Future<ChartCache?> getChartByProfileId(String profileId) async {
+    final rows = await (select(chartCaches)
+          ..where((t) => t.profileId.equals(profileId))
+          ..orderBy([(t) => OrderingTerm.desc(t.calculatedAt)]))
+        .get();
+    return rows.isNotEmpty ? rows.first : null;
+  }
+
+  /// Delete a chart from local cache.
+  Future<void> deleteChart(String chartId) async {
+    await (delete(chartCaches)..where((t) => t.chartId.equals(chartId))).go();
   }
 
   /// Convert Drift row to BirthProfile domain model.

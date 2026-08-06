@@ -14,6 +14,7 @@ class PlanetPlacement {
     required this.nakshatra,
     required this.pada,
     required this.isRetrograde,
+    this.divisionalCharts = const {},
   });
 
   final String name;
@@ -24,8 +25,12 @@ class PlanetPlacement {
   final String nakshatra;
   final int pada;
   final bool isRetrograde;
+  final Map<String, String> divisionalCharts;
 
   factory PlanetPlacement.fromJson(Map<String, dynamic> json) {
+    final rawDivs = json['divisional_charts'] as Map<String, dynamic>? ?? {};
+    final divMap = rawDivs.map((key, value) => MapEntry(key, value.toString()));
+
     return PlanetPlacement(
       name: json['name'] as String,
       longitude: (json['longitude'] as num).toDouble(),
@@ -35,6 +40,7 @@ class PlanetPlacement {
       nakshatra: json['nakshatra'] as String,
       pada: json['pada'] as int,
       isRetrograde: json['is_retrograde'] as bool? ?? false,
+      divisionalCharts: divMap,
     );
   }
 
@@ -43,15 +49,24 @@ class PlanetPlacement {
 
 @immutable
 class Ascendant {
-  const Ascendant({required this.longitude, required this.zodiacSign});
+  const Ascendant({
+    required this.longitude,
+    required this.zodiacSign,
+    this.divisionalCharts = const {},
+  });
 
   final double longitude;
   final String zodiacSign;
+  final Map<String, String> divisionalCharts;
 
   factory Ascendant.fromJson(Map<String, dynamic> json) {
+    final rawDivs = json['divisional_charts'] as Map<String, dynamic>? ?? {};
+    final divMap = rawDivs.map((key, value) => MapEntry(key, value.toString()));
+
     return Ascendant(
       longitude: (json['longitude'] as num).toDouble(),
       zodiacSign: json['zodiac_sign'] as String,
+      divisionalCharts: divMap,
     );
   }
 }
@@ -169,4 +184,44 @@ class BirthChartFacts {
   /// Returns list of planets in the given house number (1-indexed).
   List<PlanetPlacement> planetsInHouse(int house) =>
       planets.where((p) => p.house == house).toList();
+
+  static const List<String> zodiacOrder = [
+    'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
+    'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces',
+  ];
+
+  String ascendantSignForDivision(String division) {
+    if (division == 'D1') return ascendant.zodiacSign;
+    final key = _divisionKey(division);
+    return ascendant.divisionalCharts[key] ?? ascendant.zodiacSign;
+  }
+
+  String planetSignForDivision(PlanetPlacement planet, String division) {
+    if (division == 'D1') return planet.zodiacSign;
+    final key = _divisionKey(division);
+    return planet.divisionalCharts[key] ?? planet.zodiacSign;
+  }
+
+  int houseForPlanetInDivision(PlanetPlacement planet, String division) {
+    if (division == 'D1') return planet.house;
+    final ascSign = ascendantSignForDivision(division);
+    final planetSign = planetSignForDivision(planet, division);
+    final ascIdx = zodiacOrder.indexOf(ascSign);
+    final planetIdx = zodiacOrder.indexOf(planetSign);
+    if (ascIdx == -1 || planetIdx == -1) return planet.house;
+    return ((planetIdx - ascIdx + 12) % 12) + 1;
+  }
+
+  List<PlanetPlacement> planetsInDivisionalHouse(int house, String division) =>
+      planets.where((p) => houseForPlanetInDivision(p, division) == house).toList();
+
+  static String _divisionKey(String division) {
+    switch (division) {
+      case 'D9': return 'D9_Navamsha';
+      case 'D10': return 'D10_Dasamsa';
+      case 'D12': return 'D12_Dwadasamsa';
+      case 'D60': return 'D60_Shashtiamsa';
+      default: return 'D9_Navamsha';
+    }
+  }
 }

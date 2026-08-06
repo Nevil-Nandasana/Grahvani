@@ -5,6 +5,7 @@ and computes the complete Vimshottari Dasha timeline (Maha, Antar, Pratyantar).
 """
 import swisseph as swe
 from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 # ─── Ayanamsa Constants ───────────────────────────────────────────────────────
 AYANAMSA_MAP = {
@@ -328,16 +329,18 @@ def calculate_chart(
     latitude: float, longitude: float,
     ayanamsa: str = "lahiri",
     house_system: str = "P",  # Placidus
+    timezone_name: str | None = None,
 ) -> dict:
     """
     Calculates a complete Vedic birth chart using Swiss Ephemeris.
 
     Args:
-        year, month, day: Birth date (local time)
-        hour, minute, second: Birth time (local time)
+        year, month, day: Birth date (local wall-clock time)
+        hour, minute, second: Birth time (local wall-clock time)
         latitude, longitude: Birth coordinates
         ayanamsa: Ayanamsa standard (default: lahiri)
         house_system: House system code (P=Placidus, E=Equal)
+        timezone_name: Optional IANA timezone name (e.g., 'Asia/Kolkata', 'America/New_York')
 
     Returns:
         dict: Immutable chart_facts_json containing planets, houses, dasha timeline.
@@ -346,8 +349,22 @@ def calculate_chart(
     sid_mode = AYANAMSA_MAP.get(ayanamsa, swe.SIDM_LAHIRI)
     swe.set_sid_mode(sid_mode)
 
-    # Convert local birth datetime to Julian Day (UTC approximation)
-    jd = swe.julday(year, month, day, hour + minute / 60.0 + second / 3600.0)
+    # If timezone_name is provided, convert local wall-clock time to UTC
+    if timezone_name and timezone_name.upper() != "UTC":
+        try:
+            tz = ZoneInfo(timezone_name)
+        except (ZoneInfoNotFoundError, ValueError):
+            tz = timezone.utc
+        local_dt = datetime(year, month, day, hour, minute, second, tzinfo=tz)
+        utc_dt = local_dt.astimezone(timezone.utc)
+        u_year, u_month, u_day = utc_dt.year, utc_dt.month, utc_dt.day
+        u_hour_decimal = utc_dt.hour + utc_dt.minute / 60.0 + utc_dt.second / 3600.0
+    else:
+        u_year, u_month, u_day = year, month, day
+        u_hour_decimal = hour + minute / 60.0 + second / 3600.0
+
+    # Calculate Julian Day in UTC
+    jd = swe.julday(u_year, u_month, u_day, u_hour_decimal)
 
     planets_data = []
     moon_sidereal_lon: float = 0.0  # Captured for dasha calculation

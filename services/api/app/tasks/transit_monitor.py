@@ -88,6 +88,7 @@ def _get_moon_sign(profile: BirthProfile) -> str:
         hour=int(tob[0]), minute=int(tob[1]), second=int(tob[2]) if len(tob) > 2 else 0,
         latitude=profile.latitude, longitude=profile.longitude,
         ayanamsa="lahiri",
+        timezone_name=profile.timezone,
     )
     
     for planet in chart.get("planets", []):

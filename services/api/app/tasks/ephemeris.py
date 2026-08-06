@@ -57,6 +57,7 @@ async def _calculate_birth_chart_async(chart_id: str) -> None:
                 longitude=profile.longitude,
                 ayanamsa=chart.ayanamsa,
                 house_system="P",  # Placidus
+                timezone_name=profile.timezone,
             )
 
             chart.chart_facts_json = chart_facts

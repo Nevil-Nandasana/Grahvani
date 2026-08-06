@@ -1,0 +1,327 @@
+/// Sade Sati Saturn Transit Screen — 7.5-Year Saturn Transit Dashboard & Remedies
+library;
+
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
+import '../../../core/network/api_client.dart';
+
+class SadeSatiScreen extends ConsumerStatefulWidget {
+  const SadeSatiScreen({super.key, required this.profileId});
+  final String profileId;
+
+  @override
+  ConsumerState<SadeSatiScreen> createState() => _SadeSatiScreenState();
+}
+
+class _SadeSatiScreenState extends ConsumerState<SadeSatiScreen> {
+  bool _isLoading = true;
+  String? _error;
+  Map<String, dynamic>? _data;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchSadeSatiData();
+  }
+
+  Future<void> _fetchSadeSatiData() async {
+    try {
+      final client = ref.read(apiClientProvider);
+      final response = await client.get('/api/v1/transits/sade-sati/${widget.profileId}');
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        setState(() {
+          _data = body['data'] as Map<String, dynamic>;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _error = 'Failed to load Sade Sati details (${response.statusCode})';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _error = 'Network error: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A0A1A),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF0A0A1A),
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text(
+          'Saturn Sade Sati Tracker',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF7C6EFA)))
+          : _error != null
+              ? _buildErrorView()
+              : _buildContent(),
+    );
+  }
+
+  Widget _buildErrorView() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 48),
+            const SizedBox(height: 12),
+            Text(
+              _error!,
+              style: const TextStyle(color: Colors.white70),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                setState(() => _isLoading = true);
+                _fetchSadeSatiData();
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF5B4FDB)),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    final d = _data!;
+    final bool isActive = d['is_sade_sati_active'] as bool? ?? false;
+    final String phase = d['phase'] as String? ?? '';
+    final String moonSign = d['moon_sign'] as String? ?? 'Moon';
+    final String saturnSign = d['saturn_sign'] as String? ?? 'Saturn';
+    final String phaseName = d['phase_name'] as String? ?? 'Inactive';
+    final String description = d['description'] as String? ?? '';
+    final List<dynamic> remedies = d['remedies'] as List<dynamic>? ?? [];
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAlignment.start,
+        children: [
+          // Saturn Status Header Card
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isActive
+                    ? [const Color(0xFF3A1C71), const Color(0xFFD76D77)]
+                    : [const Color(0xFF16163A), const Color(0xFF252554)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.black26,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Text('🪐', style: TextStyle(fontSize: 24)),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAlignment.start,
+                        children: [
+                          Text(
+                            isActive ? 'SADE SATI ACTIVE' : 'NO SADE SATI',
+                            style: TextStyle(
+                              color: isActive ? const Color(0xFFFFD700) : Colors.white70,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            phaseName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Divider(color: Colors.white24),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildSignInfo('Your Moon Sign', moonSign, Icons.brightness_3),
+                    _buildSignInfo('Saturn Transit', saturnSign, Icons.public),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // 3-Phase Status Stepper
+          const Text(
+            'Sade Sati Phase Breakdown',
+            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          _buildPhaseStepper(phase),
+          const SizedBox(height: 20),
+
+          // Description Card
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF16163A),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF2A2A5A)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAlignment.start,
+              children: [
+                const Icon(Icons.info_outline, color: Color(0xFF7C6EFA), size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    description,
+                    style: const TextStyle(color: Colors.white90, height: 1.4, fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Remedies Section
+          const Text(
+            'Recommended Vedic Remedies',
+            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          ...remedies.map((remedy) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF12122C),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFF22224C)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check_circle_outline, color: Color(0xFF5B4FDB), size: 18),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          remedy.toString(),
+                          style: const TextStyle(color: Colors.white80, fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSignInfo(String label, String value, IconData icon) {
+    return Column(
+      crossAxisAlignment: CrossAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(color: Colors.white54, fontSize: 11)),
+        const SizedBox(height: 2),
+        Row(
+          children: [
+            Icon(icon, color: const Color(0xFF9B93CC), size: 14),
+            const SizedBox(width: 4),
+            Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPhaseStepper(String activePhase) {
+    final phases = [
+      {'code': 'first_phase', 'title': 'Phase 1', 'subtitle': '12th from Moon'},
+      {'code': 'second_phase', 'title': 'Phase 2 (Peak)', 'subtitle': 'Over Moon Sign'},
+      {'code': 'third_phase', 'title': 'Phase 3', 'subtitle': '2nd from Moon'},
+    ];
+
+    return Row(
+      children: phases.map((p) {
+        final isCurrent = p['code'] == activePhase;
+        return Expanded(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+            decoration: BoxDecoration(
+              color: isCurrent ? const Color(0xFF5B4FDB) : const Color(0xFF16163A),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: isCurrent ? const Color(0xFF7C6EFA) : const Color(0xFF2A2A5A),
+              ),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  p['title']!,
+                  style: TextStyle(
+                    color: isCurrent ? Colors.white : Colors.white60,
+                    fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                    fontSize: 12,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  p['subtitle']!,
+                  style: TextStyle(
+                    color: isCurrent ? Colors.white70 : Colors.white38,
+                    fontSize: 10,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}

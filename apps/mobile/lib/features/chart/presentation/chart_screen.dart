@@ -49,6 +49,11 @@ class _ChartScreenState extends ConsumerState<ChartScreen>
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
+            icon: const Icon(Icons.public, color: Color(0xFFFFD700)),
+            tooltip: 'Sade Sati Tracker',
+            onPressed: () => context.push('/home/sade-sati/${widget.chartId}'),
+          ),
+          IconButton(
             icon: const Icon(Icons.chat_bubble_outline, color: Color(0xFF7C6EFA)),
             tooltip: 'Ask AI',
             onPressed: chartAsync.valueOrNull != null
@@ -87,17 +92,34 @@ class _ChartScreenState extends ConsumerState<ChartScreen>
 
 // ─── Chart Tab ─────────────────────────────────────────────────────────────
 
-class _ChartTab extends StatelessWidget {
+class _ChartTab extends StatefulWidget {
   const _ChartTab({required this.chart});
   final BirthChartFacts chart;
 
   @override
+  State<_ChartTab> createState() => _ChartTabState();
+}
+
+class _ChartTabState extends State<_ChartTab> {
+  String _selectedDivision = 'D1';
+
+  static const _divisions = [
+    {'code': 'D1', 'label': 'D1 Rasi'},
+    {'code': 'D9', 'label': 'D9 Navamsha'},
+    {'code': 'D10', 'label': 'D10 Dasamsa'},
+    {'code': 'D12', 'label': 'D12 Dwadasamsa'},
+    {'code': 'D60', 'label': 'D60 Shashtiamsa'},
+  ];
+
+  @override
   Widget build(BuildContext context) {
+    final ascSign = widget.chart.ascendantSignForDivision(_selectedDivision);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          // Ayanamsa badge
+          // Ayanamsa & Divisional Lagna badge
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
             decoration: BoxDecoration(
@@ -106,16 +128,48 @@ class _ChartTab extends StatelessWidget {
               border: Border.all(color: const Color(0xFF5B4FDB).withOpacity(0.4)),
             ),
             child: Text(
-              '${chart.ayanamsa.toUpperCase()} AYANAMSA  •  ASC: ${chart.ascendant.zodiacSign}',
-              style: const TextStyle(color: Color(0xFF9B93CC), fontSize: 11),
+              '${widget.chart.ayanamsa.toUpperCase()} AYANAMSA  •  $_selectedDivision LAGNA: $ascSign',
+              style: const TextStyle(color: Color(0xFF9B93CC), fontSize: 11, fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Divisional Chart Selector Chips
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: _divisions.map((div) {
+                final isSelected = div['code'] == _selectedDivision;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: ChoiceChip(
+                    label: Text(
+                      div['label']!,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected ? Colors.white : Colors.white60,
+                      ),
+                    ),
+                    selected: isSelected,
+                    selectedColor: const Color(0xFF5B4FDB),
+                    backgroundColor: const Color(0xFF16163A),
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() => _selectedDivision = div['code']!);
+                      }
+                    },
+                  ),
+                );
+              }).toList(),
             ),
           ),
           const SizedBox(height: 16),
           // North Indian Diamond Chart
-          NorthIndianChart(chart: chart),
+          NorthIndianChart(chart: widget.chart, division: _selectedDivision),
           const SizedBox(height: 20),
           // Planet placement table
-          _PlanetTable(planets: chart.planets),
+          _PlanetTable(planets: widget.chart.planets),
         ],
       ),
     );
@@ -125,8 +179,13 @@ class _ChartTab extends StatelessWidget {
 // ─── North Indian CustomPainter Chart ──────────────────────────────────────
 
 class NorthIndianChart extends StatelessWidget {
-  const NorthIndianChart({super.key, required this.chart});
+  const NorthIndianChart({
+    super.key,
+    required this.chart,
+    this.division = 'D1',
+  });
   final BirthChartFacts chart;
+  final String division;
 
   @override
   Widget build(BuildContext context) {
@@ -140,7 +199,7 @@ class NorthIndianChart extends StatelessWidget {
                 _handleTap(context, details.localPosition, size, chart),
             child: CustomPaint(
               size: Size(size, size),
-              painter: _NorthIndianChartPainter(chart: chart),
+              painter: _NorthIndianChartPainter(chart: chart, division: division),
             ),
           );
         },
@@ -158,7 +217,7 @@ class NorthIndianChart extends StatelessWidget {
     final house = _NorthIndianChartPainter.houseAtPosition(tapPos, size);
     if (house == null) return;
 
-    final planetsInHouse = chart.planetsInHouse(house);
+    final planetsInHouse = chart.planetsInDivisionalHouse(house, division);
     final cusp = chart.houseCusps[house - 1];
 
     showModalBottomSheet(
@@ -175,8 +234,9 @@ class NorthIndianChart extends StatelessWidget {
 }
 
 class _NorthIndianChartPainter extends CustomPainter {
-  const _NorthIndianChartPainter({required this.chart});
+  const _NorthIndianChartPainter({required this.chart, this.division = 'D1'});
   final BirthChartFacts chart;
+  final String division;
 
   // North Indian house layout — house number → center offset fractions (dx, dy)
   // Grid is divided into 12 triangular zones on a 3x3 diamond grid.
@@ -249,7 +309,7 @@ class _NorthIndianChartPainter extends CustomPainter {
     for (final entry in _houseCenters.entries) {
       final houseNum = entry.key;
       final center = Offset(entry.value.dx * s, entry.value.dy * s);
-      final planetsHere = chart.planetsInHouse(houseNum);
+      final planetsHere = chart.planetsInDivisionalHouse(houseNum, division);
 
       // House number
       _drawText(

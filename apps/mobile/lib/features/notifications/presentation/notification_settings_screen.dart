@@ -3,29 +3,33 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grahvani/core/theme/app_theme.dart';
-import 'package:grahvani/features/notifications/domain/notification_model.dart';
-import 'package:grahvani/features/notifications/domain/notification_provider.dart';
-import 'package:grahvani/features/profile/domain/profile_model.dart';
-import 'package:grahvani/shared/widgets/loading_indicator.dart';
-import 'package:grahvani/shared/widgets/switch_tile.dart';
+
+import '../domain/notification_model.dart';
+import '../domain/notification_provider.dart';
 
 class NotificationSettingsScreen extends ConsumerWidget {
-  const NotificationSettingsScreen({super.key, required this.profile});
+  const NotificationSettingsScreen({
+    super.key,
+    required this.profileId,
+  });
 
-  final BirthProfile profile;
+  final String profileId;
   static const routeName = '/notifications/settings';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final preferencesAsync = ref.watch(
-      notificationPreferencesProvider(profile.id),
+      notificationPreferencesProvider(profileId),
     );
     
     return Scaffold(
       appBar: AppBar(
-        title: Text('Notifications for ${profile.name}'),
+        title: Text(
+          preferencesAsync.valueOrNull != null
+              ? 'Notifications (${preferencesAsync.valueOrNull!.profileName})'
+              : 'Notification Settings',
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.help_outline),
@@ -50,7 +54,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
   ) {
     final theme = Theme.of(context);
     final notifier = ref.read(
-      notificationPreferencesProvider(profile.id).notifier,
+      notificationPreferencesProvider(profileId).notifier,
     );
     
     return ListView(
@@ -62,7 +66,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
             title: const Text('Enable Notifications'),
             subtitle: const Text('Turn on/off all notifications for this profile'),
             value: status.notificationEnabled,
-            onChanged: (value) => notifier.toggleNotifications(profile.id),
+            onChanged: (value) => notifier.toggleNotifications(profileId),
           ),
         ),
         const SizedBox(height: 16),
@@ -88,7 +92,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
                   subtitle: 'General planetary transit notifications',
                   value: status.preferences.transitAlerts,
                   onChanged: (value) => notifier.updatePreferences(
-                    profile.id,
+                    profileId,
                     status.preferences.copyWith(transitAlerts: value),
                   ),
                 ),
@@ -99,7 +103,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
                   subtitle: 'Saturn transit phases (7.5 year cycle)',
                   value: status.preferences.sadeSatiAlerts,
                   onChanged: (value) => notifier.updatePreferences(
-                    profile.id,
+                    profileId,
                     status.preferences.copyWith(sadeSatiAlerts: value),
                   ),
                 ),
@@ -110,7 +114,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
                   subtitle: 'Maha Dasha changes and transitions',
                   value: status.preferences.dashaAlerts,
                   onChanged: (value) => notifier.updatePreferences(
-                    profile.id,
+                    profileId,
                     status.preferences.copyWith(dashaAlerts: value),
                   ),
                 ),
@@ -121,7 +125,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
                   subtitle: 'Jupiter returns, Rahu/Ketu transits',
                   value: status.preferences.majorTransitAlerts,
                   onChanged: (value) => notifier.updatePreferences(
-                    profile.id,
+                    profileId,
                     status.preferences.copyWith(majorTransitAlerts: value),
                   ),
                 ),

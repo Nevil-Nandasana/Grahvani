@@ -12,7 +12,9 @@ import '../features/auth/domain/auth_state.dart';
 import '../features/auth/presentation/consent_screen.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/chart/presentation/chart_screen.dart';
+import '../features/chart/presentation/sade_sati_screen.dart';
 import '../features/chat/presentation/chat_screen.dart';
+import '../features/notifications/presentation/notification_settings_screen.dart';
 import '../features/profile/presentation/add_profile_screen.dart';
 import '../features/profile/presentation/profiles_screen.dart';
 import '../features/subscriptions/presentation/paywall_sheet.dart';
@@ -22,14 +24,16 @@ part 'app_router.g.dart';
 
 // ─── Route Paths ──────────────────────────────────────────────────────────────
 class AppRoutes {
-  static const splash     = '/';
-  static const login      = '/login';
-  static const consent    = '/consent';
-  static const home       = '/home';
-  static const profiles   = '/home/profiles';
-  static const addProfile = '/home/profiles/add';
-  static const chart      = '/home/charts/:chartId';
-  static const chat       = '/home/chat/:chartId';
+  static const splash               = '/';
+  static const login                = '/login';
+  static const consent              = '/consent';
+  static const home                 = '/home';
+  static const profiles             = '/home/profiles';
+  static const addProfile           = '/home/profiles/add';
+  static const chart                = '/home/charts/:chartId';
+  static const chat                 = '/home/chat/:chartId';
+  static const sadeSati             = '/home/sade-sati/:profileId';
+  static const notificationSettings = '/home/notifications/settings/:profileId';
 }
 
 @riverpod
@@ -134,6 +138,24 @@ GoRouter appRouter(Ref ref) {
             builder: (BuildContext context, GoRouterState state) {
               final String chartId = state.pathParameters['chartId']!;
               return ChatScreen(chartId: chartId);
+            },
+          ),
+
+          // Sade Sati Tracker
+          GoRoute(
+            path: 'sade-sati/:profileId',
+            builder: (BuildContext context, GoRouterState state) {
+              final String profileId = state.pathParameters['profileId']!;
+              return SadeSatiScreen(profileId: profileId);
+            },
+          ),
+
+          // Notification Settings
+          GoRoute(
+            path: 'notifications/settings/:profileId',
+            builder: (BuildContext context, GoRouterState state) {
+              final String profileId = state.pathParameters['profileId']!;
+              return NotificationSettingsScreen(profileId: profileId);
             },
           ),
 

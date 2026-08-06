@@ -62,3 +62,55 @@ class TestSwissEphemerisVectors:
         )
         asc_lon = result["ascendant"]["longitude"]
         assert 0.0 <= asc_lon < 360.0, f"Ascendant {asc_lon} outside 0-360 range"
+
+    def test_timezone_conversion_equivalence_kolkata(self):
+        """
+        Verifies that passing local wall-clock time (14:30 IST) with timezone_name="Asia/Kolkata"
+        yields the exact same Julian Day and planetary positions as passing 09:00 UTC.
+        """
+        local_result = calculate_chart(
+            year=1992, month=8, day=15,
+            hour=14, minute=30, second=0,
+            latitude=28.6139, longitude=77.2090,
+            ayanamsa="lahiri",
+            timezone_name="Asia/Kolkata",
+        )
+        utc_result = calculate_chart(
+            year=1992, month=8, day=15,
+            hour=9, minute=0, second=0,
+            latitude=28.6139, longitude=77.2090,
+            ayanamsa="lahiri",
+            timezone_name="UTC",
+        )
+
+        assert abs(local_result["julian_day"] - utc_result["julian_day"]) < 1e-7, (
+            f"Julian days differ: local={local_result['julian_day']}, utc={utc_result['julian_day']}"
+        )
+        for p_local, p_utc in zip(local_result["planets"], utc_result["planets"]):
+            assert abs(p_local["longitude"] - p_utc["longitude"]) < 0.001, (
+                f"{p_local['name']} longitude mismatch: {p_local['longitude']} vs {p_utc['longitude']}"
+            )
+
+    def test_timezone_conversion_new_york(self):
+        """
+        Verifies timezone conversion for America/New_York (EDT = UTC-4).
+        1995-05-15 10:00:00 EDT = 14:00:00 UTC.
+        """
+        ny_result = calculate_chart(
+            year=1995, month=5, day=15,
+            hour=10, minute=0, second=0,
+            latitude=40.7128, longitude=-74.0060,
+            ayanamsa="lahiri",
+            timezone_name="America/New_York",
+        )
+        utc_result = calculate_chart(
+            year=1995, month=5, day=15,
+            hour=14, minute=0, second=0,
+            latitude=40.7128, longitude=-74.0060,
+            ayanamsa="lahiri",
+            timezone_name="UTC",
+        )
+
+        assert abs(ny_result["julian_day"] - utc_result["julian_day"]) < 1e-7
+        assert abs(ny_result["ascendant"]["longitude"] - utc_result["ascendant"]["longitude"]) < 0.001
+
