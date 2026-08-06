@@ -14,6 +14,7 @@ from app.modules.billing.router import router as billing_router
 from app.modules.birth_chart.router import router as chart_router
 from app.modules.identity.router import router as identity_router
 from app.modules.interpretation.router import router as interpretation_router
+from app.modules.notifications.router import router as notifications_router
 
 
 @asynccontextmanager
@@ -59,6 +60,7 @@ app.include_router(identity_router,        prefix="/api/v1", tags=["Auth & Profi
 app.include_router(chart_router,           prefix="/api/v1", tags=["Birth Charts"])
 app.include_router(interpretation_router,  prefix="/api/v1", tags=["Grounded AI Chat"])
 app.include_router(billing_router,         prefix="/api/v1", tags=["Billing & Entitlements"])
+app.include_router(notifications_router,   prefix="/api/v1", tags=["Push Notifications"])
 
 
 @app.get("/health", tags=["Health"])

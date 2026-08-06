@@ -1,22 +1,48 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
-
-import 'router/app_router.dart';
+import 'package:grahvani/core/api_client.dart';
+import 'package:grahvani/core/database/app_database.dart';
+import 'package:grahvani/core/theme/app_theme.dart';
+import 'package:grahvani/features/auth/data/auth_repository.dart';
+import 'package:grahvani/features/auth/domain/auth_provider.dart';
+import 'package:grahvani/features/notifications/data/fcm_service.dart';
+import 'package:grahvani/features/notifications/domain/notification_provider.dart';
+import 'package:grahvani/firebase_options.dart';
+import 'package:grahvani/router/app_router.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  final ref = ProviderContainer();
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
-  await Firebase.initializeApp();
+    // Initialize Firebase
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
 
-  runApp(
-    // Wrap the entire app in ProviderScope for Riverpod state management
-    const ProviderScope(
-      child: GrahvaniApp(),
-    ),
-  );
+    // Initialize FCM
+    await FCMService.initialize();
+
+    // Initialize API client
+    await ref.read(apiClientProvider).initialize();
+
+    // Initialize database
+    await ref.read(databaseProvider).initialize();
+
+    // Initialize auth state
+    ref.read(authProvider.notifier).initialize();
+
+    // Set up FCM token callback
+    FCMService.onTokenRefresh = (token) {
+      ref.read(authRepositoryProvider).updateFcmToken(token);
+    };
+
+    runApp(const ProviderScope(child: GrahvaniApp()));
+  } finally {
+    ref.dispose();
+  }
 }
 
 class GrahvaniApp extends ConsumerWidget {
@@ -24,43 +50,18 @@ class GrahvaniApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    
     final router = ref.watch(appRouterProvider);
-
+    final theme = ref.watch(themeProvider);
+    
     return MaterialApp.router(
       title: 'Grahvani',
-      debugShowCheckedModeBanner: false,
+      theme: theme.lightTheme,
+      darkTheme: theme.darkTheme,
+      themeMode: theme.themeMode,
       routerConfig: router,
-      theme: _buildLightTheme(),
-      darkTheme: _buildDarkTheme(),
-      themeMode: ThemeMode.system,
-    );
-  }
-
-  ThemeData _buildLightTheme() {
-    const seedColor = Color(0xFF5B4FDB); // Indigo-violet brand color
-
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: seedColor,
-        brightness: Brightness.light,
-      ),
-      textTheme: GoogleFonts.interTextTheme(),
-      appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
-    );
-  }
-
-  ThemeData _buildDarkTheme() {
-    const seedColor = Color(0xFF5B4FDB);
-
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: seedColor,
-        brightness: Brightness.dark,
-      ),
-      textTheme: GoogleFonts.interTextTheme(ThemeData(brightness: Brightness.dark).textTheme),
-      appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
+      debugShowCheckedModeBanner: false,
     );
   }
 }

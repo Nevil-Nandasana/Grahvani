@@ -4,8 +4,9 @@ Tables: users, birth_profiles
 """
 import uuid
 from datetime import datetime
+from typing import Optional
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, String, Text, func, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -26,6 +27,7 @@ class User(Base, TimestampMixin):
     tier: Mapped[str] = mapped_column(String(32), nullable=False, default="free")
     consent_given_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    fcm_token: Mapped[str | None] = mapped_column(String(512), nullable=True)  # For push notifications
 
     profiles: Mapped[list["BirthProfile"]] = relationship("BirthProfile", back_populates="user")
 
@@ -48,5 +50,18 @@ class BirthProfile(Base, TimestampMixin):
     timezone: Mapped[str] = mapped_column(String(64), nullable=False)
     is_primary: Mapped[bool] = mapped_column(default=False, nullable=False)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    
+    # Notification preferences (JSON for flexibility)
+    notification_enabled: Mapped[bool] = mapped_column(default=True, nullable=False)
+    notification_preferences: Mapped[dict] = mapped_column(JSON, nullable=True, default={
+        "transit_alerts": True,
+        "sade_sati_alerts": True,
+        "dasha_alerts": True,
+        "major_transit_alerts": True,
+        "quiet_hours_start": "22:00",
+        "quiet_hours_end": "07:00",
+        "last_sade_sati_notification": {},
+        "last_dasha_notification": "",
+    })
 
     user: Mapped["User"] = relationship("User", back_populates="profiles")

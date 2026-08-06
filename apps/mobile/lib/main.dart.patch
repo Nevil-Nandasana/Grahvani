@@ -1,0 +1,54 @@
+--- E:\AI-WorkSpace\Projects\Active\Grahvani\apps\mobile\lib\main.dart
++++ E:\AI-WorkSpace\Projects\Active\Grahvani\apps\mobile\lib\main.dart
+@@ -1,5 +1,6 @@
+ import 'package:firebase_core/firebase_core.dart';
+ import 'package:flutter/material.dart';
++import 'package:flutter/services.dart';
+ import 'package:flutter_riverpod/flutter_riverpod.dart';
+ import 'package:grahvani/core/api_client.dart';
+ import 'package:grahvani/core/database/app_database.dart';
+@@ -7,6 +8,7 @@
+ import 'package:grahvani/core/theme/app_theme.dart';
+ import 'package:grahvani/features/auth/data/auth_repository.dart';
+ import 'package:grahvani/features/auth/domain/auth_provider.dart';
++import 'package:grahvani/features/notifications/data/fcm_service.dart';
+ import 'package:grahvani/features/notifications/domain/notification_provider.dart';
+ import 'package:grahvani/firebase_options.dart';
+ import 'package:grahvani/router/app_router.dart';
+@@ -30,6 +32,13 @@
+   WidgetsFlutterBinding.ensureInitialized();
+ 
+   // Initialize Firebase
++  await Firebase.initializeApp(
++    options: DefaultFirebaseOptions.currentPlatform,
++  );
++
++  // Initialize FCM
++  await FCMService.initialize();
++
+   // Initialize API client
+   await ref.read(apiClientProvider).initialize();
+ 
+@@ -45,12 +54,21 @@
+   // Initialize auth state
+   ref.read(authProvider.notifier).initialize();
+ 
++  // Set up FCM token callback
++  FCMService.onTokenRefresh = (token) {
++    ref.read(authRepositoryProvider).updateFcmToken(token);
++  };
++
+   runApp(const ProviderScope(child: GrahvaniApp()));
+ }
+ 
+ class GrahvaniApp extends ConsumerWidget {
+   const GrahvaniApp({super.key});
+ 
++  @override
++  void initState() {
++    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
++  }
++
+   @override
+   Widget build(BuildContext context, WidgetRef ref) {
+     final router = ref.watch(appRouterProvider);

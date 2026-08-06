@@ -119,7 +119,7 @@ class AppDatabase extends _$AppDatabase {
     await (update(profileCaches)..where((t) => t.id.equals(id))).write(
       ProfileCachesCompanion(
         syncedAt: Value(DateTime.now()),
-        isDirty: const Value(false),
+        isDirty: false,
         updatedAt: Value(DateTime.now()),
       ),
     );
@@ -129,7 +129,7 @@ class AppDatabase extends _$AppDatabase {
   Future<void> markDirty(String id) async {
     await (update(profileCaches)..where((t) => t.id.equals(id))).write(
       ProfileCachesCompanion(
-        isDirty: const Value(true),
+        isDirty: true,
         updatedAt: Value(DateTime.now()),
       ),
     );

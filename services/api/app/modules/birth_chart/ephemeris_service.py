@@ -287,6 +287,39 @@ def _build_pratyantar_dashas(
     return pratyantar_dashas
 
 
+def _calculate_divisional_charts(longitude: float) -> dict:
+    """
+    Calculate the zodiac signs for D9, D10, D12, and D60 divisional charts.
+    """
+    sign_idx = int(longitude / 30)
+    degree_in_sign = longitude % 30
+
+    # D9: Navamsha (3°20' parts)
+    d9_sign = int(longitude / (30.0 / 9.0)) % 12
+
+    # D10: Dasamsa (3° parts)
+    part_d10 = int(degree_in_sign / 3.0)
+    if sign_idx % 2 == 0:
+        d10_sign = (sign_idx + part_d10) % 12
+    else:
+        d10_sign = (sign_idx + 8 + part_d10) % 12
+
+    # D12: Dwadasamsa (2.5° parts)
+    part_d12 = int(degree_in_sign / 2.5)
+    d12_sign = (sign_idx + part_d12) % 12
+
+    # D60: Shashtiamsa (0.5° parts)
+    part_d60 = int(degree_in_sign / 0.5)
+    d60_sign = (sign_idx + part_d60) % 12
+
+    return {
+        "D9_Navamsha": ZODIAC_SIGNS[d9_sign],
+        "D10_Dasamsa": ZODIAC_SIGNS[d10_sign],
+        "D12_Dwadasamsa": ZODIAC_SIGNS[d12_sign],
+        "D60_Shashtiamsa": ZODIAC_SIGNS[d60_sign],
+    }
+
+
 # ─── Main Chart Calculation ───────────────────────────────────────────────────
 
 def calculate_chart(
@@ -346,6 +379,7 @@ def calculate_chart(
                 "nakshatra": nakshatra,
                 "pada": pada,
                 "is_retrograde": True,
+                "divisional_charts": _calculate_divisional_charts(sidereal_lon),
             })
             ketu_lon = (sidereal_lon + 180) % 360
             ketu_nak, ketu_pada = _get_nakshatra(ketu_lon)
@@ -358,6 +392,7 @@ def calculate_chart(
                 "nakshatra": ketu_nak,
                 "pada": ketu_pada,
                 "is_retrograde": True,
+                "divisional_charts": _calculate_divisional_charts(ketu_lon),
             })
         else:
             planets_data.append({
@@ -369,6 +404,7 @@ def calculate_chart(
                 "nakshatra": nakshatra,
                 "pada": pada,
                 "is_retrograde": is_retrograde,
+                "divisional_charts": _calculate_divisional_charts(sidereal_lon),
             })
 
     # Calculate house cusps
@@ -387,6 +423,7 @@ def calculate_chart(
         "ascendant": {
             "longitude": round(ascendant_lon, 6),
             "zodiac_sign": ZODIAC_SIGNS[int(ascendant_lon / 30)],
+            "divisional_charts": _calculate_divisional_charts(ascendant_lon),
         },
         "planets": planets_data,
         "house_cusps": [round(c, 6) for c in cusps[:12]],

@@ -8,12 +8,15 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import boto3
+from app.config import settings
 from app.core.exceptions import NotFoundError
 from app.core.security import CurrentUser
 from app.db.session import get_db
 from app.modules.birth_chart.models import BirthChart
 from app.modules.identity.models import BirthProfile, User
 from app.tasks.ephemeris import calculate_birth_chart_task
+from app.tasks.pdf_export import generate_chart_pdf_task
 
 router = APIRouter()
 
@@ -97,3 +100,66 @@ async def get_chart_status(
     if not chart:
         raise NotFoundError("Birth Chart")
     return {"success": True, "data": {"chart_id": str(chart.id), "status": chart.status}}
+
+
+@router.post("/charts/{chart_id}/export/pdf", status_code=status.HTTP_202_ACCEPTED)
+async def trigger_pdf_export(
+    chart_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: AsyncSession = Depends(get_db),
+):
+    """Trigger background job to generate a high-resolution PDF for the birth chart."""
+    chart = await db.get(BirthChart, chart_id)
+    if not chart or chart.status != "complete":
+        raise NotFoundError("Birth Chart (must be fully calculated first)")
+
+    # Verify user ownership
+    profile = await db.get(BirthProfile, chart.profile_id)
+    user = await db.execute(select(User).where(User.firebase_uid == current_user.get("uid")))
+    user = user.scalar_one_or_none()
+    if not user or profile.user_id != user.id:
+        raise NotFoundError("Birth Chart")
+
+    chart.pdf_status = "pending"
+    await db.commit()
+
+    # Enqueue background task
+    generate_chart_pdf_task.send(str(chart.id))
+
+    return {
+        "success": True,
+        "data": {
+            "chart_id": str(chart.id),
+            "pdf_status": "pending",
+            "poll_url": f"/api/v1/charts/{chart.id}/export/pdf/status",
+        },
+    }
+
+
+@router.get("/charts/{chart_id}/export/pdf/status", status_code=status.HTTP_200_OK)
+async def get_pdf_export_status(
+    chart_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: AsyncSession = Depends(get_db),
+):
+    """Poll for PDF export status and return download URL if complete."""
+    chart = await db.get(BirthChart, chart_id)
+    if not chart:
+        raise NotFoundError("Birth Chart")
+
+    response_data = {
+        "chart_id": str(chart.id),
+        "pdf_status": chart.pdf_status,
+    }
+
+    if chart.pdf_status == "complete" and chart.pdf_url:
+        # Generate presigned URL
+        s3_client = boto3.client("s3", region_name=settings.AWS_REGION)
+        presigned_url = s3_client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": settings.AWS_S3_BUCKET_NAME, "Key": chart.pdf_url},
+            ExpiresIn=3600  # 1 hour
+        )
+        response_data["download_url"] = presigned_url
+
+    return {"success": True, "data": response_data}

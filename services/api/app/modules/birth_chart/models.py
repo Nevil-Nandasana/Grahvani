@@ -32,3 +32,5 @@ class BirthChart(Base, TimestampMixin):
     chart_facts_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     calculated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    pdf_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    pdf_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
