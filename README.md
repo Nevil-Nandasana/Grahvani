@@ -6,13 +6,19 @@
 
 ## 🌟 Key Features
 
-- **🎯 Sub-Arcsecond Ephemeris Engine**: High-precision astronomical calculations powered by `pyswisseph` (C-library bindings for Swiss Ephemeris), supporting Lahiri (Chitra Paksha) and custom Ayanamsas, Placidus/Equal house systems, D1 (Rasi), D9 (Navamsha), D10, D12, and D60 divisional charts.
-- **📜 Complete Vimshottari Dasha System**: Multi-level dasha calculations (Maha Dasha, Antar Dasha, Pratyantar Dasha) with automated current dasha highlighting and timeline tracking.
-- **🧠 Grounded RAG AI Interpretation Layer**: Token-by-token Server-Sent Events (SSE) streaming answers powered by Google Gemini Flash, backed by hybrid search (BM25 full-text + `pgvector` HNSW cosine vector similarity with Reciprocal Rank Fusion).
-- **📖 Classical Literature Citations**: Interactive inline citation chips (`[BPHS Ch 12]`) linking directly to authentic source shlokas (Brihat Parashara Hora Shastra, Phaladeepika, Saravali).
-- **📱 Cross-Platform Mobile Client**: Flutter app (Android & iOS) featuring native `CustomPainter` North Indian diamond chart rendering, offline SQLite caching (`Drift`), and interactive house detail bottom sheets.
-- **💳 Multi-Provider Entitlement & Billing Engine**: Server-side entitlement limit enforcement supporting Google Play Billing, Apple App Store IAP, and Razorpay UPI/Web subscriptions.
-- **🔒 Enterprise Security & Compliance**: Firebase JWT authentication, Redis token revocation blacklisting, end-to-end encryption (TLS 1.3 + AWS KMS AES-256), soft-delete data protection, and Indian DPDP Act 2023 consent logging.
+* **🎯 Sub-Arcsecond Ephemeris Engine:** Delivers high-precision astronomical calculations using `pyswisseph` (C-library bindings for Swiss Ephemeris), with support for Lahiri (Chitra Paksha) and custom Ayanamsas, Placidus and Equal house systems, along with D1 (Rasi), D9 (Navamsha), D10, D12, and D60 divisional charts.
+
+* **📜 Complete Vimshottari Dasha System:** Provides comprehensive multi-level dasha calculations, including Maha Dasha, Antar Dasha, and Pratyantar Dasha, with automatic highlighting of the current dasha and detailed timeline tracking.
+
+* **🧠 Grounded RAG AI Interpretation Layer:** Enables token-by-token Server-Sent Events (SSE) streaming responses powered by Google Gemini Flash, utilizing hybrid retrieval through BM25 full-text search and `pgvector` HNSW cosine vector similarity combined with Reciprocal Rank Fusion (RRF).
+
+* **📖 Classical Literature Citations:** Displays interactive inline citation chips (e.g., `[BPHS Ch 12]`) that directly reference authentic source shlokas from *Brihat Parashara Hora Shastra*, *Phaladeepika*, and *Saravali*.
+
+* **📱 Cross-Platform Mobile Client:** Built with Flutter for Android and iOS, featuring native `CustomPainter`-based North Indian diamond chart rendering, offline SQLite caching using `Drift`, and interactive house-detail bottom sheets.
+
+* **💳 Multi-Provider Entitlement & Billing Engine:** Implements server-side entitlement enforcement with support for Google Play Billing, Apple App Store In-App Purchases (IAP), and Razorpay UPI/Web subscription management.
+
+* **🔒 Enterprise Security & Compliance:** Ensures robust security through Firebase JWT authentication, Redis-based token revocation blacklisting, end-to-end encryption (TLS 1.3 with AWS KMS AES-256), soft-delete data protection, and consent logging compliant with the Indian DPDP Act 2023.
 
 ---
 
