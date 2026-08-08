@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     APP_SECRET_KEY: str = "changeme_32_char_secret"
     CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
+    PROJECT_NAME: str = "Grahvani API"
+    PROJECT_VERSION: str = "1.0.0"
+    PROJECT_DESCRIPTION: str = "Vedic Astrology Engine API"
+    STATIC_FILES_DIRECTORY: str = "static"
 
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://grahvani_user:grahvani_pass@localhost:5432/grahvani"

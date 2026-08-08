@@ -40,6 +40,16 @@ async def get_current_user(
         AuthenticationError: If the token is invalid, expired, or revoked.
     """
     token = credentials.credentials
+
+    # Development mode demo token bypass for offline/local testing
+    if settings.APP_ENV == "development" and token.startswith("demo-"):
+        return {
+            "uid": "demo-user-uid-12345",
+            "email": "demo@grahvani.ai",
+            "phone_number": "+919999999999",
+            "user_id": "demo-user-uid-12345",
+        }
+
     try:
         decoded_token = firebase_auth.verify_id_token(token, check_revoked=True)
         return decoded_token
