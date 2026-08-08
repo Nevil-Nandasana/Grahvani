@@ -2,12 +2,12 @@
 Interpretation Module — API Router (Grounded RAG AI Chat)
 Routes: /chat/sessions, /chat/stream
 
-RAG Pipeline:
+LLM Pipeline:
   1. Validate prompt (500-char cap + content guardrails)
   2. Check daily entitlement quota
   3. Embed query via google-genai text-embedding-004
   4. Hybrid search: HNSW cosine vector + BM25 GIN tsvector via RRF fusion
-  5. Build grounded Gemini Flash prompt with retrieved shlokas
+  5. Build grounded system prompt with retrieved shlokas
   6. Stream response via SSE with [SOURCEREF] citation markers
   7. Persist completed message to chat_messages
 """
@@ -19,8 +19,6 @@ from typing import AsyncGenerator
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
-from google import genai
-from google.genai import types as genai_types
 from pydantic import BaseModel, Field
 from sqlalchemy import select, text, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,23 +26,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.core.exceptions import EntitlementError, GuardrailError, NotFoundError
 from app.core.security import CurrentUser
-from app.db.session import AsyncSessionLocal, get_db
+from app.db.session import get_db
 from app.modules.billing.models import Subscription
 from app.modules.birth_chart.models import BirthChart
 from app.modules.identity.models import User
 from app.modules.interpretation.models import ChatMessage, ChatSession
+from app.modules.interpretation.llm_provider import LLMProviderFactory, BillingError
 
 router = APIRouter()
 
-# ─── Gemini Client ────────────────────────────────────────────────────────────
-_genai_client: genai.Client | None = None
-
-
-def _get_genai_client() -> genai.Client:
-    global _genai_client
-    if _genai_client is None:
-        _genai_client = genai.Client(api_key=settings.GEMINI_API_KEY)
-    return _genai_client
+# ─── LLM Provider Factory ────────────────────────────────────────────────────
+llm_factory = LLMProviderFactory()
 
 
 # ─── Content Guardrails ───────────────────────────────────────────────────────
@@ -344,13 +336,7 @@ async def stream_chat_response(
     await db.commit()
 
     async def _sse_generator() -> AsyncGenerator[str, None]:
-        """
-        Streams Gemini Flash response as Server-Sent Events.
-        Events:
-          data: {"event": "delta", "content": "<token>"}
-          data: {"event": "citations", "citations": [...]}
-          data: {"event": "done", "total_tokens": N}
-        """
+        """Stream LLM response as Server-Sent Events."""
         full_response = ""
         total_tokens = 0
 
@@ -358,21 +344,18 @@ async def stream_chat_response(
             # Send citations metadata before streaming starts
             yield f"data: {json.dumps({'event': 'citations', 'citations': citations})}\n\n"
 
-            # Stream Gemini Flash response
-            async for chunk in await client.aio.models.generate_content_stream(
-                model="gemini-2.0-flash",
-                contents=[prompt_text],
-                config=genai_types.GenerateContentConfig(
-                    system_instruction=grounded_system,
-                    temperature=0.4,
-                    max_output_tokens=1500,
-                ),
+            # Get LLM provider with fallback support
+            llm_provider = await llm_factory.create_provider_with_fallback()
+            
+            # Stream response from LLM provider
+            async for chunk in llm_provider.generate_stream(
+                system_prompt=grounded_system,
+                user_message=prompt_text,
+                temperature=0.4,
+                max_tokens=1500,
             ):
-                if chunk.text:
-                    full_response += chunk.text
-                    yield f"data: {json.dumps({'event': 'delta', 'content': chunk.text})}\n\n"
-                if chunk.usage_metadata:
-                    total_tokens = chunk.usage_metadata.total_token_count or 0
+                full_response += chunk
+                yield f"data: {json.dumps({'event': 'delta', 'content': chunk})}\n\n"
 
             # Persist assistant reply to chat_messages
             async with AsyncSessionLocal() as async_db:
@@ -381,13 +364,13 @@ async def stream_chat_response(
                     role="assistant",
                     content=full_response,
                     citations_json=citations,
-                    tokens_used=total_tokens,
+                    tokens_used=len(full_response.split()),  # Approximate token count
                     created_at=datetime.now(timezone.utc),
                 )
                 async_db.add(assistant_msg)
                 await async_db.commit()
 
-            yield f"data: {json.dumps({'event': 'done', 'total_tokens': total_tokens})}\n\n"
+            yield f"data: {json.dumps({'event': 'done', 'total_tokens': len(full_response.split())})}\n\n"
 
         except EntitlementError as e:
             yield f"data: {json.dumps({'event': 'error', 'code': 'ENTITLEMENT_REQUIRED', 'message': e.message})}\n\n"

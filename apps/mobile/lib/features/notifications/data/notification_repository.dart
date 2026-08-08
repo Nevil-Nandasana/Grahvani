@@ -4,6 +4,9 @@
 import 'package:dio/dio.dart';
 import 'package:grahvani/core/api_client.dart';
 import 'package:grahvani/features/notifications/domain/notification_model.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'notification_repository.g.dart';
 
 class NotificationRepository {
   NotificationRepository({required Dio dio}) : _dio = dio;
@@ -95,11 +98,6 @@ class NotificationRepository {
     }
   }
 }
-
-/// Riverpod provider for NotificationRepository
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-
-part 'notification_repository.g.dart';
 
 @riverpod
 NotificationRepository notificationRepository(Ref ref) {

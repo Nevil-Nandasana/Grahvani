@@ -646,15 +646,377 @@ class ProfileCachesCompanion extends UpdateCompanion<ProfileCache> {
   }
 }
 
+class $ChartCachesTable extends ChartCaches
+    with TableInfo<$ChartCachesTable, ChartCache> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ChartCachesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _chartIdMeta =
+      const VerificationMeta('chartId');
+  @override
+  late final GeneratedColumn<String> chartId = GeneratedColumn<String>(
+      'chart_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _profileIdMeta =
+      const VerificationMeta('profileId');
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+      'profile_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _ayanamsaMeta =
+      const VerificationMeta('ayanamsa');
+  @override
+  late final GeneratedColumn<String> ayanamsa = GeneratedColumn<String>(
+      'ayanamsa', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _houseSystemMeta =
+      const VerificationMeta('houseSystem');
+  @override
+  late final GeneratedColumn<String> houseSystem = GeneratedColumn<String>(
+      'house_system', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _chartFactsJsonMeta =
+      const VerificationMeta('chartFactsJson');
+  @override
+  late final GeneratedColumn<String> chartFactsJson = GeneratedColumn<String>(
+      'chart_facts_json', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _calculatedAtMeta =
+      const VerificationMeta('calculatedAt');
+  @override
+  late final GeneratedColumn<DateTime> calculatedAt = GeneratedColumn<DateTime>(
+      'calculated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [chartId, profileId, ayanamsa, houseSystem, chartFactsJson, calculatedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'chart_caches';
+  @override
+  VerificationContext validateIntegrity(Insertable<ChartCache> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('chart_id')) {
+      context.handle(_chartIdMeta,
+          chartId.isAcceptableOrUnknown(data['chart_id']!, _chartIdMeta));
+    } else if (isInserting) {
+      context.missing(_chartIdMeta);
+    }
+    if (data.containsKey('profile_id')) {
+      context.handle(_profileIdMeta,
+          profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta));
+    } else if (isInserting) {
+      context.missing(_profileIdMeta);
+    }
+    if (data.containsKey('ayanamsa')) {
+      context.handle(_ayanamsaMeta,
+          ayanamsa.isAcceptableOrUnknown(data['ayanamsa']!, _ayanamsaMeta));
+    } else if (isInserting) {
+      context.missing(_ayanamsaMeta);
+    }
+    if (data.containsKey('house_system')) {
+      context.handle(
+          _houseSystemMeta,
+          houseSystem.isAcceptableOrUnknown(
+              data['house_system']!, _houseSystemMeta));
+    } else if (isInserting) {
+      context.missing(_houseSystemMeta);
+    }
+    if (data.containsKey('chart_facts_json')) {
+      context.handle(
+          _chartFactsJsonMeta,
+          chartFactsJson.isAcceptableOrUnknown(
+              data['chart_facts_json']!, _chartFactsJsonMeta));
+    } else if (isInserting) {
+      context.missing(_chartFactsJsonMeta);
+    }
+    if (data.containsKey('calculated_at')) {
+      context.handle(
+          _calculatedAtMeta,
+          calculatedAt.isAcceptableOrUnknown(
+              data['calculated_at']!, _calculatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_calculatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {chartId};
+  @override
+  ChartCache map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ChartCache(
+      chartId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}chart_id'])!,
+      profileId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}profile_id'])!,
+      ayanamsa: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}ayanamsa'])!,
+      houseSystem: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}house_system'])!,
+      chartFactsJson: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}chart_facts_json'])!,
+      calculatedAt: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}calculated_at'])!,
+    );
+  }
+
+  @override
+  $ChartCachesTable createAlias(String alias) {
+    return $ChartCachesTable(attachedDatabase, alias);
+  }
+}
+
+class ChartCache extends DataClass implements Insertable<ChartCache> {
+  final String chartId;
+  final String profileId;
+  final String ayanamsa;
+  final String houseSystem;
+  final String chartFactsJson;
+  final DateTime calculatedAt;
+  const ChartCache(
+      {required this.chartId,
+      required this.profileId,
+      required this.ayanamsa,
+      required this.houseSystem,
+      required this.chartFactsJson,
+      required this.calculatedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['chart_id'] = Variable<String>(chartId);
+    map['profile_id'] = Variable<String>(profileId);
+    map['ayanamsa'] = Variable<String>(ayanamsa);
+    map['house_system'] = Variable<String>(houseSystem);
+    map['chart_facts_json'] = Variable<String>(chartFactsJson);
+    map['calculated_at'] = Variable<DateTime>(calculatedAt);
+    return map;
+  }
+
+  ChartCachesCompanion toCompanion(bool nullToAbsent) {
+    return ChartCachesCompanion(
+      chartId: Value(chartId),
+      profileId: Value(profileId),
+      ayanamsa: Value(ayanamsa),
+      houseSystem: Value(houseSystem),
+      chartFactsJson: Value(chartFactsJson),
+      calculatedAt: Value(calculatedAt),
+    );
+  }
+
+  factory ChartCache.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ChartCache(
+      chartId: serializer.fromJson<String>(json['chartId']),
+      profileId: serializer.fromJson<String>(json['profileId']),
+      ayanamsa: serializer.fromJson<String>(json['ayanamsa']),
+      houseSystem: serializer.fromJson<String>(json['houseSystem']),
+      chartFactsJson: serializer.fromJson<String>(json['chartFactsJson']),
+      calculatedAt: serializer.fromJson<DateTime>(json['calculatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'chartId': serializer.toJson<String>(chartId),
+      'profileId': serializer.toJson<String>(profileId),
+      'ayanamsa': serializer.toJson<String>(ayanamsa),
+      'houseSystem': serializer.toJson<String>(houseSystem),
+      'chartFactsJson': serializer.toJson<String>(chartFactsJson),
+      'calculatedAt': serializer.toJson<DateTime>(calculatedAt),
+    };
+  }
+
+  ChartCache copyWith(
+          {String? chartId,
+          String? profileId,
+          String? ayanamsa,
+          String? houseSystem,
+          String? chartFactsJson,
+          DateTime? calculatedAt}) =>
+      ChartCache(
+        chartId: chartId ?? this.chartId,
+        profileId: profileId ?? this.profileId,
+        ayanamsa: ayanamsa ?? this.ayanamsa,
+        houseSystem: houseSystem ?? this.houseSystem,
+        chartFactsJson: chartFactsJson ?? this.chartFactsJson,
+        calculatedAt: calculatedAt ?? this.calculatedAt,
+      );
+  ChartCache copyWithCompanion(ChartCachesCompanion data) {
+    return ChartCache(
+      chartId: data.chartId.present ? data.chartId.value : this.chartId,
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
+      ayanamsa: data.ayanamsa.present ? data.ayanamsa.value : this.ayanamsa,
+      houseSystem:
+          data.houseSystem.present ? data.houseSystem.value : this.houseSystem,
+      chartFactsJson: data.chartFactsJson.present
+          ? data.chartFactsJson.value
+          : this.chartFactsJson,
+      calculatedAt: data.calculatedAt.present
+          ? data.calculatedAt.value
+          : this.calculatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ChartCache(')
+          ..write('chartId: $chartId, ')
+          ..write('profileId: $profileId, ')
+          ..write('ayanamsa: $ayanamsa, ')
+          ..write('houseSystem: $houseSystem, ')
+          ..write('chartFactsJson: $chartFactsJson, ')
+          ..write('calculatedAt: $calculatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      chartId, profileId, ayanamsa, houseSystem, chartFactsJson, calculatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ChartCache &&
+          other.chartId == this.chartId &&
+          other.profileId == this.profileId &&
+          other.ayanamsa == this.ayanamsa &&
+          other.houseSystem == this.houseSystem &&
+          other.chartFactsJson == this.chartFactsJson &&
+          other.calculatedAt == this.calculatedAt);
+}
+
+class ChartCachesCompanion extends UpdateCompanion<ChartCache> {
+  final Value<String> chartId;
+  final Value<String> profileId;
+  final Value<String> ayanamsa;
+  final Value<String> houseSystem;
+  final Value<String> chartFactsJson;
+  final Value<DateTime> calculatedAt;
+  final Value<int> rowid;
+  const ChartCachesCompanion({
+    this.chartId = const Value.absent(),
+    this.profileId = const Value.absent(),
+    this.ayanamsa = const Value.absent(),
+    this.houseSystem = const Value.absent(),
+    this.chartFactsJson = const Value.absent(),
+    this.calculatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ChartCachesCompanion.insert({
+    required String chartId,
+    required String profileId,
+    required String ayanamsa,
+    required String houseSystem,
+    required String chartFactsJson,
+    required DateTime calculatedAt,
+    this.rowid = const Value.absent(),
+  })  : chartId = Value(chartId),
+        profileId = Value(profileId),
+        ayanamsa = Value(ayanamsa),
+        houseSystem = Value(houseSystem),
+        chartFactsJson = Value(chartFactsJson),
+        calculatedAt = Value(calculatedAt);
+  static Insertable<ChartCache> custom({
+    Expression<String>? chartId,
+    Expression<String>? profileId,
+    Expression<String>? ayanamsa,
+    Expression<String>? houseSystem,
+    Expression<String>? chartFactsJson,
+    Expression<DateTime>? calculatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (chartId != null) 'chart_id': chartId,
+      if (profileId != null) 'profile_id': profileId,
+      if (ayanamsa != null) 'ayanamsa': ayanamsa,
+      if (houseSystem != null) 'house_system': houseSystem,
+      if (chartFactsJson != null) 'chart_facts_json': chartFactsJson,
+      if (calculatedAt != null) 'calculated_at': calculatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ChartCachesCompanion copyWith(
+      {Value<String>? chartId,
+      Value<String>? profileId,
+      Value<String>? ayanamsa,
+      Value<String>? houseSystem,
+      Value<String>? chartFactsJson,
+      Value<DateTime>? calculatedAt,
+      Value<int>? rowid}) {
+    return ChartCachesCompanion(
+      chartId: chartId ?? this.chartId,
+      profileId: profileId ?? this.profileId,
+      ayanamsa: ayanamsa ?? this.ayanamsa,
+      houseSystem: houseSystem ?? this.houseSystem,
+      chartFactsJson: chartFactsJson ?? this.chartFactsJson,
+      calculatedAt: calculatedAt ?? this.calculatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (chartId.present) {
+      map['chart_id'] = Variable<String>(chartId.value);
+    }
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
+    }
+    if (ayanamsa.present) {
+      map['ayanamsa'] = Variable<String>(ayanamsa.value);
+    }
+    if (houseSystem.present) {
+      map['house_system'] = Variable<String>(houseSystem.value);
+    }
+    if (chartFactsJson.present) {
+      map['chart_facts_json'] = Variable<String>(chartFactsJson.value);
+    }
+    if (calculatedAt.present) {
+      map['calculated_at'] = Variable<DateTime>(calculatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ChartCachesCompanion(')
+          ..write('chartId: $chartId, ')
+          ..write('profileId: $profileId, ')
+          ..write('ayanamsa: $ayanamsa, ')
+          ..write('houseSystem: $houseSystem, ')
+          ..write('chartFactsJson: $chartFactsJson, ')
+          ..write('calculatedAt: $calculatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $ProfileCachesTable profileCaches = $ProfileCachesTable(this);
+  late final $ChartCachesTable chartCaches = $ChartCachesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [profileCaches];
+  List<DatabaseSchemaEntity> get allSchemaEntities =>
+      [profileCaches, chartCaches];
 }
 
 typedef $$ProfileCachesTableCreateCompanionBuilder = ProfileCachesCompanion
@@ -950,12 +1312,199 @@ typedef $$ProfileCachesTableProcessedTableManager = ProcessedTableManager<
     ),
     ProfileCache,
     PrefetchHooks Function()>;
+typedef $$ChartCachesTableCreateCompanionBuilder = ChartCachesCompanion
+    Function({
+  required String chartId,
+  required String profileId,
+  required String ayanamsa,
+  required String houseSystem,
+  required String chartFactsJson,
+  required DateTime calculatedAt,
+  Value<int> rowid,
+});
+typedef $$ChartCachesTableUpdateCompanionBuilder = ChartCachesCompanion
+    Function({
+  Value<String> chartId,
+  Value<String> profileId,
+  Value<String> ayanamsa,
+  Value<String> houseSystem,
+  Value<String> chartFactsJson,
+  Value<DateTime> calculatedAt,
+  Value<int> rowid,
+});
+
+class $$ChartCachesTableFilterComposer
+    extends Composer<_$AppDatabase, $ChartCachesTable> {
+  $$ChartCachesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get chartId => $composableBuilder(
+      column: $table.chartId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get profileId => $composableBuilder(
+      column: $table.profileId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ayanamsa => $composableBuilder(
+      column: $table.ayanamsa, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get houseSystem => $composableBuilder(
+      column: $table.houseSystem, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get chartFactsJson => $composableBuilder(
+      column: $table.chartFactsJson,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get calculatedAt => $composableBuilder(
+      column: $table.calculatedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$ChartCachesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ChartCachesTable> {
+  $$ChartCachesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get chartId => $composableBuilder(
+      column: $table.chartId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get profileId => $composableBuilder(
+      column: $table.profileId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get ayanamsa => $composableBuilder(
+      column: $table.ayanamsa, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get houseSystem => $composableBuilder(
+      column: $table.houseSystem, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get chartFactsJson => $composableBuilder(
+      column: $table.chartFactsJson,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get calculatedAt => $composableBuilder(
+      column: $table.calculatedAt,
+      builder: (column) => ColumnOrderings(column));
+}
+
+class $$ChartCachesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ChartCachesTable> {
+  $$ChartCachesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get chartId =>
+      $composableBuilder(column: $table.chartId, builder: (column) => column);
+
+  GeneratedColumn<String> get profileId =>
+      $composableBuilder(column: $table.profileId, builder: (column) => column);
+
+  GeneratedColumn<String> get ayanamsa =>
+      $composableBuilder(column: $table.ayanamsa, builder: (column) => column);
+
+  GeneratedColumn<String> get houseSystem => $composableBuilder(
+      column: $table.houseSystem, builder: (column) => column);
+
+  GeneratedColumn<String> get chartFactsJson => $composableBuilder(
+      column: $table.chartFactsJson, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get calculatedAt => $composableBuilder(
+      column: $table.calculatedAt, builder: (column) => column);
+}
+
+class $$ChartCachesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $ChartCachesTable,
+    ChartCache,
+    $$ChartCachesTableFilterComposer,
+    $$ChartCachesTableOrderingComposer,
+    $$ChartCachesTableAnnotationComposer,
+    $$ChartCachesTableCreateCompanionBuilder,
+    $$ChartCachesTableUpdateCompanionBuilder,
+    (ChartCache, BaseReferences<_$AppDatabase, $ChartCachesTable, ChartCache>),
+    ChartCache,
+    PrefetchHooks Function()> {
+  $$ChartCachesTableTableManager(_$AppDatabase db, $ChartCachesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ChartCachesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ChartCachesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ChartCachesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> chartId = const Value.absent(),
+            Value<String> profileId = const Value.absent(),
+            Value<String> ayanamsa = const Value.absent(),
+            Value<String> houseSystem = const Value.absent(),
+            Value<String> chartFactsJson = const Value.absent(),
+            Value<DateTime> calculatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ChartCachesCompanion(
+            chartId: chartId,
+            profileId: profileId,
+            ayanamsa: ayanamsa,
+            houseSystem: houseSystem,
+            chartFactsJson: chartFactsJson,
+            calculatedAt: calculatedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String chartId,
+            required String profileId,
+            required String ayanamsa,
+            required String houseSystem,
+            required String chartFactsJson,
+            required DateTime calculatedAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ChartCachesCompanion.insert(
+            chartId: chartId,
+            profileId: profileId,
+            ayanamsa: ayanamsa,
+            houseSystem: houseSystem,
+            chartFactsJson: chartFactsJson,
+            calculatedAt: calculatedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$ChartCachesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $ChartCachesTable,
+    ChartCache,
+    $$ChartCachesTableFilterComposer,
+    $$ChartCachesTableOrderingComposer,
+    $$ChartCachesTableAnnotationComposer,
+    $$ChartCachesTableCreateCompanionBuilder,
+    $$ChartCachesTableUpdateCompanionBuilder,
+    (ChartCache, BaseReferences<_$AppDatabase, $ChartCachesTable, ChartCache>),
+    ChartCache,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
   $$ProfileCachesTableTableManager get profileCaches =>
       $$ProfileCachesTableTableManager(_db, _db.profileCaches);
+  $$ChartCachesTableTableManager get chartCaches =>
+      $$ChartCachesTableTableManager(_db, _db.chartCaches);
 }
 
 // **************************************************************************

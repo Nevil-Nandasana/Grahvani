@@ -35,6 +35,8 @@ Covers all planned features not included in the MVP. See [MVP.md](MVP.md) for th
 | **Multi-Profile Comparison** | Family member chart overlays | Profile picker; chart diff renderer |
 | **International Payment Integration** | Serve UK, US, Australia diaspora | Stripe or Paddle for USD/GBP/EUR |
 | **Yearly Varshaphal (Solar Return) Chart** | Annual predictive chart highly valued in Vedic tradition | Annual ephemeris calculation at birthday |
+| **Western Astrology (Tropical Zodiac)** | Serve users wanting Tropical zodiac & Western chart wheel views | Ephemeris calculation with `AYANAMSA = 0`; Placidus/Koch house cusps & 360° wheel `CustomPainter` |
+| **Horary Astrology (Prashna)** | Instantaneous Q&A chart calculation for specific user questions | Time & place chart generator; KP 1–249 seed number input & Horary RAG prompt pipeline |
 
 ---
 
@@ -49,17 +51,15 @@ Covers all planned features not included in the MVP. See [MVP.md](MVP.md) for th
 | **Community Forums** | User engagement flywheel; lower CAC via organic growth | Discourse integration or custom forum |
 | **API Access (Developer Tier)** | B2B revenue stream: other apps paying for ephemeris + RAG API | API key management; usage-based billing |
 | **Muhurta (Auspicious Timing)** | Find optimal timing for events (weddings, business starts) | Planetary dignity calculation; calendar integration |
+| **Numerology & Tarot Reading Suite** | Broaden divination offerings for lifestyle & daily guidance users | Pythagorean & Chaldean numerology calculations; 78-card Tarot draw state machine + LLM interpretations |
+| **On-Device LLM Local Inference** | Provide offline AI consultation fallback when network is unavailable | Quantized 1B–3B local SLM runtime (e.g., Llama-3.2-1B / ExecuTorch) integrated via mobile native FFI bindings |
 
 ---
 
-## 4. Deprioritised Features (Unlikely to Build)
+## 4. Roadmap Scope Status
 
-| Feature | Why Deprioritised |
-| :--- | :--- |
-| Numerology / Tarot | Outside Vedic astrology scope; dilutes brand identity |
-| Horary astrology (Prashna) | Niche sub-discipline; low demand in target market |
-| Western astrology (Tropical zodiac) | Explicitly out of scope per brand positioning |
-| On-device LLM inference | Current model sizes incompatible with mobile memory constraints; no accuracy benefit |
+> [!NOTE]
+> All previously deprioritized features (**Western Astrology**, **Horary/Prashna**, **Numerology & Tarot**, and **On-Device LLM Local Inference**) have been formally integrated into the Phase 3 and Phase 4 active development roadmaps.
 
 ---
 

@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     APP_ENV: str = "development"
     DEBUG: bool = True
     LOG_LEVEL: str = "INFO"
-    APP_SECRET_KEY: str = "changeme_32_char_secret"
+    APP_SECRET_KEY: *** = "changeme_32_char_secret"
     CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
 
     # Database
@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     FIREBASE_PROJECT_ID: str = ""
 
     # Google AI
-    GEMINI_API_KEY: str = ""
+    GEMINI_API_KEY: *** = ""
 
     # LLM Configuration
     LLM_PROVIDER: str = "google"  # google | nvidia
@@ -38,23 +38,23 @@ class Settings(BaseSettings):
     LLM_FALLBACK_PROVIDER: str = "nvidia"  # Fallback when primary fails
 
     # NVIDIA API (fallback)
-    NVIDIA_API_KEY: str = ""
+    NVIDIA_API_KEY: *** = ""
     NVIDIA_MODEL_NAME: str = "nvidia/nemotron-3-ultra-550b-instruct"
 
     # Google Places (Geocoding)
-    GOOGLE_PLACES_API_KEY: str = ""
+    GOOGLE_PLACES_API_KEY: *** = ""
 
     # Razorpay
     RAZORPAY_KEY_ID: str = ""
-    RAZORPAY_KEY_SECRET: str = ""
-    RAZORPAY_WEBHOOK_SECRET: str = ""
+    RAZORPAY_KEY_SECRET: *** = ""
+    RAZORPAY_WEBHOOK_SECRET: *** = ""
 
     # Apple App Store
     APPLE_BUNDLE_ID: str = "com.grahvani.app"
-    APPLE_SHARED_SECRET: str = ""
+    APPLE_SHARED_SECRET: *** = ""
     APPLE_KEY_ID: str = ""
     APPLE_ISSUER_ID: str = ""
-    APPLE_PRIVATE_KEY: str = ""
+    APPLE_PRIVATE_KEY: *** = ""
 
     # Google Play
     GOOGLE_PLAY_PACKAGE_NAME: str = "com.grahvani.app"
@@ -65,8 +65,8 @@ class Settings(BaseSettings):
     AWS_S3_BUCKET_NAME: str = "grahvani-private-assets"
     
     # Langfuse
-    LANGFUSE_SECRET_KEY: str = ""
-    LANGFUSE_PUBLIC_KEY: str = ""
+    LANGFUSE_SECRET_KEY: *** = ""
+    LANGFUSE_PUBLIC_KEY: *** = ""
     LANGFUSE_HOST: str = "https://cloud.langfuse.com"
 
 

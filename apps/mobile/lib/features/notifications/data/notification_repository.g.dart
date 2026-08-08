@@ -1,27 +1,30 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'chart_repository.dart';
+part of 'notification_repository.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$chartRepositoryHash() => r'8ffa945f240f907ae61abd76a5219116dabb4022';
+String _$notificationRepositoryHash() =>
+    r'66d77e5361057ffbff81af75ec9276ad2320b341';
 
-/// See also [chartRepository].
-@ProviderFor(chartRepository)
-final chartRepositoryProvider = AutoDisposeProvider<ChartRepository>.internal(
-  chartRepository,
-  name: r'chartRepositoryProvider',
+/// See also [notificationRepository].
+@ProviderFor(notificationRepository)
+final notificationRepositoryProvider =
+    AutoDisposeProvider<NotificationRepository>.internal(
+  notificationRepository,
+  name: r'notificationRepositoryProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
       ? null
-      : _$chartRepositoryHash,
+      : _$notificationRepositoryHash,
   dependencies: null,
   allTransitiveDependencies: null,
 );
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-typedef ChartRepositoryRef = AutoDisposeProviderRef<ChartRepository>;
+typedef NotificationRepositoryRef
+    = AutoDisposeProviderRef<NotificationRepository>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
