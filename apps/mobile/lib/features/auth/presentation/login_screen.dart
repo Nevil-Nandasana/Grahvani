@@ -83,6 +83,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   _buildDivider(),
                   const SizedBox(height: 16),
                   _buildPhoneButton(context),
+                  const SizedBox(height: 16),
+                  _buildDemoBypassButton(context),
                 ] else if (!_otpSent) ...[
                   _buildPhoneInput(context, isLoading),
                 ] else ...[
@@ -142,6 +144,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 color: const Color(0xFF9B93CC),
                 letterSpacing: 0.5,
               ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E1B4B),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFF3730A3)),
+          ),
+          child: const Text(
+            'Sign In / Create Account',
+            style: TextStyle(
+              color: Color(0xFFA5B4FC),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
       ],
     );
@@ -261,17 +280,43 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
-  Widget _buildErrorBanner(String message) {
+  Widget _buildDemoBypassButton(BuildContext context) {
+    return _AuthButton(
+      label: 'Demo / Guest Access (Local Testing)',
+      icon: const Icon(Icons.flash_on, color: Color(0xFFFBBF24), size: 20),
+      isLoading: false,
+      onPressed: () {
+        ref.read(authRepositoryProvider).consentStateNotifier.value = true;
+        context.go('/home');
+      },
+    );
+  }
+
+  Widget _buildErrorBanner(String rawMessage) {
+    final isApiKeyError = rawMessage.contains('api-key-not-valid');
+    final message = isApiKeyError
+        ? 'Firebase API key is not configured in firebase_options.dart yet. Tap "Demo / Guest Access" above to test all features locally.'
+        : rawMessage.replaceAll('Exception: ', '');
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.red.withOpacity(0.12),
+        color: isApiKeyError
+            ? Colors.amber.withOpacity(0.12)
+            : Colors.red.withOpacity(0.12),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.red.withOpacity(0.3)),
+        border: Border.all(
+          color: isApiKeyError
+              ? Colors.amber.withOpacity(0.4)
+              : Colors.red.withOpacity(0.3),
+        ),
       ),
       child: Text(
-        message.replaceAll('Exception: ', ''),
-        style: const TextStyle(color: Colors.redAccent, fontSize: 13),
+        message,
+        style: TextStyle(
+          color: isApiKeyError ? const Color(0xFFFBBF24) : Colors.redAccent,
+          fontSize: 13,
+        ),
         textAlign: TextAlign.center,
       ),
     );
