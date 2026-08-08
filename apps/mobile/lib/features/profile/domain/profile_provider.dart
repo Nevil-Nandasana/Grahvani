@@ -1,15 +1,12 @@
 /// Profile Domain — Riverpod AsyncNotifier for profile list
 library;
 
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/profile_repository.dart';
 import 'profile_model.dart';
 
-part 'profile_provider.g.dart';
-
-@riverpod
-class ProfilesNotifier extends _$ProfilesNotifier {
+class ProfilesNotifier extends AsyncNotifier<List<BirthProfile>> {
   @override
   Future<List<BirthProfile>> build() async {
     return ref.read(profileRepositoryProvider).listProfiles();
@@ -45,3 +42,8 @@ class ProfilesNotifier extends _$ProfilesNotifier {
     );
   }
 }
+
+final profilesNotifierProvider =
+    AsyncNotifierProvider<ProfilesNotifier, List<BirthProfile>>(
+  ProfilesNotifier.new,
+);

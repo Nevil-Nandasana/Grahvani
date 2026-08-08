@@ -1,12 +1,10 @@
 /// Chat Domain — Riverpod Notifier managing SSE streaming chat state
 library;
 
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/chat_repository.dart';
 import 'chat_model.dart';
-
-part 'chat_provider.g.dart';
 
 class ChatState {
   const ChatState({
@@ -40,40 +38,44 @@ class ChatState {
   }
 }
 
-@riverpod
-class ChatNotifier extends _$ChatNotifier {
-  @override
-  ChatState build(String chartId) {
-    return const ChatState(messages: [], isStreaming: false);
-  }
+class ChatNotifier extends StateNotifier<ChatState> {
+  ChatNotifier(this.chartId, this._repository)
+      : super(const ChatState(messages: [], isStreaming: false));
+
+  final String chartId;
+  final ChatRepository _repository;
 
   Future<void> initSession() async {
     if (state.sessionId != null) return;
     try {
-      final sessionId =
-          await ref.read(chatRepositoryProvider).createSession(chartId);
+      final sessionId = await _repository.createSession(chartId);
       state = state.copyWith(sessionId: sessionId);
+      await _loadHistory(sessionId);
     } catch (e) {
       state = state.copyWith(errorMessage: e.toString());
     }
   }
 
-  Future<void> sendMessage(String prompt) async {
-    final sessionId = state.sessionId;
-    if (sessionId == null) return;
-    if (state.isStreaming) return;
+  Future<void> _loadHistory(String sessionId) async {
+    try {
+      final messages = await _repository.loadMessages(sessionId);
+      state = state.copyWith(messages: messages);
+    } catch (_) {}
+  }
 
-    // Optimistically add user message
+  Future<void> sendMessage(String promptText) async {
+    final sessionId = state.sessionId;
+    if (sessionId == null || promptText.trim().isEmpty) return;
+
     final userMsg = ChatMessage(
-      id: 'user_${DateTime.now().millisecondsSinceEpoch}',
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
       role: ChatRole.user,
-      content: prompt,
+      content: promptText,
       createdAt: DateTime.now(),
     );
 
-    // Placeholder assistant message (streaming)
-    final assistantPlaceholder = ChatMessage(
-      id: 'assistant_streaming',
+    final assistantMsgPlaceholder = ChatMessage(
+      id: (DateTime.now().millisecondsSinceEpoch + 1).toString(),
       role: ChatRole.assistant,
       content: '',
       isStreaming: true,
@@ -81,60 +83,56 @@ class ChatNotifier extends _$ChatNotifier {
     );
 
     state = state.copyWith(
-      messages: [...state.messages, userMsg, assistantPlaceholder],
+      messages: [...state.messages, userMsg, assistantMsgPlaceholder],
       isStreaming: true,
       errorMessage: null,
     );
 
-    String accumulatedContent = '';
-    List<CitationRef> receivedCitations = [];
+    var currentContent = '';
+    var currentCitations = <CitationRef>[];
 
     try {
-      final stream = ref.read(chatRepositoryProvider).streamChat(
-            sessionId: sessionId,
-            prompt: prompt,
-          );
-
-      await for (final event in stream) {
-        if (event is SseDeltaEvent) {
-          accumulatedContent += event.content;
-          _updateLastAssistantMessage(
-            content: accumulatedContent,
-            isStreaming: true,
-            citations: receivedCitations,
-          );
-        } else if (event is SseCitationsEvent) {
-          receivedCitations = event.citations;
-        } else if (event is SseDoneEvent) {
-          _updateLastAssistantMessage(
-            content: accumulatedContent,
-            isStreaming: false,
-            citations: receivedCitations,
-            tokensUsed: event.totalTokens,
-          );
-          state = state.copyWith(isStreaming: false);
-        } else if (event is SseErrorEvent) {
-          final isQuota = event.code == 'ENTITLEMENT_REQUIRED';
-          _updateLastAssistantMessage(
-            content: event.message,
-            isStreaming: false,
-            citations: [],
-          );
-          state = state.copyWith(
-            isStreaming: false,
-            errorMessage: isQuota ? null : event.message,
-            quotaExhausted: isQuota,
-          );
-          return;
+      await for (final event in _repository.streamChat(
+        sessionId: sessionId,
+        prompt: promptText,
+      )) {
+        switch (event) {
+          case SseDeltaEvent(:final content):
+            currentContent += content;
+            _updateLastAssistantMessage(
+              content: currentContent,
+              isStreaming: true,
+              citations: currentCitations,
+            );
+          case SseCitationsEvent(:final citations):
+            currentCitations = citations;
+            _updateLastAssistantMessage(
+              content: currentContent,
+              isStreaming: true,
+              citations: currentCitations,
+            );
+          case SseDoneEvent(:final totalTokens):
+            _updateLastAssistantMessage(
+              content: currentContent,
+              isStreaming: false,
+              citations: currentCitations,
+              tokensUsed: totalTokens,
+            );
+            state = state.copyWith(isStreaming: false);
+          case SseErrorEvent(:final code, :final message):
+            final isQuota = code == 'RATE_LIMIT_EXCEEDED' || code == 'QUOTA_EXHAUSTED';
+            state = state.copyWith(
+              isStreaming: false,
+              errorMessage: message,
+              quotaExhausted: isQuota,
+            );
         }
       }
     } catch (e) {
-      _updateLastAssistantMessage(
-        content: 'An error occurred. Please try again.',
+      state = state.copyWith(
         isStreaming: false,
-        citations: [],
+        errorMessage: e.toString(),
       );
-      state = state.copyWith(isStreaming: false, errorMessage: e.toString());
     }
   }
 
@@ -160,3 +158,7 @@ class ChatNotifier extends _$ChatNotifier {
     state = state.copyWith(messages: msgs);
   }
 }
+
+final chatNotifierProvider = StateNotifierProvider.family<ChatNotifier, ChatState, String>(
+  (ref, chartId) => ChatNotifier(chartId, ref.watch(chatRepositoryProvider)),
+);

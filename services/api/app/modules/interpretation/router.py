@@ -316,8 +316,7 @@ async def stream_chat_response(
         context=context_block, chart_facts=chart_facts_str
     )
 
-    # ── 6. Gemini Flash SSE streaming ─────────────────────────────────────────
-    client = _get_genai_client()
+    # ── 6. LLM Provider SSE streaming ─────────────────────────────────────────
     session_id_str = str(body.session_id)
     prompt_text = body.prompt
     now = datetime.now(timezone.utc)
@@ -353,6 +352,7 @@ async def stream_chat_response(
                 user_message=prompt_text,
                 temperature=0.4,
                 max_tokens=1500,
+                rate_limit_key=str(user.id),
             ):
                 full_response += chunk
                 yield f"data: {json.dumps({'event': 'delta', 'content': chunk})}\n\n"

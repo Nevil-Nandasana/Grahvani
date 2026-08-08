@@ -2,12 +2,15 @@
 /// Manages notification preferences, FCM token, and notification state
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grahvani/core/api_client.dart';
 import 'package:grahvani/features/notifications/data/fcm_service.dart';
 import 'package:grahvani/features/notifications/data/notification_repository.dart';
 import 'package:grahvani/features/notifications/domain/notification_model.dart';
 
 // ─── Repository Provider ─────────────────────────────────────────────────────
-final notificationRepositoryProvider = notificationRepositoryProvider;
+final notificationRepositoryProvider = Provider<NotificationRepository>(
+  (ref) => NotificationRepository(dio: ref.watch(apiClientProvider)),
+);
 
 // ─── FCM Token State ─────────────────────────────────────────────────────────
 final fcmTokenProvider = StateProvider<String?>((ref) => null);

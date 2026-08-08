@@ -1,9 +1,9 @@
 """
 LLM Provider Abstraction Layer
-Provides a unified interface for different LLM providers with fallback support.
+Provides a unified interface for different LLM providers with fallback support and Redis rate limiting.
 """
 import json
-import time
+import logging
 from abc import ABC, abstractmethod
 from typing import AsyncGenerator, Optional
 
@@ -11,13 +11,19 @@ import redis.asyncio as redis
 from fastapi import HTTPException
 from google import genai
 from google.api_core.exceptions import GoogleAPICallError, GoogleAPIError
-from google.generativeai import types as genai_types
 
 from app.config import settings
 
+logger = logging.getLogger(__name__)
+
 # Rate limiting constants
-RATE_LIMIT = 40  # 40 requests per minute as requested
+RATE_LIMIT = 40  # 40 requests per minute
 RATE_LIMIT_WINDOW = 60  # 60 seconds
+
+
+class BillingError(Exception):
+    """Raised when API billing/quota/credit issues occur."""
+    pass
 
 
 class LLMProvider(ABC):
@@ -30,21 +36,28 @@ class LLMProvider(ABC):
         user_message: str,
         temperature: float = 0.4,
         max_tokens: int = 1500,
+        rate_limit_key: Optional[str] = None,
     ) -> AsyncGenerator[str, None]:
         """Generate and stream LLM response."""
         pass
 
 
 class GeminiProvider(LLMProvider):
-    """Google Gemini provider implementation."""
+    """Google Gemini provider implementation supporting both google-genai and google.generativeai SDKs."""
 
     def __init__(self, model_name: str, api_key: str):
-        genai.configure(api_key=api_key)
         self.model_name = model_name
-        self.model = genai.GenerativeModel(
-            model_name=model_name,
-            generation_config={"temperature": 0.2, "max_output_tokens": 600},
-        )
+        self.api_key = api_key
+        try:
+            # Modern google-genai SDK (v1.0+)
+            self.client = genai.Client(api_key=api_key)
+            self._use_new_sdk = True
+        except (AttributeError, TypeError):
+            # Legacy google.generativeai fallback
+            import google.generativeai as legacy_genai
+            legacy_genai.configure(api_key=api_key)
+            self.legacy_model = legacy_genai.GenerativeModel(model_name=model_name)
+            self._use_new_sdk = False
 
     async def generate_stream(
         self,
@@ -52,25 +65,41 @@ class GeminiProvider(LLMProvider):
         user_message: str,
         temperature: float = 0.4,
         max_tokens: int = 1500,
+        rate_limit_key: Optional[str] = None,
     ) -> AsyncGenerator[str, None]:
         """Generate and stream response from Google Gemini."""
         full_prompt = f"{system_prompt}\n\n{user_message}"
         try:
-            response = await self.model.generate_content_async(
-                full_prompt,
-                stream=True,
-                generation_config=genai_types.GenerationConfig(
-                    temperature=temperature,
-                    max_output_tokens=max_tokens,
-                ),
-            )
-            async for chunk in response:
-                if chunk.text:
-                    yield chunk.text
-        except (GoogleAPICallError, GoogleAPIError) as e:
-            # Check if this is a billing/quota error
-            if "quota" in str(e).lower() or "billing" in str(e).lower() or "credit" in str(e).lower():
-                raise BillingError("Google Gemini API billing error")
+            if self._use_new_sdk:
+                from google.genai import types
+                response = await self.client.aio.models.generate_content_stream(
+                    model=self.model_name,
+                    contents=full_prompt,
+                    config=types.GenerateContentConfig(
+                        temperature=temperature,
+                        max_output_tokens=max_tokens,
+                    ),
+                )
+                async for chunk in response:
+                    if chunk.text:
+                        yield chunk.text
+            else:
+                response = await self.legacy_model.generate_content_async(
+                    full_prompt,
+                    stream=True,
+                    generation_config={
+                        "temperature": temperature,
+                        "max_output_tokens": max_tokens,
+                    },
+                )
+                async for chunk in response:
+                    if chunk.text:
+                        yield chunk.text
+        except (GoogleAPICallError, GoogleAPIError, Exception) as e:
+            err_msg = str(e).lower()
+            if "quota" in err_msg or "billing" in err_msg or "credit" in err_msg or "429" in err_msg or "exceeded" in err_msg:
+                logger.warning(f"Google Gemini billing/quota error: {e}")
+                raise BillingError(f"Google Gemini API error: {e}") from e
             raise
 
 
@@ -88,13 +117,14 @@ class NVIDIAProvider(LLMProvider):
         user_message: str,
         temperature: float = 0.4,
         max_tokens: int = 1500,
+        rate_limit_key: Optional[str] = None,
     ) -> AsyncGenerator[str, None]:
         """Generate and stream response from NVIDIA Nemotron."""
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
-        
+
         payload = {
             "model": self.model_name,
             "messages": [
@@ -105,37 +135,32 @@ class NVIDIAProvider(LLMProvider):
             "max_tokens": max_tokens,
             "stream": True,
         }
-        
-        # Import httpx only when needed
+
         import httpx
-        
+
         async with httpx.AsyncClient() as client:
             async with client.stream("POST", f"{self.base_url}/chat/completions", json=payload, headers=headers) as response:
                 if response.status_code != 200:
-                    error_data = await response.json()
+                    error_body = await response.aread()
+                    error_text = error_body.decode("utf-8", errors="ignore")
+                    if response.status_code in (402, 429) or "quota" in error_text.lower() or "billing" in error_text.lower():
+                        raise BillingError(f"NVIDIA API rate/billing error ({response.status_code}): {error_text}")
                     raise HTTPException(
                         status_code=response.status_code,
-                        detail=f"NVIDIA API error: {error_data.get('message', 'Unknown error')}",
+                        detail=f"NVIDIA API error ({response.status_code}): {error_text}",
                     )
-                
-                async for chunk in response.aiter_bytes():
-                    if chunk:
-                        # Parse Server-Sent Events
-                        for line in chunk.decode().split("\n"):
-                            if line.startswith("data: ") and line.strip() != "data: [DONE]":
-                                try:
-                                    data = json.loads(line[6:])
-                                    if "choices" in data and len(data["choices"]) > 0:
-                                        content = data["choices"][0].get("delta", {}).get("content", "")
-                                        if content:
-                                            yield content
-                                except json.JSONDecodeError:
-                                    continue
 
-
-class BillingError(Exception):
-    """Raised when API billing/quota issues occur."""
-    pass
+                # Use aiter_lines to safely parse SSE lines across chunk boundaries
+                async for line in response.aiter_lines():
+                    if line.startswith("data: ") and line.strip() != "data: [DONE]":
+                        try:
+                            data = json.loads(line[6:])
+                            if "choices" in data and len(data) > 0:
+                                content = data["choices"][0].get("delta", {}).get("content", "")
+                                if content:
+                                    yield content
+                        except json.JSONDecodeError:
+                            continue
 
 
 class RateLimiter:
@@ -145,21 +170,24 @@ class RateLimiter:
         self.redis = redis.from_url(redis_url)
 
     async def check_rate_limit(self, key: str, limit: int = RATE_LIMIT, window: int = RATE_LIMIT_WINDOW) -> bool:
-        """Check if the rate limit has been exceeded."""
-        current = await self.redis.get(key)
-        if current and int(current) >= limit:
-            return False
-        
-        pipe = self.redis.pipeline()
-        pipe.incr(key)
-        pipe.expire(key, window)
-        await pipe.execute()
-        return True
+        """Check if the rate limit has been exceeded atomically without resetting TTL."""
+        try:
+            count = await self.redis.incr(key)
+            if count == 1:
+                await self.redis.expire(key, window)
+            return count <= limit
+        except Exception as e:
+            logger.warning(f"Redis rate limiter failed: {e}. Bypassing rate limit check.")
+            return True
 
-    async def get_remaining(self, key: str) -> int:
+    async def get_remaining(self, key: str, limit: int = RATE_LIMIT) -> int:
         """Get remaining requests in the current window."""
-        current = await self.redis.get(key)
-        return RATE_LIMIT - int(current or 0)
+        try:
+            current = await self.redis.get(key)
+            used = int(current or 0)
+            return max(0, limit - used)
+        except Exception:
+            return limit
 
 
 class LLMProviderFactory:
@@ -186,51 +214,60 @@ class LLMProviderFactory:
     async def create_provider_with_fallback(self) -> LLMProvider:
         """Create provider with automatic fallback when primary fails."""
         primary_provider = await self.create_provider()
-        
+
         class FallbackProvider(LLMProvider):
+            def __init__(self, primary: LLMProvider, rate_limiter: RateLimiter):
+                self.primary_provider = primary
+                self.rate_limiter = rate_limiter
+
             async def generate_stream(
                 self,
                 system_prompt: str,
                 user_message: str,
                 temperature: float = 0.4,
                 max_tokens: int = 1500,
+                rate_limit_key: Optional[str] = None,
             ) -> AsyncGenerator[str, None]:
                 # Check rate limit first
-                user_key = f"llm:rate_limit:{user_message[:50]}"  # Simple key based on prompt
-                if not await self.rate_limiter.check_rate_limit(user_key):
+                key = f"llm:rate_limit:{rate_limit_key if rate_limit_key else 'global'}"
+                if not await self.rate_limiter.check_rate_limit(key):
                     raise HTTPException(
                         status_code=429,
                         detail=f"Rate limit exceeded. Maximum {RATE_LIMIT} requests per minute.",
                     )
-                
+
+                has_yielded = False
                 try:
-                    # Try primary provider first
-                    async for chunk in primary_provider.generate_stream(
-                        system_prompt, user_message, temperature, max_tokens
+                    async for chunk in self.primary_provider.generate_stream(
+                        system_prompt, user_message, temperature, max_tokens, rate_limit_key
                     ):
+                        has_yielded = True
                         yield chunk
-                except BillingError:
-                    # Fallback to NVIDIA if primary fails due to billing
-                    if settings.LLM_FALLBACK_PROVIDER == "nvidia" and settings.NVIDIA_API_KEY:
-                        fallback_provider = NVIDIAProvider(
-                            model_name=settings.NVIDIA_MODEL_NAME or "nvidia/nemotron-3-ultra-550b-instruct",
-                            api_key=settings.NVIDIA_API_KEY,
-                        )
-                        async for chunk in fallback_provider.generate_stream(
-                            system_prompt, user_message, temperature, max_tokens
-                        ):
-                            yield chunk
-                    else:
-                        raise HTTPException(
-                            status_code=503,
-                            detail="Primary API failed and no fallback provider configured.",
-                        )
-                except Exception as e:
+                except (BillingError, Exception) as e:
+                    # Trigger fallback if BillingError occurs or if primary failed before yielding any output
+                    if isinstance(e, BillingError) or not has_yielded:
+                        if settings.LLM_FALLBACK_PROVIDER == "nvidia" and settings.NVIDIA_API_KEY:
+                            logger.info("Primary provider failed due to quota/error. Switching to NVIDIA fallback provider.")
+                            fallback_provider = NVIDIAProvider(
+                                model_name=settings.NVIDIA_MODEL_NAME or "nvidia/nemotron-3-ultra-550b-instruct",
+                                api_key=settings.NVIDIA_API_KEY,
+                            )
+                            async for chunk in fallback_provider.generate_stream(
+                                system_prompt, user_message, temperature, max_tokens, rate_limit_key
+                            ):
+                                yield chunk
+                            return
+                        else:
+                            raise HTTPException(
+                                status_code=503,
+                                detail="Primary API failed and no fallback provider configured.",
+                            )
+
+                    if isinstance(e, HTTPException):
+                        raise e
                     raise HTTPException(
                         status_code=500,
                         detail=f"LLM generation failed: {str(e)}",
                     )
-        
-        fallback_provider = FallbackProvider()
-        fallback_provider.rate_limiter = self.rate_limiter
-        return fallback_provider
+
+        return FallbackProvider(primary_provider, self.rate_limiter)

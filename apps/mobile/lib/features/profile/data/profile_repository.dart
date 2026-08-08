@@ -9,15 +9,12 @@ import '../../../core/api_client.dart';
 import '../../../core/database/app_database.dart';
 import '../domain/profile_model.dart';
 
-part 'profile_repository.g.dart';
-
-@riverpod
-ProfileRepository profileRepository(Ref ref) {
-  return ProfileRepository(
+final profileRepositoryProvider = Provider<ProfileRepository>(
+  (ref) => ProfileRepository(
     dio: ref.watch(apiClientProvider),
     database: ref.watch(appDatabaseProvider),
-  );
-}
+  ),
+);
 
 class ProfileRepository {
   ProfileRepository({required Dio dio, required AppDatabase database})

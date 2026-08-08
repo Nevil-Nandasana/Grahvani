@@ -5,17 +5,14 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api_client.dart';
 import '../domain/chat_model.dart';
 
-part 'chat_repository.g.dart';
-
-@riverpod
-ChatRepository chatRepository(Ref ref) {
-  return ChatRepository(dio: ref.watch(apiClientProvider));
-}
+final chatRepositoryProvider = Provider<ChatRepository>(
+  (ref) => ChatRepository(dio: ref.watch(apiClientProvider)),
+);
 
 class ChatRepository {
   const ChatRepository({required Dio dio}) : _dio = dio;

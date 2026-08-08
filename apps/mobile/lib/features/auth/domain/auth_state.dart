@@ -2,35 +2,32 @@
 library;
 
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/auth_repository.dart';
 
-part 'auth_state.g.dart';
-
 /// Watches Firebase Auth state stream. Null = unauthenticated.
-@riverpod
-Stream<User?> authStateStream(Ref ref) {
+final authStateStreamProvider = StreamProvider<User?>((ref) {
   return ref.watch(authRepositoryProvider).authStateChanges;
-}
+});
 
 /// Notifier for performing auth actions (sign in / sign out).
-@riverpod
-class AuthNotifier extends _$AuthNotifier {
-  @override
-  AsyncValue<void> build() => const AsyncData(null);
+class AuthNotifier extends StateNotifier<AsyncValue<void>> {
+  AuthNotifier(this._repository) : super(const AsyncData(null));
+
+  final AuthRepository _repository;
 
   Future<void> signInWithGoogle() async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(
-      () => ref.read(authRepositoryProvider).signInWithGoogle(),
+      () => _repository.signInWithGoogle(),
     );
   }
 
   Future<void> signOut() async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(
-      () => ref.read(authRepositoryProvider).signOut(),
+      () => _repository.signOut(),
     );
   }
 
@@ -39,7 +36,7 @@ class AuthNotifier extends _$AuthNotifier {
     state = const AsyncLoading();
     ConfirmationResult? result;
     state = await AsyncValue.guard(() async {
-      result = await ref.read(authRepositoryProvider).sendPhoneOtp(phone);
+      result = await _repository.sendPhoneOtp(phone);
     });
     return result;
   }
@@ -48,7 +45,11 @@ class AuthNotifier extends _$AuthNotifier {
   Future<void> verifyOtp(ConfirmationResult confirmationResult, String code) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(
-      () => ref.read(authRepositoryProvider).verifyPhoneOtp(confirmationResult, code),
+      () => _repository.verifyPhoneOtp(confirmationResult, code),
     );
   }
 }
+
+final authNotifierProvider = StateNotifierProvider<AuthNotifier, AsyncValue<void>>(
+  (ref) => AuthNotifier(ref.watch(authRepositoryProvider)),
+);

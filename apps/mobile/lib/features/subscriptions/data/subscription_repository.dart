@@ -2,16 +2,13 @@
 library;
 
 import 'package:dio/dio.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api_client.dart';
 
-part 'subscription_repository.g.dart';
-
-@riverpod
-SubscriptionRepository subscriptionRepository(Ref ref) {
-  return SubscriptionRepository(dio: ref.watch(apiClientProvider));
-}
+final subscriptionRepositoryProvider = Provider<SubscriptionRepository>(
+  (ref) => SubscriptionRepository(dio: ref.watch(apiClientProvider)),
+);
 
 class Entitlements {
   const Entitlements({
@@ -32,10 +29,10 @@ class Entitlements {
 
   factory Entitlements.fromJson(Map<String, dynamic> json) {
     return Entitlements(
-      tier: json['tier'] as String,
-      isActive: json['is_active'] as bool,
-      dailyQueriesLimit: json['daily_queries_limit'] as int,
-      queriesRemaining: json['queries_remaining'] as int,
+      tier: json['tier'] as String? ?? 'free',
+      isActive: json['is_active'] as bool? ?? false,
+      dailyQueriesLimit: json['daily_queries_limit'] as int? ?? 5,
+      queriesRemaining: json['queries_remaining'] as int? ?? 5,
       expiresAt: json['expires_at'] != null
           ? DateTime.tryParse(json['expires_at'] as String)
           : null,
@@ -54,7 +51,8 @@ class SubscriptionRepository {
       final response = await _dio.get<Map<String, dynamic>>(
         '/api/v1/billing/entitlements',
       );
-      return Entitlements.fromJson(response.data!);
+      final data = response.data?['data'] ?? response.data ?? {};
+      return Entitlements.fromJson(data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw ApiException.fromDioException(e);
     }
