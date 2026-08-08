@@ -4,17 +4,14 @@ library;
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:grahvani/core/api_client.dart';
 
-part 'auth_repository.g.dart';
-
-@riverpod
-AuthRepository authRepository(Ref ref) {
-  return AuthRepository(dio: ref.watch(apiClientProvider));
-}
+final authRepositoryProvider = Provider<AuthRepository>(
+  (ref) => AuthRepository(dio: ref.watch(apiClientProvider)),
+);
 
 class AuthRepository {
   AuthRepository({required Dio dio}) : _dio = dio;
@@ -26,6 +23,16 @@ class AuthRepository {
   /// In-memory flag: null = unknown (not yet fetched), false = no consent,
   /// true = consent already given. Drives router redirect without extra calls.
   final ValueNotifier<bool?> consentStateNotifier = ValueNotifier<bool?>(null);
+
+  /// Update FCM Push Notification token on backend
+  Future<void> updateFcmToken(String token) async {
+    try {
+      await _dio.post<Map<String, dynamic>>(
+        '/api/v1/auth/fcm-token',
+        data: {'token': token},
+      );
+    } catch (_) {}
+  }
 
   // ─── Sign In ─────────────────────────────────────────────────────────────
 

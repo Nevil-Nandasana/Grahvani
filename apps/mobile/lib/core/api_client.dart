@@ -5,17 +5,13 @@ library;
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-
-part 'api_client.g.dart';
 
 // Replace with your deployed API URL (e.g. from AWS App Runner)
 const String _kBaseUrl =
     String.fromEnvironment('API_BASE_URL', defaultValue: 'http://10.0.2.2:8000');
 
 /// Dio singleton provider — shared across all repository classes.
-@riverpod
-Dio apiClient(Ref ref) {
+final apiClientProvider = Provider<Dio>((ref) {
   final dio = Dio(
     BaseOptions(
       baseUrl: _kBaseUrl,
@@ -35,7 +31,7 @@ Dio apiClient(Ref ref) {
   dio.interceptors.add(_EnvelopeInterceptor());
 
   return dio;
-}
+});
 
 /// Injects the current Firebase user's ID token into the Authorization header.
 /// Automatically refreshes expired tokens before each request.

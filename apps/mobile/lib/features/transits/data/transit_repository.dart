@@ -2,16 +2,13 @@
 library;
 
 import 'package:dio/dio.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api_client.dart';
 
-part 'transit_repository.g.dart';
-
-@riverpod
-TransitRepository transitRepository(Ref ref) {
-  return TransitRepository(dio: ref.watch(apiClientProvider));
-}
+final transitRepositoryProvider = Provider<TransitRepository>(
+  (ref) => TransitRepository(dio: ref.watch(apiClientProvider)),
+);
 
 class TransitRepository {
   const TransitRepository({required Dio dio}) : _dio = dio;

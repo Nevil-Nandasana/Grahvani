@@ -25,8 +25,6 @@ import '../features/profile/presentation/profiles_screen.dart';
 import '../features/subscriptions/presentation/paywall_sheet.dart';
 import '../features/auth/data/auth_repository.dart';
 
-part 'app_router.g.dart';
-
 // ─── Route Paths ──────────────────────────────────────────────────────────────────────────────
 class AppRoutes {
   static const splash               = '/';
@@ -46,8 +44,7 @@ class AppRoutes {
   static const voiceQA              = '/home/voice-qa/:chartId';
 }
 
-@riverpod
-GoRouter appRouter(Ref ref) {
+final appRouterProvider = Provider<GoRouter>((ref) {
   // Listen to Firebase auth state for redirect guard.
   final authNotifier = ValueNotifier<User?>(
     FirebaseAuth.instance.currentUser,
@@ -247,7 +244,7 @@ GoRouter appRouter(Ref ref) {
       ),
     ),
   );
-}
+});
 
 // ─── Splash Screen ─────────────────────────────────────────────────────────
 

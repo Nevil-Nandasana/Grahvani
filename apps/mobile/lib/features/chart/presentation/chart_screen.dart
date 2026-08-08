@@ -2,6 +2,7 @@
 library;
 
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -543,7 +544,7 @@ class _NorthIndianChartPainter extends CustomPainter {
   void _drawText(Canvas canvas, String text, Offset center, TextStyle style) {
     final tp = TextPainter(
       text: TextSpan(text: text, style: style),
-      textDirection: TextDirection.ltr,
+      textDirection: ui.TextDirection.ltr,
     )..layout();
     tp.paint(canvas, center.translate(-tp.width / 2, -tp.height / 2));
   }

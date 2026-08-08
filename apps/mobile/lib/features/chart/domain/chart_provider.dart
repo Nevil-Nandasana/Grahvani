@@ -1,20 +1,15 @@
 /// Chart Domain — Riverpod provider for chart calculation and polling
 library;
 
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/chart_repository.dart';
 import 'chart_model.dart';
 
-part 'chart_provider.g.dart';
-
-/// Fetches (or triggers) a chart for a given profile ID.
-/// The profile ID is passed as argument to allow per-profile caching.
-@riverpod
-class ChartNotifier extends _$ChartNotifier {
+class ChartNotifier extends FamilyAsyncNotifier<BirthChartFacts?, String> {
   @override
-  Future<BirthChartFacts?> build(String profileId) async {
-    return await _loadOrTrigger(profileId);
+  Future<BirthChartFacts?> build(String arg) async {
+    return await _loadOrTrigger(arg);
   }
 
   Future<BirthChartFacts?> _loadOrTrigger(String profileId) async {
@@ -59,3 +54,8 @@ class ChartNotifier extends _$ChartNotifier {
     state = await AsyncValue.guard(() => _loadOrTrigger(profileId));
   }
 }
+
+final chartNotifierProvider =
+    AsyncNotifierProvider.family<ChartNotifier, BirthChartFacts?, String>(
+  ChartNotifier.new,
+);

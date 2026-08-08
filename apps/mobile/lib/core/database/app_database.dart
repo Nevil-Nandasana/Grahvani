@@ -83,10 +83,13 @@ class AppDatabase extends _$AppDatabase {
         createdAt: now,
         updatedAt: now,
         syncedAt: isDirty ? const Value.absent() : Value(now),
-        isDirty: Value(isDirty),
+        isDirty: isDirty,
       ),
     );
   }
+
+  /// Initialize database connection
+  Future<void> initialize() async {}
 
   /// Get all cached profiles as a reactive stream.
   Stream<List<BirthProfile>> watchAllProfiles() {
@@ -129,7 +132,7 @@ class AppDatabase extends _$AppDatabase {
     await (update(profileCaches)..where((t) => t.id.equals(id))).write(
       ProfileCachesCompanion(
         syncedAt: Value(DateTime.now()),
-        isDirty: false,
+        isDirty: const Value(false),
         updatedAt: Value(DateTime.now()),
       ),
     );
@@ -139,7 +142,7 @@ class AppDatabase extends _$AppDatabase {
   Future<void> markDirty(String id) async {
     await (update(profileCaches)..where((t) => t.id.equals(id))).write(
       ProfileCachesCompanion(
-        isDirty: true,
+        isDirty: const Value(true),
         updatedAt: Value(DateTime.now()),
       ),
     );
@@ -228,6 +231,8 @@ AppDatabase appDatabase(Ref ref) {
   ref.onDispose(() => db.close());
   return db;
 }
+
+final databaseProvider = appDatabaseProvider;
 
 /// Provider for reactive profile list from local cache.
 @riverpod

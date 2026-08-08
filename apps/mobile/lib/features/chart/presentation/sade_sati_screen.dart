@@ -1,11 +1,9 @@
 /// Sade Sati Saturn Transit Screen — 7.5-Year Saturn Transit Dashboard & Remedies
 library;
 
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
-import '../../../core/network/api_client.dart';
+import '../../../core/api_client.dart';
 
 class SadeSatiScreen extends ConsumerStatefulWidget {
   const SadeSatiScreen({super.key, required this.profileId});
@@ -31,9 +29,11 @@ class _SadeSatiScreenState extends ConsumerState<SadeSatiScreen> {
       final client = ref.read(apiClientProvider);
       final response = await client.get('/api/v1/transits/sade-sati/${widget.profileId}');
       if (response.statusCode == 200) {
-        final body = jsonDecode(response.body);
+        final body = response.data is Map<String, dynamic>
+            ? response.data as Map<String, dynamic>
+            : {};
         setState(() {
-          _data = body['data'] as Map<String, dynamic>;
+          _data = (body['data'] ?? body) as Map<String, dynamic>;
           _isLoading = false;
         });
       } else {
@@ -58,62 +58,39 @@ class _SadeSatiScreenState extends ConsumerState<SadeSatiScreen> {
         backgroundColor: const Color(0xFF0A0A1A),
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text(
-          'Saturn Sade Sati Tracker',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Sade Sati Analysis',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            Text('Saturn 7.5 Year Transit Cycle',
+                style: TextStyle(color: Color(0xFF6B6B99), fontSize: 11)),
+          ],
         ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF7C6EFA)))
           : _error != null
-              ? _buildErrorView()
+              ? Center(
+                  child: Text(_error!, style: const TextStyle(color: Colors.redAccent)))
               : _buildContent(),
     );
   }
 
-  Widget _buildErrorView() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 48),
-            const SizedBox(height: 12),
-            Text(
-              _error!,
-              style: const TextStyle(color: Colors.white70),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                setState(() => _isLoading = true);
-                _fetchSadeSatiData();
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF5B4FDB)),
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildContent() {
-    final d = _data!;
-    final bool isActive = d['is_sade_sati_active'] as bool? ?? false;
-    final String phase = d['phase'] as String? ?? '';
-    final String moonSign = d['moon_sign'] as String? ?? 'Moon';
-    final String saturnSign = d['saturn_sign'] as String? ?? 'Saturn';
-    final String phaseName = d['phase_name'] as String? ?? 'Inactive';
+    final d = _data ?? {};
+    final bool isActive = d['is_active'] as bool? ?? false;
+    final String phase = d['phase'] as String? ?? 'none';
+    final String phaseName = d['phase_name'] as String? ?? 'No Active Sade Sati';
+    final String moonSign = d['moon_sign'] as String? ?? 'Unknown';
+    final String saturnSign = d['saturn_sign'] as String? ?? 'Unknown';
     final String description = d['description'] as String? ?? '';
     final List<dynamic> remedies = d['remedies'] as List<dynamic>? ?? [];
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
-        crossAxisAlignment: CrossAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Saturn Status Header Card
           Container(
@@ -137,13 +114,13 @@ class _SadeSatiScreenState extends ConsumerState<SadeSatiScreen> {
               ],
             ),
             child: Column(
-              crossAxisAlignment: CrossAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: Colors.black26,
                         shape: BoxShape.circle,
                       ),
@@ -152,7 +129,7 @@ class _SadeSatiScreenState extends ConsumerState<SadeSatiScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             isActive ? 'SADE SATI ACTIVE' : 'NO SADE SATI',
@@ -210,14 +187,14 @@ class _SadeSatiScreenState extends ConsumerState<SadeSatiScreen> {
               border: Border.all(color: const Color(0xFF2A2A5A)),
             ),
             child: Row(
-              crossAxisAlignment: CrossAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Icon(Icons.info_outline, color: Color(0xFF7C6EFA), size: 20),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     description,
-                    style: const TextStyle(color: Colors.white90, height: 1.4, fontSize: 13),
+                    style: TextStyle(color: Colors.white.withOpacity(0.9), height: 1.4, fontSize: 13),
                   ),
                 ),
               ],
@@ -247,7 +224,7 @@ class _SadeSatiScreenState extends ConsumerState<SadeSatiScreen> {
                       Expanded(
                         child: Text(
                           remedy.toString(),
-                          style: const TextStyle(color: Colors.white80, fontSize: 13),
+                          style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13),
                         ),
                       ),
                     ],
@@ -261,7 +238,7 @@ class _SadeSatiScreenState extends ConsumerState<SadeSatiScreen> {
 
   Widget _buildSignInfo(String label, String value, IconData icon) {
     return Column(
-      crossAxisAlignment: CrossAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: const TextStyle(color: Colors.white54, fontSize: 11)),
         const SizedBox(height: 2),

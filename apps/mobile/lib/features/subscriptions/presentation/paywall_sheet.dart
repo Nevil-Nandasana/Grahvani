@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
+import '../data/subscription_repository.dart';
 import '../domain/subscription_provider.dart';
 
 // ─── IAP Product IDs ──────────────────────────────────────────────────────────

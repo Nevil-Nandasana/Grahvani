@@ -3,21 +3,18 @@ library;
 
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api_client.dart';
 import '../../../core/database/app_database.dart';
 import '../domain/chart_model.dart';
 
-part 'chart_repository.g.dart';
-
-@riverpod
-ChartRepository chartRepository(Ref ref) {
-  return ChartRepository(
+final chartRepositoryProvider = Provider<ChartRepository>(
+  (ref) => ChartRepository(
     dio: ref.watch(apiClientProvider),
     database: ref.watch(appDatabaseProvider),
-  );
-}
+  ),
+);
 
 class ChartRepository {
   const ChartRepository({

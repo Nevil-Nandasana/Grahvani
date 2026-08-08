@@ -25,9 +25,6 @@ Future<void> main() async {
     // Initialize FCM
     await FCMService.initialize();
 
-    // Initialize API client
-    await ref.read(apiClientProvider).initialize();
-
     // Initialize database
     await ref.read(databaseProvider).initialize();
 

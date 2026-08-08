@@ -2,11 +2,13 @@
 /// Handles all notification-related API calls
 
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grahvani/core/api_client.dart';
 import 'package:grahvani/features/notifications/domain/notification_model.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'notification_repository.g.dart';
+final notificationRepositoryProvider = Provider<NotificationRepository>(
+  (ref) => NotificationRepository(dio: ref.watch(apiClientProvider)),
+);
 
 class NotificationRepository {
   NotificationRepository({required Dio dio}) : _dio = dio;
@@ -97,9 +99,4 @@ class NotificationRepository {
       throw ApiException.fromDioException(e);
     }
   }
-}
-
-@riverpod
-NotificationRepository notificationRepository(Ref ref) {
-  return NotificationRepository(dio: ref.watch(apiClientProvider));
 }
