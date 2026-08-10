@@ -4,6 +4,7 @@ library;
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
@@ -18,6 +19,7 @@ const _kYearlyId  = 'grahvani_premium_yearly';
 // ─── IAP Products Provider ────────────────────────────────────────────────────
 final _iapProductsProvider =
     FutureProvider<List<ProductDetails>>((ref) async {
+  if (kIsWeb) return [];
   final iap = InAppPurchase.instance;
   final bool available = await iap.isAvailable();
   if (!available) return [];
@@ -30,6 +32,7 @@ final _iapProductsProvider =
 // ─── Purchase Stream Notifier ─────────────────────────────────────────────────
 final _purchaseProvider =
     StreamProvider<List<PurchaseDetails>>((ref) {
+  if (kIsWeb) return const Stream.empty();
   return InAppPurchase.instance.purchaseStream;
 });
 
@@ -49,6 +52,17 @@ class PaywallSheet extends ConsumerWidget {
   /// Falls back to a SnackBar if the store is unavailable (e.g. emulator).
   Future<void> _purchase(
       BuildContext context, WidgetRef ref, String productId) async {
+    if (kIsWeb) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Web subscriptions use Razorpay checkout.'),
+            backgroundColor: Color(0xFF3B2FBE),
+          ),
+        );
+      }
+      return;
+    }
     final iap = InAppPurchase.instance;
     final bool available = await iap.isAvailable();
     if (!available) {

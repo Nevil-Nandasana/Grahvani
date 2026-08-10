@@ -27,6 +27,12 @@ coverage.xml
 *.pem
 *.key
 firebase-service-account.json
+.firebase/
+.firebaserc
+firebase.json
+apps/mobile/firebase.json
+**/google-services.json
+**/GoogleService-Info.plist
 
 # Alembic
 # (keep versions tracked, exclude compiled)

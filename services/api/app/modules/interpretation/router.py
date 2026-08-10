@@ -13,6 +13,7 @@ LLM Pipeline:
 """
 import json
 import re
+import time
 import uuid
 from datetime import datetime, date, timezone
 from typing import AsyncGenerator
@@ -26,7 +27,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.core.exceptions import EntitlementError, GuardrailError, NotFoundError
 from app.core.security import CurrentUser
-from app.db.session import get_db
+from app.core.tracing import tracer
+from app.db.session import AsyncSessionLocal, get_db
 from app.modules.billing.models import Subscription
 from app.modules.birth_chart.models import BirthChart
 from app.modules.identity.models import User
@@ -88,6 +90,12 @@ class StreamChatRequest(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=500, description="User's question (max 500 chars).")
 
 
+class FeedbackRequest(BaseModel):
+    message_id: uuid.UUID = Field(..., description="The assistant chat message UUID.")
+    score: int = Field(..., description="1 for positive feedback, -1 for hallucination/negative feedback.")
+    comment: str | None = Field(None, max_length=1000, description="Optional feedback explanation.")
+
+
 # ─── Helper: Get User Record ──────────────────────────────────────────────────
 
 async def _get_user(firebase_uid: str, db: AsyncSession) -> User:
@@ -96,6 +104,18 @@ async def _get_user(firebase_uid: str, db: AsyncSession) -> User:
     if not user:
         raise NotFoundError("User")
     return user
+
+
+async def _get_user_tier(user: User, db: AsyncSession) -> str:
+    """Fetch active subscription tier for user (free, premium, etc.)."""
+    result = await db.execute(
+        select(Subscription)
+        .where(Subscription.user_id == user.id, Subscription.status == "active")
+        .order_by(Subscription.created_at.desc())
+        .limit(1)
+    )
+    subscription = result.scalar_one_or_none()
+    return subscription.tier if subscription else "free"
 
 
 # ─── Helper: Entitlement Check ───────────────────────────────────────────────
@@ -277,6 +297,7 @@ async def stream_chat_response(
 
     firebase_uid = current_user.get("uid")
     user = await _get_user(firebase_uid, db)
+    user_tier = await _get_user_tier(user, db)
 
     # ── 2. Entitlement quota check ────────────────────────────────────────────
     await _check_daily_quota(user, db)
@@ -292,8 +313,25 @@ async def stream_chat_response(
         if chart and chart.chart_facts_json:
             chart_facts_str = json.dumps(chart.chart_facts_json, indent=2)
 
+    # Start Langfuse root trace
+    trace_info = tracer.start_trace(
+        user_id=str(user.id),
+        session_id=str(body.session_id),
+        tier=user_tier,
+    )
+
     # ── 4 & 5. Hybrid RAG search ──────────────────────────────────────────────
+    rag_start = time.time()
     retrieved_chunks = await _hybrid_search(body.prompt, db, top_k=5)
+    rag_duration_ms = (time.time() - rag_start) * 1000
+
+    # Record RAG retrieval span in Langfuse
+    tracer.record_rag_span(
+        trace_info=trace_info,
+        query=body.prompt,
+        chunks=retrieved_chunks,
+        duration_ms=rag_duration_ms,
+    )
 
     # Build context block with source references
     context_lines = []
@@ -337,7 +375,8 @@ async def stream_chat_response(
     async def _sse_generator() -> AsyncGenerator[str, None]:
         """Stream LLM response as Server-Sent Events."""
         full_response = ""
-        total_tokens = 0
+        stream_start = time.time()
+        first_token_time = None
 
         try:
             # Send citations metadata before streaming starts
@@ -354,23 +393,44 @@ async def stream_chat_response(
                 max_tokens=1500,
                 rate_limit_key=str(user.id),
             ):
+                if first_token_time is None:
+                    first_token_time = time.time()
                 full_response += chunk
                 yield f"data: {json.dumps({'event': 'delta', 'content': chunk})}\n\n"
 
-            # Persist assistant reply to chat_messages
+            total_duration_ms = (time.time() - stream_start) * 1000
+            ttft_ms = (first_token_time - stream_start) * 1000 if first_token_time else None
+            input_tokens = len(grounded_system.split()) + len(prompt_text.split())
+            output_tokens = len(full_response.split())
+
+            # Log LLM generation metrics to Langfuse
+            tracer.record_llm_generation(
+                trace_info=trace_info,
+                model_name=settings.LLM_MODEL_NAME,
+                system_prompt=grounded_system,
+                user_message=prompt_text,
+                completion=full_response,
+                ttft_ms=ttft_ms,
+                total_duration_ms=total_duration_ms,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+            )
+
+            # Persist assistant reply to chat_messages with trace_id
             async with AsyncSessionLocal() as async_db:
                 assistant_msg = ChatMessage(
                     session_id=uuid.UUID(session_id_str),
                     role="assistant",
                     content=full_response,
                     citations_json=citations,
-                    tokens_used=len(full_response.split()),  # Approximate token count
+                    tokens_used=output_tokens,
+                    trace_id=trace_info.get("trace_id"),
                     created_at=datetime.now(timezone.utc),
                 )
                 async_db.add(assistant_msg)
                 await async_db.commit()
 
-            yield f"data: {json.dumps({'event': 'done', 'total_tokens': len(full_response.split())})}\n\n"
+            yield f"data: {json.dumps({'event': 'done', 'total_tokens': output_tokens, 'trace_id': trace_info.get('trace_id')})}\n\n"
 
         except EntitlementError as e:
             yield f"data: {json.dumps({'event': 'error', 'code': 'ENTITLEMENT_REQUIRED', 'message': e.message})}\n\n"
@@ -386,6 +446,58 @@ async def stream_chat_response(
             "X-Accel-Buffering": "no",
         },
     )
+
+
+@router.post("/chat/messages/feedback", status_code=status.HTTP_200_OK)
+async def submit_message_feedback(
+    body: FeedbackRequest,
+    current_user: CurrentUser,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Submit user rating (score: +1 or -1) and feedback comment for an assistant response.
+    Updates database record and pushes score evaluation to Langfuse.
+    """
+    if body.score not in (1, -1):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Score must be 1 (positive) or -1 (negative/hallucination).",
+        )
+
+    firebase_uid = current_user.get("uid")
+    user = await _get_user(firebase_uid, db)
+
+    # Fetch message and verify session ownership
+    message = await db.get(ChatMessage, body.message_id)
+    if not message:
+        raise NotFoundError("Chat Message")
+
+    session = await db.get(ChatSession, message.session_id)
+    if not session or session.user_id != user.id:
+        raise NotFoundError("Chat Session")
+
+    message.feedback_score = body.score
+    message.feedback_text = body.comment
+    await db.commit()
+
+    # Send feedback score to Langfuse if trace_id is present
+    if message.trace_id:
+        tracer.score_message(
+            trace_id=message.trace_id,
+            name="user_feedback",
+            value=float(body.score),
+            comment=body.comment,
+        )
+
+    return {
+        "success": True,
+        "data": {
+            "message_id": str(message.id),
+            "feedback_score": message.feedback_score,
+            "feedback_text": message.feedback_text,
+            "trace_id": message.trace_id,
+        },
+    }
 
 
 @router.get("/chat/sessions", status_code=status.HTTP_200_OK)
@@ -449,6 +561,9 @@ async def get_session_messages(
                 "content": m.content,
                 "citations": m.citations_json,
                 "tokens_used": m.tokens_used,
+                "trace_id": m.trace_id,
+                "feedback_score": m.feedback_score,
+                "feedback_text": m.feedback_text,
                 "created_at": m.created_at.isoformat(),
             }
             for m in messages

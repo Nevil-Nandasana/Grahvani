@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Varshaphal Report - {{ profile.name }} ({{ varshaphal.year }})</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1cm;
+        }
+        body {
+            font-family: 'Noto Sans', 'DejaVu Sans', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #3B2FBE;
+            padding-bottom: 10px;
+        }
+        .header h1 {
+            color: #3B2FBE;
+            margin: 0;
+            font-size: 24px;
+        }
+        .header .subtitle {
+            color: #6B6B99;
+            font-size: 16px;
+            margin: 5px 0 0 0;
+        }
+        .profile {
+            width: 100%;
+            padding: 15px;
+            background-color: #f9f9ff;
+            border-radius: 8px;
+            border: 1px solid #e0e0ff;
+            margin-bottom: 20px;
+        }
+        .profile h2 {
+            color: #3B2FBE;
+            border-bottom: 1px solid #e0e0ff;
+            padding-bottom: 5px;
+            margin-top: 0;
+        }
+        .profile p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        .profile .label {
+            font-weight: bold;
+            color: #6B6B99;
+        }
+        .year-header {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: linear-gradient(135deg, #1A1A35, #3B2FBE);
+            border-radius: 8px;
+            color: white;
+        }
+        .year-header h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+        .year-header .solar-return {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .key-indicators {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+        }
+        .indicator {
+            width: 48%;
+            padding: 12px;
+            background-color: #f9f9ff;
+            border-radius: 8px;
+            border: 1px solid #e0e0ff;
+            text-align: center;
+        }
+        .indicator .label {
+            color: #6B6B99;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .indicator .value {
+            color: #3B2FBE;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .chart-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .chart-label {
+            background-color: #e0e0ff;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+        .section-title {
+            color: #3B2FBE;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 5px;
+            margin: 20px 0 10px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f0f0ff;
+            color: #3B2FBE;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9ff;
+        }
+        .life-area {
+            display: flex;
+            margin-bottom: 15px;
+            background-color: #f9f9ff;
+            border-radius: 8px;
+            border: 1px solid #e0e0ff;
+            overflow: hidden;
+        }
+        .life-area-emoji {
+            width: 60px;
+            background-color: #3B2FBE;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        .life-area-content {
+            padding: 15px;
+            flex: 1;
+        }
+        .life-area-title {
+            color: #3B2FBE;
+            font-weight: bold;
+            margin: 0 0 5px 0;
+        }
+        .life-area-prediction {
+            color: #444;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #6B6B99;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 10px;
+        }
+        .footer .disclaimer {
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Varshaphal Report</h1>
+        <div class="subtitle">Annual Solar Return Analysis</div>
+    </div>
+
+    <div class="profile">
+        <h2>{{ profile.name }}</h2>
+        <p><span class="label">Date of Birth:</span> {{ profile.date_of_birth }} {{ profile.time_of_birth }}</p>
+        <p><span class="label">Place of Birth:</span> {{ profile.place_of_birth }}</p>
+    </div>
+
+    <div class="year-header">
+        <h2>Solar Return {{ varshaphal.year }}</h2>
+        <div class="solar-return">Sun returns to natal position on {{ varshaphal.solar_return_date }}</div>
+    </div>
+
+    <div class="key-indicators">
+        <div class="indicator">
+            <div class="label">Muntha</div>
+            <div class="value">{{ varshaphal.muntha_planet }}</div>
+        </div>
+        <div class="indicator">
+            <div class="label">Varshesha (Year Lord)</div>
+            <div class="value">{{ varshaphal.varshesha_planet }}</div>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <div class="chart-label">Annual Chart ({{ varshaphal.year }})</div>
+        <div style="font-size: 48px;">🪐</div>
+    </div>
+
+    <h2 class="section-title">Year Overview</h2>
+    <div style="background-color: #f9f9ff; padding: 15px; border-radius: 8px; border: 1px solid #e0e0ff; margin-bottom: 20px;">
+        {{ varshaphal.year_summary }}
+    </div>
+
+    <h2 class="section-title">Annual Planet Positions</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Planet</th>
+                <th>Sign</th>
+                <th>Nakshatra</th>
+                <th>House</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for planet in planets %}
+            <tr>
+                <td>{{ planet.name }}</td>
+                <td>{{ planet.zodiac_sign }}</td>
+                <td>{{ planet.nakshatra }} P{{ planet.pada }}</td>
+                <td>{{ planet.house }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2 class="section-title">Life Area Forecasts</h2>
+    {% for area in life_areas %}
+    <div class="life-area">
+        <div class="life-area-emoji">{{ area.emoji }}</div>
+        <div class="life-area-content">
+            <div class="life-area-title">{{ area.title }}</div>
+            <div class="life-area-prediction">{{ area.prediction }}</div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="footer">
+        <div class="disclaimer">
+            Varshaphal (Solar Return) predicts themes for the year when the Sun returns to its natal position.
+            This report is based on Vedic astrology principles.
+        </div>
+        <div>Generated by Grahvani</div>
+    </div>
+</body>
+</html>

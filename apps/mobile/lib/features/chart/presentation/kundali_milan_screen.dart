@@ -6,9 +6,11 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../profile/domain/profile_model.dart';
 import '../../profile/domain/profile_provider.dart';
+import '../../core/api_client.dart';
 
 // ─── Ashtakoot Score Model ────────────────────────────────────────────────────
 
@@ -40,6 +42,7 @@ class KundaliMilanScreen extends ConsumerStatefulWidget {
 
 class _KundaliMilanScreenState extends ConsumerState<KundaliMilanScreen>
     with SingleTickerProviderStateMixin {
+  bool _isPdfLoading = false;
   BirthProfile? _profile1;
   BirthProfile? _profile2;
   late AnimationController _animController;
@@ -56,41 +59,67 @@ class _KundaliMilanScreenState extends ConsumerState<KundaliMilanScreen>
     ('Nadi', 'नाड़ी', 8, 'Health & genetic compatibility', 'Physiological compatibility & progeny'),
   ];
 
-  List<KootaScore> _computeScores() {
-    if (_profile1 == null || _profile2 == null) return [];
+  bool _isLoading = false;
+  String? _errorMessage;
+  List<KootaScore> _cachedScores = [];
 
-    // Demo computation based on profile name hash for deterministic results.
-    // In production this would call /api/v1/charts/milan.
-    final seed1 = _profile1!.name.codeUnits.fold(0, (a, b) => a + b);
-    final seed2 = _profile2!.name.codeUnits.fold(0, (a, b) => a + b);
-
-    final scores = <double>[
-      1.0,   // Varna (max 1)
-      (seed1 + seed2) % 3 == 0 ? 2.0 : 1.0,  // Vashya (max 2)
-      (seed1 * seed2 % 4) < 3 ? 3.0 : 1.5,   // Tara (max 3)
-      (seed1 + seed2) % 5 < 4 ? 4.0 : 2.0,   // Yoni (max 4)
-      (seed1 % 3) == (seed2 % 3) ? 5.0 : 3.0, // Graha Maitri (max 5)
-      (seed1 + seed2) % 4 > 1 ? 6.0 : 0.0,   // Gana (max 6)
-      (seed1 % 7) + 1.0,                       // Bhakoot (max 7)
-      (seed1 + seed2) % 3 == 0 ? 0.0 : 8.0,   // Nadi (max 8) — 0 = dosha
-    ];
-
-    return List.generate(_kootaInfo.length, (i) {
-      final (name, sanskrit, maxPts, desc, aspect) = _kootaInfo[i];
-      return KootaScore(
-        name: name,
-        sanskrit: sanskrit,
-        maxPoints: maxPts,
-        obtainedPoints: scores[i].clamp(0, maxPts.toDouble()),
-        description: desc,
-        aspect: aspect,
-      );
+  Future<void> _fetchScores() async {
+    if (_profile1 == null || _profile2 == null) return;
+    
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
     });
+
+    try {
+      final dio = ref.read(apiClientProvider);
+      final response = await dio.post(
+        '/api/v1/charts/milan',
+        data: {
+          'profile1_id': _profile1!.id,
+          'profile2_id': _profile2!.id,
+        },
+      );
+      
+      final ashtakoot = response.data['ashtakoot'] as Map<String, dynamic>;
+      
+      final scores = <double>[
+        (ashtakoot['varna'] as num).toDouble(),
+        (ashtakoot['vashya'] as num).toDouble(),
+        (ashtakoot['tara'] as num).toDouble(),
+        (ashtakoot['yoni'] as num).toDouble(),
+        (ashtakoot['graha_maitri'] as num).toDouble(),
+        (ashtakoot['gana'] as num).toDouble(),
+        (ashtakoot['bhakoot'] as num).toDouble(),
+        (ashtakoot['nadi'] as num).toDouble(),
+      ];
+      
+      setState(() {
+        _cachedScores = List.generate(_kootaInfo.length, (i) {
+          final (name, sanskrit, maxPts, desc, aspect) = _kootaInfo[i];
+          return KootaScore(
+            name: name,
+            sanskrit: sanskrit,
+            maxPoints: maxPts,
+            obtainedPoints: scores[i].clamp(0, maxPts.toDouble()),
+            description: desc,
+            aspect: aspect,
+          );
+        });
+        _isLoading = false;
+      });
+      _animController.forward(from: 0);
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString();
+        _cachedScores = [];
+      });
+    }
   }
 
   double get _totalScore {
-    return _computeScores()
-        .fold(0.0, (sum, k) => sum + k.obtainedPoints);
+    return _cachedScores.fold(0.0, (sum, k) => sum + k.obtainedPoints);
   }
 
   String _compatibility(double score) {
@@ -128,16 +157,59 @@ class _KundaliMilanScreenState extends ConsumerState<KundaliMilanScreen>
 
   void _onProfileSelected() {
     if (_profile1 != null && _profile2 != null) {
-      _animController.forward(from: 0);
+      _fetchScores();
+    }
+  }
+
+  Future<void> _exportPdf(BuildContext context) async {
+    if (_profile1 == null || _profile2 == null) return;
+
+    setState(() => _isPdfLoading = true);
+    try {
+      final dio = ref.read(apiClientProvider);
+      final response = await dio.post<Map<String, dynamic>>(
+        '/api/v1/charts/milan/export-pdf',
+        data: {
+          'profile1_id': _profile1!.id,
+          'profile2_id': _profile2!.id,
+        },
+      );
+      final pdfUrl = response.data?['pdf_url'] as String? ?? response.data?['url'] as String?;
+      if (pdfUrl != null) {
+        final uri = Uri.parse(pdfUrl);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('PDF export is a Premium feature.'),
+              backgroundColor: Color(0xFF3B2FBE),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF export failed: ${e.toString().replaceAll('ApiException', '').trim()}'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isPdfLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final profilesAsync = ref.watch(profilesNotifierProvider);
-    final scores = _computeScores();
+    final scores = _cachedScores;
     final total = _totalScore;
-    final hasMatch = _profile1 != null && _profile2 != null;
+    final hasMatch = _profile1 != null && _profile2 != null && !_isLoading && _errorMessage == null;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A1A),
@@ -150,6 +222,24 @@ class _KundaliMilanScreenState extends ConsumerState<KundaliMilanScreen>
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         actions: [
+          // PDF Export
+          _isPdfLoading
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 14),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xFFFFD700),
+                    ),
+                  ),
+                )
+              : IconButton(
+                  icon: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFFFFD700)),
+                  tooltip: 'Export PDF',
+                  onPressed: hasMatch ? () => _exportPdf(context) : null,
+                ),
           IconButton(
             icon: const Icon(Icons.help_outline, color: Color(0xFF9B93CC)),
             onPressed: () => _showInfoDialog(context),
@@ -223,7 +313,12 @@ class _KundaliMilanScreenState extends ConsumerState<KundaliMilanScreen>
 
               if (!hasMatch) ...[
                 const SizedBox(height: 40),
-                _PromptCard(),
+                if (_isLoading)
+                  const Center(child: CircularProgressIndicator(color: Color(0xFF7C6EFA)))
+                else if (_errorMessage != null)
+                  Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.redAccent)))
+                else
+                  _PromptCard(),
               ],
 
               if (hasMatch) ...[

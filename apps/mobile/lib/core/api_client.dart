@@ -3,6 +3,8 @@
 library;
 
 import 'package:dio/dio.dart';
+import 'dart:io';
+import 'package:dio/io.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -22,6 +24,15 @@ final apiClientProvider = Provider<Dio>((ref) {
         'Accept': 'application/json',
       },
     ),
+  );
+
+  // OWASP Hardening: Strictly reject bad certificates (prevent MITM)
+  dio.httpClientAdapter = IOHttpClientAdapter(
+    createHttpClient: () {
+      final client = HttpClient();
+      client.badCertificateCallback = (X509Certificate cert, String host, int port) => false;
+      return client;
+    },
   );
 
   // Intercept every request: attach a fresh Firebase ID token as Bearer token.

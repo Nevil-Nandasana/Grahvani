@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sade Sati Report - {{ profile.name }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1cm;
+        }
+        body {
+            font-family: 'Noto Sans', 'DejaVu Sans', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #3B2FBE;
+            padding-bottom: 10px;
+        }
+        .header h1 {
+            color: #3B2FBE;
+            margin: 0;
+            font-size: 24px;
+        }
+        .header .subtitle {
+            color: #6B6B99;
+            font-size: 16px;
+            margin: 5px 0 0 0;
+        }
+        .profile {
+            width: 100%;
+            padding: 15px;
+            background-color: #f9f9ff;
+            border-radius: 8px;
+            border: 1px solid #e0e0ff;
+            margin-bottom: 20px;
+        }
+        .profile h2 {
+            color: #3B2FBE;
+            border-bottom: 1px solid #e0e0ff;
+            padding-bottom: 5px;
+            margin-top: 0;
+        }
+        .profile p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        .profile .label {
+            font-weight: bold;
+            color: #6B6B99;
+        }
+        .status-card {
+            width: 100%;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        .sade-sati-active {
+            background: linear-gradient(135deg, #3A1C71, #D76D77);
+        }
+        .sade-sati-inactive {
+            background: linear-gradient(135deg, #16163A, #252554);
+        }
+        .status-card h3 {
+            color: #FFD700;
+            margin: 0 0 5px 0;
+            font-size: 14px;
+            letter-spacing: 1.2px;
+        }
+        .status-card h2 {
+            color: white;
+            margin: 0 0 15px 0;
+            font-size: 20px;
+        }
+        .status-details {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+        .status-detail {
+            text-align: center;
+        }
+        .status-detail .label {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+        }
+        .status-detail .value {
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .phase-stepper {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+        }
+        .phase {
+            flex: 1;
+            padding: 12px 8px;
+            text-align: center;
+            border-radius: 10px;
+            margin: 0 4px;
+        }
+        .phase.active {
+            background-color: #5B4FDB;
+            color: white;
+        }
+        .phase.inactive {
+            background-color: #16163A;
+            color: #6B6B99;
+            border: 1px solid #2A2A5A;
+        }
+        .section-title {
+            color: #3B2FBE;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 5px;
+            margin: 20px 0 10px 0;
+        }
+        .description {
+            background-color: #f9f9ff;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e0e0ff;
+            margin-bottom: 20px;
+        }
+        .remedies {
+            margin-top: 20px;
+        }
+        .remedy {
+            background-color: #f9f9ff;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #e0e0ff;
+            margin-bottom: 10px;
+        }
+        .remedy::before {
+            content: "• ";
+            color: #5B4FDB;
+            font-weight: bold;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #6B6B99;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 10px;
+        }
+        .footer .disclaimer {
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Sade Sati Report</h1>
+        <div class="subtitle">Saturn 7.5 Year Transit Analysis</div>
+    </div>
+
+    <div class="profile">
+        <h2>{{ profile.name }}</h2>
+        <p><span class="label">Date of Birth:</span> {{ profile.date_of_birth }} {{ profile.time_of_birth }}</p>
+        <p><span class="label">Place of Birth:</span> {{ profile.place_of_birth }}</p>
+        <p><span class="label">Moon Sign:</span> {{ profile.moon_sign }}</p>
+    </div>
+
+    <div class="status-card {% if sade_sati.is_active %}sade-sati-active{% else %}sade-sati-inactive{% endif %}">
+        <h3>{% if sade_sati.is_active %}SADE SATI ACTIVE{% else %}NO SADE SATI{% endif %}</h3>
+        <h2>{{ sade_sati.phase_name }}</h2>
+        
+        <div class="status-details">
+            <div class="status-detail">
+                <div class="label">Your Moon Sign</div>
+                <div class="value">{{ profile.moon_sign }}</div>
+            </div>
+            <div class="status-detail">
+                <div class="label">Saturn Transit</div>
+                <div class="value">{{ sade_sati.saturn_sign }}</div>
+            </div>
+        </div>
+        
+        {% if sade_sati.start_date and sade_sati.end_date %}
+        <div class="status-details" style="margin-top: 15px;">
+            <div class="status-detail">
+                <div class="label">Phase Start</div>
+                <div class="value">{{ sade_sati.start_date }}</div>
+            </div>
+            <div class="status-detail">
+                <div class="label">Phase End</div>
+                <div class="value">{{ sade_sati.end_date }}</div>
+            </div>
+            <div class="status-detail">
+                <div class="label">Days Remaining</div>
+                <div class="value">{{ sade_sati.days_remaining }}</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <h2 class="section-title">Sade Sati Phase Breakdown</h2>
+    
+    <div class="phase-stepper">
+        <div class="phase {% if sade_sati.phase == 'first_phase' %}active{% else %}inactive{% endif %}">
+            <div>Phase 1</div>
+            <div style="font-size: 10px; margin-top: 2px;">12th from Moon</div>
+        </div>
+        <div class="phase {% if sade_sati.phase == 'second_phase' %}active{% else %}inactive{% endif %}">
+            <div>Phase 2 (Peak)</div>
+            <div style="font-size: 10px; margin-top: 2px;">Over Moon Sign</div>
+        </div>
+        <div class="phase {% if sade_sati.phase == 'third_phase' %}active{% else %}inactive{% endif %}">
+            <div>Phase 3</div>
+            <div style="font-size: 10px; margin-top: 2px;">2nd from Moon</div>
+        </div>
+    </div>
+
+    <h2 class="section-title">Phase Description</h2>
+    
+    <div class="description">
+        {{ sade_sati.description }}
+    </div>
+
+    {% if remedies|length > 0 %}
+    <h2 class="section-title">Recommended Vedic Remedies</h2>
+    
+    <div class="remedies">
+        {% for remedy in remedies %}
+        <div class="remedy">
+            {{ remedy }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        <div class="disclaimer">
+            Sade Sati is a 7.5-year Saturn transit that occurs approximately every 25 years. This report provides insights based on Vedic astrology.
+        </div>
+        <div>Generated by Grahvani</div>
+    </div>
+</body>
+</html>

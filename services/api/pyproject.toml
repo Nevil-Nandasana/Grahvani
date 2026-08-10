@@ -33,6 +33,7 @@ firebase-admin = "^6.5.0"
 
 # AI / LLM
 google-genai = "^1.0.0"
+langfuse = "^4.0.0"
 
 # Astrology Engine
 pyswisseph = "^2.10.3"
@@ -49,6 +50,10 @@ passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 weasyprint = "^62.0"
 Jinja2 = "^3.1.4"
 boto3 = "^1.35.0"
+
+# Observability
+sentry-sdk = {extras = ["fastapi"], version = "^2.13.0"}
+watchtower = "^3.2.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.0"

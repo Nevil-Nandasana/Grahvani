@@ -4,9 +4,13 @@ Routes: /charts
 """
 import uuid
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+import tempfile
+import os
+from pathlib import Path
+from uuid import UUID
 
 import boto3
 from app.config import settings
@@ -19,6 +23,10 @@ from app.tasks.ephemeris import calculate_birth_chart_task
 from app.tasks.pdf_export import generate_chart_pdf_task
 
 router = APIRouter()
+
+# Directory to store generated PDFs
+PDF_STORAGE = Path(tempfile.gettempdir()) / "grahvani_pdfs"
+PDF_STORAGE.mkdir(exist_ok=True)
 
 
 @router.post("/charts/calculate", status_code=status.HTTP_202_ACCEPTED)
@@ -134,6 +142,46 @@ async def trigger_pdf_export(
             "poll_url": f"/api/v1/charts/{chart.id}/export/pdf/status",
         },
     }
+
+
+@router.post("/varshaphal/export-pdf", status_code=status.HTTP_200_OK, response_model=Dict[str, Any])
+async def export_varshaphal_pdf(
+    profile_id: UUID,
+    year: int,
+    current_user: CurrentUser,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Generate and return a PDF report for Varshaphal (Solar Return) analysis.
+    Returns a URL to download the PDF.
+    """
+    profile = await db.get(BirthProfile, profile_id)
+    if not profile:
+        raise NotFoundError("Birth Profile not found")
+
+    # Calculate Varshaphal data
+    varshaphal_data = _build_varshaphal_data(profile, year)
+
+    # Generate PDF
+    try:
+        from app.modules.birth_chart.pdf_service import generate_varshaphal_pdf
+        pdf_path = await generate_varshaphal_pdf(
+            profile=profile,
+            varshaphal_data=varshaphal_data
+        )
+        
+        # Return PDF URL (in production, this would be a cloud storage URL)
+        pdf_url = f"/static/pdfs/{os.path.basename(pdf_path)}"
+        return {
+            "success": True,
+            "pdf_url": pdf_url,
+            "message": "PDF generated successfully"
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"PDF generation failed: {str(e)}"
+        )
 
 
 @router.get("/charts/{chart_id}/export/pdf/status", status_code=status.HTTP_200_OK)
