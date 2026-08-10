@@ -22,6 +22,10 @@ from app.modules.identity.models import BirthProfile, User
 from app.tasks.ephemeris import calculate_birth_chart_task
 from app.tasks.pdf_export import generate_chart_pdf_task
 
+from typing import Dict, Any
+from app.modules.birth_chart.ashtakvarga_service import calculate_ashtakvarga
+from app.modules.birth_chart.dignity_service import calculate_planetary_dignity
+
 router = APIRouter()
 
 # Directory to store generated PDFs
@@ -211,3 +215,55 @@ async def get_pdf_export_status(
         response_data["download_url"] = presigned_url
 
     return {"success": True, "data": response_data}
+
+
+@router.post("/charts/ashtakvarga", status_code=status.HTTP_200_OK)
+async def calculate_ashtakvarga_endpoint(
+    body: dict,
+    current_user: CurrentUser,
+):
+    """
+    Calculate Parasara Bhinna Ashtakvarga (BAV) and Samudaya Ashtakvarga (SAV) points.
+    Payload expected:
+      - planet_signs: dict[str, int] (e.g. {"Sun": 0, "Moon": 3, ...})
+      - lagna_sign: int (0-11)
+    """
+    planet_signs = body.get("planet_signs", {})
+    lagna_sign = body.get("lagna_sign", 0)
+
+    result = calculate_ashtakvarga(planet_signs, lagna_sign)
+    return {"success": True, "data": result}
+
+
+@router.post("/charts/dignities", status_code=status.HTTP_200_OK)
+async def calculate_dignities_endpoint(
+    body: dict,
+    current_user: CurrentUser,
+):
+    """
+    Calculate Dignity status, Panchadha Sambandha, and Combustion for planets.
+    Payload expected:
+      - planet_positions: dict[str, int] (sign index 0-11)
+      - planet_degrees: dict[str, float] (degree within sign 0-30)
+      - sun_longitude: float (0-360)
+      - retrogrades: dict[str, bool]
+    """
+    planet_positions = body.get("planet_positions", {})
+    planet_degrees = body.get("planet_degrees", {})
+    sun_longitude = body.get("sun_longitude", 0.0)
+    retrogrades = body.get("retrogrades", {})
+
+    dignities = {}
+    for planet, sign_idx in planet_positions.items():
+        deg = planet_degrees.get(planet, 0.0)
+        is_retro = retrogrades.get(planet, False)
+        dignities[planet] = calculate_planetary_dignity(
+            planet=planet,
+            sign_index=sign_idx,
+            deg_in_sign=deg,
+            sun_longitude=sun_longitude,
+            planet_positions=planet_positions,
+            is_retrograde=is_retro,
+        )
+
+    return {"success": True, "data": dignities}
