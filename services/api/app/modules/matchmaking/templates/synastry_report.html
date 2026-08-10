@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synastry Report - {{ profile1.name }} & {{ profile2.name }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1cm;
+        }
+        body {
+            font-family: 'Noto Sans', 'DejaVu Sans', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #3B2FBE;
+            padding-bottom: 10px;
+        }
+        .header h1 {
+            color: #3B2FBE;
+            margin: 0;
+            font-size: 24px;
+        }
+        .header .subtitle {
+            color: #6B6B99;
+            font-size: 16px;
+            margin: 5px 0 0 0;
+        }
+        .profiles {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        .profile {
+            width: 48%;
+            padding: 15px;
+            background-color: #f9f9ff;
+            border-radius: 8px;
+            border: 1px solid #e0e0ff;
+        }
+        .profile h2 {
+            color: #3B2FBE;
+            border-bottom: 1px solid #e0e0ff;
+            padding-bottom: 5px;
+            margin-top: 0;
+        }
+        .profile p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        .profile .label {
+            font-weight: bold;
+            color: #6B6B99;
+        }
+        .score-summary {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .score-circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 3px solid #FFD700;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 15px auto;
+            background-color: #fff;
+        }
+        .score-circle .score {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3B2FBE;
+        }
+        .score-circle .total {
+            font-size: 12px;
+            color: #6B6B99;
+        }
+        .compatibility {
+            font-size: 18px;
+            font-weight: bold;
+            color: #3B2FBE;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f0f0ff;
+            color: #3B2FBE;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9ff;
+        }
+        .aspect-row {
+            font-size: 14px;
+        }
+        .aspect-symbol {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .harmonious {
+            color: #64FF8A;
+        }
+        .tense {
+            color: #FF6B6B;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #6B6B99;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 10px;
+        }
+        .footer .disclaimer {
+            font-style: italic;
+        }
+        .chart-container {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+        }
+        .chart {
+            width: 48%;
+            text-align: center;
+        }
+        .chart-label {
+            background-color: #e0e0ff;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+        .chart1-label {
+            background-color: rgba(124, 110, 250, 0.2);
+            border: 1px solid rgba(124, 110, 250, 0.4);
+        }
+        .chart2-label {
+            background-color: rgba(100, 255, 138, 0.2);
+            border: 1px solid rgba(100, 255, 138, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Synastry Report</h1>
+        <div class="subtitle">Dual-Chart Compatibility Analysis</div>
+    </div>
+
+    <div class="profiles">
+        <div class="profile">
+            <h2>{{ profile1.name }}</h2>
+            <p><span class="label">Date of Birth:</span> {{ profile1.date_of_birth }} {{ profile1.time_of_birth }}</p>
+            <p><span class="label">Place of Birth:</span> {{ profile1.place_of_birth }}</p>
+        </div>
+        
+        <div class="profile">
+            <h2>{{ profile2.name }}</h2>
+            <p><span class="label">Date of Birth:</span> {{ profile2.date_of_birth }} {{ profile2.time_of_birth }}</p>
+            <p><span class="label">Place of Birth:</span> {{ profile2.place_of_birth }}</p>
+        </div>
+    </div>
+
+    <div class="score-summary">
+        <div class="score-circle">
+            <div class="score">{{ total_aspects }}</div>
+            <div class="total">Total Aspects</div>
+        </div>
+        <div class="compatibility">
+            {% if harmonious_count >= tense_count %}
+                Harmonious Connection
+            {% else %}
+                Challenging Connection
+            {% endif %}
+        </div>
+        <div style="text-align: center; margin-bottom: 20px;">
+            <span style="color: #64FF8A; font-weight: bold;">{{ harmonious_count }} Harmonious</span>
+            &nbsp;&nbsp;&nbsp;
+            <span style="color: #FF6B6B; font-weight: bold;">{{ tense_count }} Tense</span>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <div class="chart">
+            <div class="chart-label chart1-label">{{ profile1.name }}</div>
+            <div style="font-size: 48px;">🪐</div>
+        </div>
+        <div class="chart">
+            <div class="chart-label chart2-label">{{ profile2.name }}</div>
+            <div style="font-size: 48px;">🪐</div>
+        </div>
+    </div>
+
+    <h2 style="color: #3B2FBE; border-bottom: 1px solid #e0e0e0; padding-bottom: 5px;">Planetary Aspects</h2>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Planet 1</th>
+                <th>Aspect</th>
+                <th>Planet 2</th>
+                <th>Type</th>
+                <th>Orb</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for aspect in aspects %}
+            <tr class="aspect-row">
+                <td>{{ aspect.planet1 }}</td>
+                <td>
+                    <span class="aspect-symbol {% if aspect.is_harmonious %}harmonious{% else %}tense{% endif %}">
+                        {{ aspect.symbol }}
+                    </span>
+                </td>
+                <td>{{ aspect.planet2 }}</td>
+                <td>
+                    <span style="color: {% if aspect.is_harmonious %}#64FF8A{% else %}#FF6B6B{% endif %};">
+                        {{ aspect.type }}
+                    </span>
+                </td>
+                <td>{{ "{:.1f}".format(aspect.orb) }}°</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <div class="disclaimer">
+            Synastry analysis examines planetary aspects between two charts to assess compatibility.
+            Harmonious aspects (Trine, Sextile, Conjunction) indicate ease, while tense aspects (Square, Opposition) suggest challenges.
+        </div>
+        <div>Generated by Grahvani</div>
+    </div>
+</body>
+</html>

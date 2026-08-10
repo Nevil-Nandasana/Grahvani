@@ -38,6 +38,11 @@ class NotFoundError(GrahvaniException):
         super().__init__(status.HTTP_404_NOT_FOUND, "NOT_FOUND", f"{resource} not found.")
 
 
+class BadRequestError(GrahvaniException):
+    def __init__(self, message: str = "Invalid request."):
+        super().__init__(status.HTTP_400_BAD_REQUEST, "BAD_REQUEST", message)
+
+
 class GuardrailError(GrahvaniException):
     def __init__(self, message: str = "This question falls outside the scope of Vedic astrology."):
         super().__init__(status.HTTP_422_UNPROCESSABLE_ENTITY, "GUARDRAIL_TRIGGERED", message)
@@ -88,3 +93,6 @@ def register_exception_handlers(app: FastAPI) -> None:
             "INTERNAL_SERVER_ERROR",
             "An unexpected error occurred. Please try again.",
         )
+
+
+add_exception_handlers = register_exception_handlers

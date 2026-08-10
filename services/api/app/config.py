@@ -73,6 +73,11 @@ class Settings(BaseSettings):
     LANGFUSE_PUBLIC_KEY: str = ""
     LANGFUSE_HOST: str = "https://cloud.langfuse.com"
 
+    # Observability
+    SENTRY_DSN: str = ""
+    AWS_CLOUDWATCH_LOG_GROUP: str = "grahvani-api-logs"
+    AWS_CLOUDWATCH_LOG_STREAM: str = "production"
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -1,10 +1,8 @@
 ## Recommendation in one line
 
-Build VedAI as a **Flutter mobile app + Python/FastAPI modular-monolith backend + PostgreSQL**, with a licensed/deterministic astrology-calculation service and a retrieval-grounded LLM interpretation layer. Do not use AI to calculate charts, and do not begin with microservices or autonomous agents.
+Build Gruhvani as a **Flutter mobile app + Python/FastAPI modular-monolith backend + PostgreSQL**, with a licensed/deterministic astrology-calculation service and a retrieval-grounded LLM interpretation layer. Do not use AI to calculate charts, and do not begin with microservices or autonomous agents.
 
-This aligns strongly with your experience in Python, FastAPI, PostgreSQL, Docker, Gemini APIs, AI agents, and Flutter, while deliberately adding production skills: RAG evaluation, async jobs, observability, cloud deployment, billing, and secure AI architecture. Your resume shows particularly solid foundations for this direction. :codex-file-citation{path="C:\Users\Nevil Nandasana\Downloads\Dhirubhai_Ambani_University_Resume.pdf" purpose="source"}
-
-I also reviewed the [VedAI repository](https://github.com/MakwanaNitin/VedAI). Its Android/Kotlin UI is a worthwhile prototype, but the current local `VedicEngine` uses hashes and fixed values, so it must be replaced before users receive results.
+This aligns strongly with your experience in Python, FastAPI, PostgreSQL, Docker, Gemini APIs, AI agents, and Flutter, while deliberately adding production skills: RAG evaluation, async jobs, observability, cloud deployment, billing, and secure AI architecture. 
 
 ## Recommended architecture
 
@@ -29,7 +27,7 @@ Use a **modular monolith**, not microservices.
 
 Why:
 
-- VedAI has one team, one core domain, and an early-stage product.
+- Gruhvani has one team, one core domain, and an early-stage product.
 - You can deploy, test, debug, and evolve it much faster.
 - Modules still have clean boundaries, so the calculation worker or AI service can become independent later if load demands it.
 - Microservices would add networking, deployment, observability, and data-consistency complexity before the product needs it.
@@ -75,7 +73,7 @@ Use REST, not GraphQL or gRPC, initially. Your mobile app has predictable resour
 
 ## Accurate astrology engine
 
-This is the most important engineering boundary in VedAI.
+This is the most important engineering boundary in Gruhvani.
 
 Use:
 
@@ -182,7 +180,7 @@ Do not begin with Kubernetes. It is useful only when you have multiple independe
 ## Recommended structure
 
 ```text
-vedai/
+Gruhvani/
   apps/
     mobile/                         # Flutter
       lib/

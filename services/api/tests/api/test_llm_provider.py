@@ -85,7 +85,8 @@ async def test_fallback_provider_switches_to_nvidia_on_billing_error():
         for chunk in mock_nvidia_chunks:
             yield chunk
 
-    with patch.object(NVIDIAProvider, "generate_stream", side_effect=mock_nvidia_stream):
+    with patch("app.modules.interpretation.llm_provider.settings.NVIDIA_API_KEY", "test-nvidia-key"), \
+         patch.object(NVIDIAProvider, "generate_stream", side_effect=mock_nvidia_stream):
         chunks = []
         async for chunk in fallback_provider.generate_stream("sys", "user", rate_limit_key="user_123"):
             chunks.append(chunk)

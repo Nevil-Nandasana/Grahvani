@@ -7,6 +7,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../profile/domain/profile_model.dart';
 import '../../profile/domain/profile_provider.dart';
@@ -115,6 +116,7 @@ class _SynastryScreenState extends ConsumerState<SynastryScreen>
   BirthProfile? _profile1;
   BirthProfile? _profile2;
   late TabController _tabs;
+  bool _isPdfLoading = false;
 
   @override
   void initState() {
@@ -126,6 +128,49 @@ class _SynastryScreenState extends ConsumerState<SynastryScreen>
   void dispose() {
     _tabs.dispose();
     super.dispose();
+  }
+
+  Future<void> _exportPdf(BuildContext context) async {
+    if (_profile1 == null || _profile2 == null) return;
+
+    setState(() => _isPdfLoading = true);
+    try {
+      final dio = ref.read(apiClientProvider);
+      final response = await dio.post<Map<String, dynamic>>(
+        '/api/v1/charts/synastry/export-pdf',
+        data: {
+          'profile1_id': _profile1!.id,
+          'profile2_id': _profile2!.id,
+        },
+      );
+      final pdfUrl = response.data?['pdf_url'] as String? ?? response.data?['url'] as String?;
+      if (pdfUrl != null) {
+        final uri = Uri.parse(pdfUrl);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('PDF export is a Premium feature.'),
+              backgroundColor: Color(0xFF3B2FBE),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF export failed: ${e.toString().replaceAll('ApiException', '').trim()}'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isPdfLoading = false);
+    }
   }
 
   @override
@@ -141,6 +186,25 @@ class _SynastryScreenState extends ConsumerState<SynastryScreen>
         title: const Text('Synastry',
             style:
                 TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        actions: [
+          _isPdfLoading
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 14),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xFFFFD700),
+                    ),
+                  ),
+                )
+              : IconButton(
+                  icon: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFFFFD700)),
+                  tooltip: 'Export PDF',
+                  onPressed: (_profile1 != null && _profile2 != null) ? () => _exportPdf(context) : null,
+                ),
+        ],
         bottom: TabBar(
           controller: _tabs,
           indicatorColor: const Color(0xFF5B4FDB),

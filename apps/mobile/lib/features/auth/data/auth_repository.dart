@@ -38,16 +38,22 @@ class AuthRepository {
 
   /// Sign in with Google OAuth2 → Firebase credential → backend verify-token.
   Future<Map<String, dynamic>> signInWithGoogle() async {
-    final googleUser = await _googleSignIn.signIn();
-    if (googleUser == null) throw Exception('Google Sign-In cancelled.');
+    UserCredential userCredential;
+    if (kIsWeb) {
+      final googleProvider = GoogleAuthProvider();
+      userCredential = await _firebaseAuth.signInWithPopup(googleProvider);
+    } else {
+      final googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) throw Exception('Google Sign-In cancelled.');
 
-    final googleAuth = await googleUser.authentication;
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
+      final googleAuth = await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
 
-    final userCredential = await _firebaseAuth.signInWithCredential(credential);
+      userCredential = await _firebaseAuth.signInWithCredential(credential);
+    }
     return _verifyWithBackend(userCredential);
   }
 

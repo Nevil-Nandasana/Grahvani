@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../data/auth_repository.dart';
 import '../domain/auth_state.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -83,8 +84,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   _buildDivider(),
                   const SizedBox(height: 16),
                   _buildPhoneButton(context),
-                  const SizedBox(height: 16),
-                  _buildDemoBypassButton(context),
                 ] else if (!_otpSent) ...[
                   _buildPhoneInput(context, isLoading),
                 ] else ...[
@@ -280,43 +279,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
-  Widget _buildDemoBypassButton(BuildContext context) {
-    return _AuthButton(
-      label: 'Demo / Guest Access (Local Testing)',
-      icon: const Icon(Icons.flash_on, color: Color(0xFFFBBF24), size: 20),
-      isLoading: false,
-      onPressed: () {
-        ref.read(authRepositoryProvider).consentStateNotifier.value = true;
-        context.go('/home');
-      },
-    );
-  }
-
   Widget _buildErrorBanner(String rawMessage) {
-    final isApiKeyError = rawMessage.contains('api-key-not-valid');
-    final message = isApiKeyError
-        ? 'Firebase API key is not configured in firebase_options.dart yet. Tap "Demo / Guest Access" above to test all features locally.'
-        : rawMessage.replaceAll('Exception: ', '');
+    var message = rawMessage.replaceAll('Exception: ', '');
+    if (message.contains('operation-not-allowed')) {
+      message = 'SMS is not allowed for this phone number/region. Enable Phone Auth in Firebase Console or use test number (+91 9999999999).';
+    } else if (message.contains('billing-not-enabled')) {
+      message = 'Real SMS requires Firebase Blaze billing. Use a Test Phone Number (+91 9999999999 with code 123456) or Google Sign-In for free testing!';
+    }
 
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isApiKeyError
-            ? Colors.amber.withOpacity(0.12)
-            : Colors.red.withOpacity(0.12),
+        color: Colors.red.withOpacity(0.12),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isApiKeyError
-              ? Colors.amber.withOpacity(0.4)
-              : Colors.red.withOpacity(0.3),
-        ),
+        border: Border.all(color: Colors.red.withOpacity(0.3)),
       ),
       child: Text(
         message,
-        style: TextStyle(
-          color: isApiKeyError ? const Color(0xFFFBBF24) : Colors.redAccent,
-          fontSize: 13,
-        ),
+        style: const TextStyle(color: Colors.redAccent, fontSize: 13),
         textAlign: TextAlign.center,
       ),
     );

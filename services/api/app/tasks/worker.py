@@ -17,3 +17,4 @@ dramatiq.set_broker(broker)
 # Import all task modules so Dramatiq discovers them
 from app.tasks import ephemeris  # noqa: E402, F401
 from app.tasks import pdf_export  # noqa: E402, F401
+from app.tasks import transit_monitor  # noqa: E402, F401

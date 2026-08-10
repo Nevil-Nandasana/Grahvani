@@ -5,6 +5,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../domain/chart_model.dart';
 import '../domain/chart_provider.dart';
@@ -44,9 +45,10 @@ class VarshaphalScreen extends ConsumerStatefulWidget {
 }
 
 class _VarshaphalScreenState extends ConsumerState<VarshaphalScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTibrationStateMixin {
   late TabController _tabs;
   bool _isLoading = false;
+  bool _isPdfLoading = false;
   String? _errorMsg;
   VarshaphalData? _data;
 
@@ -123,6 +125,49 @@ class _VarshaphalScreenState extends ConsumerState<VarshaphalScreen>
     return 'With $varsesha as Varsesha (year lord), ${themes[varsesha] ?? 'transformation and growth unfold'}.';
   }
 
+  Future<void> _exportPdf(BuildContext context) async {
+    if (_data == null) return;
+
+    setState(() => _isPdfLoading = true);
+    try {
+      final dio = ref.read(apiClientProvider);
+      final response = await dio.post<Map<String, dynamic>>(
+        '/api/v1/charts/varshaphal/export-pdf',
+        data: {
+          'profile_id': widget.profileId,
+          'year': _data!.year,
+        },
+      );
+      final pdfUrl = response.data?['pdf_url'] as String? ?? response.data?['url'] as String?;
+      if (pdfUrl != null) {
+        final uri = Uri.parse(pdfUrl);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('PDF export is a Premium feature.'),
+              backgroundColor: Color(0xFF3B2FBE),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF export failed: ${e.toString().replaceAll('ApiException', '').trim()}'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isPdfLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final year = ref.watch(_varshaphalYearProvider);
@@ -146,6 +191,25 @@ class _VarshaphalScreenState extends ConsumerState<VarshaphalScreen>
                     color: Color(0xFF6B6B99), fontSize: 11)),
           ],
         ),
+        actions: [
+          _isPdfLoading
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 14),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xFFFFD700),
+                    ),
+                  ),
+                )
+              : IconButton(
+                  icon: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFFFFD700)),
+                  tooltip: 'Export PDF',
+                  onPressed: _data != null ? () => _exportPdf(context) : null,
+                ),
+        ],
         actions: [
           // Year picker
           IconButton(

@@ -5,10 +5,13 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+import tempfile
+import os
+from pathlib import Path
 
 from app.core.exceptions import NotFoundError
 from app.core.security import CurrentUser
@@ -23,6 +26,10 @@ from app.tasks.transit_monitor import (
 )
 
 router = APIRouter(prefix="", tags=["Transits & Sade Sati"])
+
+# Directory to store generated PDFs
+PDF_STORAGE = Path(tempfile.gettempdir()) / "grahvani_pdfs"
+PDF_STORAGE.mkdir(exist_ok=True)
 
 
 # ─── Pydantic Models ─────────────────────────────────────────────────────────
@@ -96,6 +103,48 @@ def _calculate_phase_dates(phase: str, moon_sign: str) -> tuple[Optional[str], O
 
 
 # ─── Endpoints ───────────────────────────────────────────────────────────────
+
+@router.post(
+    "/sade-sati/export-pdf",
+    status_code=status.HTTP_200_OK,
+    response_model=Dict[str, Any]
+)
+async def export_sade_sati_pdf(
+    profile_id: UUID,
+    current_user: CurrentUser,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Generate and return a PDF report for Sade Sati (Saturn Transit) analysis.
+    Returns a URL to download the PDF.
+    """
+    # Get profile
+    profile = await _get_profile_for_user(profile_id, UUID(current_user["uid"]), db)
+    
+    # Get Sade Sati data
+    sade_sati_data = await get_sade_sati_status(profile_id, current_user, db)
+    
+    # Generate PDF
+    try:
+        from app.modules.transits.pdf_service import generate_sade_sati_pdf
+        pdf_path = await generate_sade_sati_pdf(
+            profile=profile,
+            sade_sati_data=sade_sati_data
+        )
+        
+        # Return PDF URL (in production, this would be a cloud storage URL)
+        pdf_url = f"/static/pdfs/{os.path.basename(pdf_path)}"
+        return {
+            "success": True,
+            "pdf_url": pdf_url,
+            "message": "PDF generated successfully"
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"PDF generation failed: {str(e)}"
+        )
+
 
 @router.get(
     "/sade-sati/{profile_id}",

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kundali Milan Report - {{ profile1.name }} & {{ profile2.name }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1cm;
+        }
+        body {
+            font-family: 'Noto Sans', 'DejaVu Sans', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #FFD700;
+            padding-bottom: 10px;
+        }
+        .header h1 {
+            color: #3B2FBE;
+            margin: 0;
+            font-size: 24px;
+        }
+        .header .subtitle {
+            color: #6B6B99;
+            font-size: 16px;
+            margin: 5px 0 0 0;
+        }
+        .profiles {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        .profile {
+            width: 48%;
+            padding: 15px;
+            background-color: #f9f9ff;
+            border-radius: 8px;
+            border: 1px solid #e0e0ff;
+        }
+        .profile h2 {
+            color: #3B2FBE;
+            border-bottom: 1px solid #e0e0ff;
+            padding-bottom: 5px;
+            margin-top: 0;
+        }
+        .profile p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        .profile .label {
+            font-weight: bold;
+            color: #6B6B99;
+        }
+        .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 3px solid #FFD700;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 20px auto;
+            background-color: #fff;
+        }
+        .score-circle .score {
+            font-size: 36px;
+            font-weight: bold;
+            color: #3B2FBE;
+        }
+        .score-circle .total {
+            font-size: 14px;
+            color: #6B6B99;
+        }
+        .compatibility {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .compatibility .rating {
+            font-size: 20px;
+            font-weight: bold;
+            color: #3B2FBE;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f0f0ff;
+            color: #3B2FBE;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9ff;
+        }
+        .koota-row {
+            font-size: 14px;
+        }
+        .koota-name {
+            font-weight: bold;
+        }
+        .koota-sanskrit {
+            color: #6B6B99;
+            font-style: italic;
+        }
+        .progress-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            margin: 5px 0;
+        }
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #FFD700;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #6B6B99;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 10px;
+        }
+        .footer .disclaimer {
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Kundali Milan Report</h1>
+        <div class="subtitle">Ashtakoot Compatibility Analysis</div>
+    </div>
+
+    <div class="profiles">
+        <div class="profile">
+            <h2>{{ profile1.name }}</h2>
+            <p><span class="label">Date of Birth:</span> {{ profile1.date_of_birth }} {{ profile1.time_of_birth }}</p>
+            <p><span class="label">Place of Birth:</span> {{ profile1.place_of_birth }}</p>
+            <p><span class="label">Moon Sign:</span> {{ profile1.moon_sign }}</p>
+            <p><span class="label">Nakshatra:</span> {{ profile1.nakshatra }}</p>
+        </div>
+        
+        <div class="profile">
+            <h2>{{ profile2.name }}</h2>
+            <p><span class="label">Date of Birth:</span> {{ profile2.date_of_birth }} {{ profile2.time_of_birth }}</p>
+            <p><span class="label">Place of Birth:</span> {{ profile2.place_of_birth }}</p>
+            <p><span class="label">Moon Sign:</span> {{ profile2.moon_sign }}</p>
+            <p><span class="label">Nakshatra:</span> {{ profile2.nakshatra }}</p>
+        </div>
+    </div>
+
+    <div class="compatibility">
+        <div class="score-circle">
+            <div class="score">{{ "{:.1f}".format(total_score) }}</div>
+            <div class="total">/ 36</div>
+        </div>
+        <div class="rating">
+            {% if total_score >= 28 %}
+                Excellent Match
+            {% elif total_score >= 24 %}
+                Very Good Match
+            {% elif total_score >= 18 %}
+                Good Match
+            {% elif total_score >= 12 %}
+                Average Match
+            {% else %}
+                Challenging Match
+            {% endif %}
+        </div>
+    </div>
+
+    <h2 style="color: #3B2FBE; border-bottom: 1px solid #e0e0e0; padding-bottom: 5px;">Ashtakoot Scores</h2>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Koota</th>
+                <th>Sanskrit</th>
+                <th>Aspect</th>
+                <th>Max Points</th>
+                <th>Obtained</th>
+                <th>Score</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="koota-row">
+                <td>
+                    <div class="koota-name">Varna</div>
+                    <div class="koota-sanskrit">वर्ण</div>
+                </td>
+                <td>Spiritual Compatibility</td>
+                <td>1</td>
+                <td>{{ ashtakoot.varna }}</td>
+                <td>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: {{ (ashtakoot.varna / 1) * 100 }}%"></div>
+                    </div>
+                </td>
+            </tr>
+            
+            <tr class="koota-row">
+                <td>
+                    <div class="koota-name">Vashya</div>
+                    <div class="koota-sanskrit">वश्य</div>
+                </td>
+                <td>Mutual Attraction</td>
+                <td>2</td>
+                <td>{{ ashtakoot.vashya }}</td>
+                <td>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: {{ (ashtakoot.vashya / 2) * 100 }}%"></div>
+                    </div>
+                </td>
+            </tr>
+            
+            <tr class="koota-row">
+                <td>
+                    <div class="koota-name">Tara</div>
+                    <div class="koota-sanskrit">तारा</div>
+                </td>
+                <td>Health & Longevity</td>
+                <td>3</td>
+                <td>{{ ashtakoot.tara }}</td>
+                <td>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: {{ (ashtakoot.tara / 3) * 100 }}%"></div>
+                    </div>
+                </td>
+            </tr>
+            
+            <tr class="koota-row">
+                <td>
+                    <div class="koota-name">Yoni</div>
+                    <div class="koota-sanskrit">योनि</div>
+                </td>
+                <td>Sexual Compatibility</td>
+                <td>4</td>
+                <td>{{ ashtakoot.yoni }}</td>
+                <td>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: {{ (ashtakoot.yoni / 4) * 100 }}%"></div>
+                    </div>
+                </td>
+            </tr>
+            
+            <tr class="koota-row">
+                <td>
+                    <div class="koota-name">Graha Maitri</div>
+                    <div class="koota-sanskrit">ग्रह मैत्री</div>
+                </td>
+                <td>Mental Compatibility</td>
+                <td>5</td>
+                <td>{{ ashtakoot.graha_maitri }}</td>
+                <td>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: {{ (ashtakoot.graha_maitri / 5) * 100 }}%"></div>
+                    </div>
+                </td>
+            </tr>
+            
+            <tr class="koota-row">
+                <td>
+                    <div class="koota-name">Gana</div>
+                    <div class="koota-sanskrit">गण</div>
+                </td>
+                <td>Temperament</td>
+                <td>6</td>
+                <td>{{ ashtakoot.gana }}</td>
+                <td>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: {{ (ashtakoot.gana / 6) * 100 }}%"></div>
+                    </div>
+                </td>
+            </tr>
+            
+            <tr class="koota-row">
+                <td>
+                    <div class="koota-name">Bhakoot</div>
+                    <div class="koota-sanskrit">भकूट</div>
+                </td>
+                <td>Emotional Compatibility</td>
+                <td>7</td>
+                <td>{{ ashtakoot.bhakoot }}</td>
+                <td>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: {{ (ashtakoot.bhakoot / 7) * 100 }}%"></div>
+                    </div>
+                </td>
+            </tr>
+            
+            <tr class="koota-row">
+                <td>
+                    <div class="koota-name">Nadi</div>
+                    <div class="koota-sanskrit">नाड़ी</div>
+                </td>
+                <td>Health & Genetic</td>
+                <td>8</td>
+                <td>{{ ashtakoot.nadi }}</td>
+                <td>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: {{ (ashtakoot.nadi / 8) * 100 }}%"></div>
+                    </div>
+                </td>
+            </tr>
+            
+            <tr style="font-weight: bold;">
+                <td colspan="3">Total</td>
+                <td>36</td>
+                <td>{{ "{:.1f}".format(total_score) }}</td>
+                <td>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: {{ (total_score / 36) * 100 }}%"></div>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <div class="disclaimer">
+            This report is based on the Ashtakoot (8-fold) compatibility system of Vedic astrology.
+            A score of 18 or above is generally considered compatible.
+        </div>
+        <div>Generated by Grahvani</div>
+    </div>
+</body>
+</html>
