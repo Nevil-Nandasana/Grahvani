@@ -72,7 +72,7 @@ class ChatRepository {
           streamController.close();
           if (!responseCompleter.isCompleted) responseCompleter.complete();
         },
-        onError: (e) {
+        onError: (Object e) {
           streamController.addError(e);
           if (!responseCompleter.isCompleted) responseCompleter.completeError(e);
         },
