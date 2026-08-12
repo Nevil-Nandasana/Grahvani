@@ -1,26 +1,57 @@
 #!/bin/bash
-# Grahvani Environment Startup Script
+# Grahvani Environment Startup Script (Linux / macOS)
 
-echo "Starting Grahvani Backend Environment..."
+echo "=================================================="
+echo " 🪐 Grahvani Backend Startup Script"
+echo "=================================================="
 
-# 1. Build and start the docker-compose stack in detached mode
-echo "Starting PostgreSQL, Redis, API, and Background Worker containers..."
-docker-compose up --build -d
+# 1. Check if Docker is running
+echo "[1/4] Checking Docker status..."
+if ! docker info > /dev/null 2>&1; then
+    echo ""
+    echo "❌ ERROR: Docker Engine is not running!"
+    echo "   Details: Docker daemon is stopped or inaccessible."
+    echo ""
+    echo "👉 How to fix:"
+    echo "   Option A: Start Docker Desktop (or 'sudo systemctl start docker') and re-run ./run.sh"
+    echo "   Option B: Run FastAPI backend locally using Python:"
+    echo "             cd services/api"
+    echo "             poetry run uvicorn app.main:app --reload --port 8000"
+    echo ""
+    exit 1
+fi
+echo "✔ Docker Engine is running."
 
-# 2. Wait for the database to be ready
-echo "Waiting for the database to initialize (10 seconds)..."
+# 2. Determine compose command
+COMPOSE_CMD="docker compose"
+if ! docker compose version > /dev/null 2>&1; then
+    COMPOSE_CMD="docker-compose"
+fi
+
+# 3. Build and start containers
+echo "[2/4] Starting PostgreSQL, Redis, API, and Background Worker containers..."
+$COMPOSE_CMD up --build -d
+if [ $? -ne 0 ]; then
+    echo "❌ ERROR: Failed to start Docker containers."
+    exit 1
+fi
+
+# 4. Wait for database
+echo "[3/4] Waiting for services to initialize (10 seconds)..."
 sleep 10
 
-# 3. Run database migrations
-echo "Applying database migrations using Alembic..."
-docker-compose exec api alembic upgrade head
+# 5. Apply migrations
+echo "[4/4] Applying database migrations using Alembic..."
+$COMPOSE_CMD exec api alembic upgrade head
 
-# 4. Display running containers
+# 6. Display Status
 echo "----------------------------------------"
-echo "Containers Running:"
-docker-compose ps
+echo "Containers Status:"
+$COMPOSE_CMD ps
 echo "----------------------------------------"
-echo "Grahvani Backend is running!"
-echo "API URL: http://localhost:8000"
-echo "API Docs: http://localhost:8000/docs"
-echo "To view logs, run: docker-compose logs -f"
+echo "🚀 Grahvani Backend is successfully running!"
+echo "   API Base URL   : http://localhost:8000"
+echo "   Interactive Docs: http://localhost:8000/docs"
+echo "   ReDoc           : http://localhost:8000/redoc"
+echo ""
+echo "💡 To view container logs: $COMPOSE_CMD logs -f"
