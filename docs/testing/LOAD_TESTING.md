@@ -1,192 +1,170 @@
 # Load and Concurrency Testing Specification (Locust)
 
 ## Purpose
-This document defines the load testing strategy for the Grahvani backend API, including target performance SLOs, Locust test scenarios, infrastructure scaling validation procedures, and pre-release load test sign-off criteria.
+This document defines the load testing architecture, execution procedures, performance Service Level Objectives (SLOs), and results interpretation for the Grahvani FastAPI backend service (`services/api`).
 
 ## Scope
-Covers HTTP API endpoints served by the FastAPI container and SSE streaming endpoints. Does not cover client-side performance (Flutter rendering frames) or database internals.
+Applies to HTTP REST and Server-Sent Event (SSE) streaming API endpoints served by the FastAPI application. Covers concurrent user simulation up to 500+ users across multiple user tiers (Free, Trial, Premium).
 
 ---
 
-## 1. Performance Service Level Objectives (SLOs)
+## 1. Prerequisites & Installation
 
-These targets must be met in a load test before any production release:
+### Prerequisites
+- Python 3.12+
+- Poetry package manager installed
+- Target Grahvani API server running (e.g. `http://localhost:8000` locally or a staging environment)
 
-| Endpoint | Target p50 | Target p95 | Target p99 | Max Error Rate |
-| :--- | :--- | :--- | :--- | :--- |
-| `GET /api/v1/profiles` | < 50 ms | < 120 ms | < 250 ms | < 0.1% |
-| `GET /api/v1/profiles/{id}/charts` | < 80 ms | < 200 ms | < 400 ms | < 0.1% |
-| `POST /api/v1/profiles/{id}/charts/calculate` | < 200 ms (enqueue) | < 500 ms | < 1,000 ms | < 0.1% |
-| `POST /api/v1/chat/stream` (TTFB) | < 1,200 ms | < 2,500 ms | < 4,000 ms | < 1.0% |
-| `GET /api/v1/billing/entitlements` | < 40 ms | < 100 ms | < 200 ms | < 0.1% |
-
-**Time-To-First-Byte (TTFB) for SSE**: The time from request received to first SSE token delivered. LLM inference latency dominates this -- the 1.2 second p50 target reflects the LLM provider's typical TTFB.
-
----
-
-## 2. Load Scenarios
-
-### Scenario A: Baseline API Load (Normal Traffic)
-Simulate 200 concurrent users browsing charts and reading their Dasha timeline.
-
-### Scenario B: AI Chat Burst (Peak Engagement)
-Simulate 100 concurrent users simultaneously opening SSE connections for AI chat.
-
-### Scenario C: Launch Day Spike (Stress Test)
-Simulate 1,000 concurrent users over a 5-minute ramp to verify App Runner auto-scaling.
-
----
-
-## 3. Locust Test Implementation
-
-```python
-# tests/load/locustfile.py
-from locust import HttpUser, task, between, events
-import random, json
-
-# Test JWT tokens (pre-generated for staging test accounts)
-TEST_TOKENS = [
-    "Bearer eyJ...",  # Load from tests/load/test_tokens.json
-]
-
-TEST_PROFILE_IDS = [
-    "e4b2d184-7a33-4f9e-a892-000000000001",
-    "e4b2d184-7a33-4f9e-a892-000000000002",
-    # ... 20 pre-seeded staging profiles
-]
-
-class GrahvaniUser(HttpUser):
-    """Simulates a typical Grahvani user session."""
-    wait_time = between(1, 5)   # Think time between requests (seconds)
-
-    def on_start(self):
-        """Called when simulated user starts. Pick a random test identity."""
-        self.token = random.choice(TEST_TOKENS)
-        self.profile_id = random.choice(TEST_PROFILE_IDS)
-        self.headers = {"Authorization": self.token}
-
-    @task(5)
-    def fetch_chart(self):
-        """Most common action: view birth chart. Weight=5 (most frequent)."""
-        with self.client.get(
-            f"/api/v1/profiles/{self.profile_id}/charts",
-            headers=self.headers,
-            catch_response=True,
-            name="GET /api/v1/profiles/{id}/charts",
-        ) as resp:
-            if resp.status_code != 200:
-                resp.failure(f"Chart fetch failed: {resp.status_code}")
-
-    @task(3)
-    def fetch_dasha(self):
-        """View Dasha timeline. Weight=3."""
-        self.client.get(
-            f"/api/v1/profiles/{self.profile_id}/dashas",
-            headers=self.headers,
-            name="GET /api/v1/profiles/{id}/dashas",
-        )
-
-    @task(2)
-    def check_entitlement(self):
-        """Check subscription tier. Weight=2."""
-        self.client.get(
-            "/api/v1/billing/entitlements",
-            headers=self.headers,
-            name="GET /api/v1/billing/entitlements",
-        )
-
-    @task(1)
-    def stream_ai_chat(self):
-        """
-        AI chat SSE stream. Weight=1 (least frequent, most expensive).
-        Measures Time-To-First-Byte using streaming response.
-        """
-        questions = [
-            "What does my Sun in the 10th house mean?",
-            "Tell me about my current Maha Dasha period.",
-            "What is the significance of my Moon in Aries?",
-        ]
-        with self.client.post(
-            "/api/v1/chat/stream",
-            json={
-                "session_id": "00000000-0000-0000-0000-000000000001",
-                "question": random.choice(questions),
-            },
-            headers={**self.headers, "Accept": "text/event-stream"},
-            stream=True,
-            catch_response=True,
-            name="POST /api/v1/chat/stream (SSE)",
-        ) as resp:
-            first_token_received = False
-            for chunk in resp.iter_content(chunk_size=512):
-                if not first_token_received and b"token" in chunk:
-                    first_token_received = True
-                    # TTFB is automatically measured by Locust's response_time at this point
-                if b'"done"' in chunk:
-                    break  # Stop reading after done event
-```
-
----
-
-## 4. Running Load Tests
+### Installation
+Locust is included as a dev dependency in `services/api/pyproject.toml`. To ensure all dependencies are installed:
 
 ```bash
-# Install Locust
-pip install locust
+cd services/api
+poetry install --with dev
+```
 
-# Scenario A: 200 users, 5 minute ramp, against staging
-locust -f tests/load/locustfile.py \
-  --host https://staging.api.grahvani.app \
-  --users 200 \
-  --spawn-rate 10 \
-  --run-time 5m \
-  --headless \
-  --html load_test_report.html \
-  --csv load_test_results
-
-# Scenario C: Launch day stress test (1000 users, 5 min ramp)
-locust -f tests/load/locustfile.py \
-  --host https://staging.api.grahvani.app \
-  --users 1000 \
-  --spawn-rate 50 \
-  --run-time 10m \
-  --headless \
-  --html stress_test_report.html
+To verify Locust installation:
+```bash
+poetry run locust --version
 ```
 
 ---
 
-## 5. Auto-Scaling Validation
+## 2. Target Performance Service Level Objectives (SLOs)
 
-During Scenario C (1000 users), monitor App Runner instance count in CloudWatch:
-- Expect: scaling from 2 to 8-10 instances within 90 seconds of ramp start.
-- Alert if: p95 response time exceeds SLO during scale-up period (scale-up lag).
+All backend endpoints must meet the following performance benchmarks under a 500 concurrent user load test before major releases:
 
----
+| Endpoint | Target p50 | Target p95 | Target p99 | Max Non-Quota Error Rate |
+| :--- | :--- | :--- | :--- | :--- |
+| `GET /api/v1/billing/entitlements` | < 40 ms | < 100 ms | < 200 ms | < 0.1% |
+| `POST /api/v1/billing/trial/activate` | < 100 ms | < 250 ms | < 500 ms | < 0.1% |
+| `GET /api/v1/profiles` | < 50 ms | < 120 ms | < 250 ms | < 0.1% |
+| `POST /api/v1/charts/dignities` | < 50 ms | < 150 ms | < 300 ms | < 0.1% |
+| `POST /api/v1/charts/calculate` (Enqueue) | < 200 ms | < 500 ms | < 1,000 ms | < 0.1% |
+| `POST /api/v1/chat/stream` (TTFB) | < 1,200 ms | < 2,500 ms | < 4,000 ms | < 1.0% |
+| `POST /api/v1/chat/stream` (Total Stream) | < 3,500 ms | < 7,000 ms | < 10,000 ms | < 1.0% |
+| `POST /api/v1/interpretation/query` (TTFB) | < 1,200 ms | < 2,500 ms | < 4,000 ms | < 1.0% |
 
-## 6. Pre-Release Sign-Off Criteria
-
-Load tests must be run and signed off before every major release:
-
-- [ ] All SLO targets met at Scenario B load (100 concurrent users)
-- [ ] Error rate < 1% for SSE chat endpoint under Scenario B
-- [ ] App Runner scales to >= 4 instances under Scenario C within 2 minutes
-- [ ] No RDS connection pool exhaustion errors in CloudWatch during Scenario C
-- [ ] Redis memory usage stays below 80% during peak load
-
----
-
-## 7. Rationale
-
-Load testing is run against staging (not production) because:
-1. Production test traffic would consume real LLM API quota and incur real costs.
-2. The staging backend uses the same App Runner configuration as production, giving representative scaling behaviour.
-3. Staging test user tokens are pre-seeded with free-tier entitlements to accurately simulate the majority of users.
+> **Note on TTFB (Time-To-First-Byte)**: Measures the time elapsed between client request transmission and the receipt of the first SSE token chunk (`data: {"event": "delta", ...}`). This reflects hybrid search retrieval, cross-encoder reranking, and initial LLM model latency.
 
 ---
 
-## 8. Related Documents
+## 3. Running Load Tests
 
-- [TESTING_STRATEGY.md](TESTING_STRATEGY.md) -- Overall testing philosophy
-- [infrastructure/MONITORING.md](../infrastructure/MONITORING.md) -- CloudWatch metrics and alarms
-- [infrastructure/DEPLOYMENT.md](../infrastructure/DEPLOYMENT.md) -- App Runner auto-scaling configuration
+### 3.1 Headless Mode Execution (Automated CI/CD Runs)
+
+To run a headless load test simulating 500 concurrent users with a spawn rate of 50 users/sec for 1 minute:
+
+```bash
+cd services/api
+poetry run locust -f tests/load/locustfile.py \
+  --headless \
+  -u 500 \
+  -r 50 \
+  --run-time 1m \
+  --host http://localhost:8000 \
+  --html load_test_report.html \
+  --csv load_test_metrics
+```
+
+#### Command Options Reference:
+- `-f tests/load/locustfile.py`: Path to the Locust test script.
+- `--headless`: Runs Locust without launching the Web UI (ideal for CLI/CI scripts).
+- `-u 500` (`--users`): Peak number of concurrent simulated users.
+- `-r 50` (`--spawn-rate`): Users spawned per second during ramp-up.
+- `--run-time 1m`: Total test duration (e.g., `1m`, `5m`, `10m`).
+- `--host http://localhost:8000`: Base URL of the target API service.
+- `--html report.html`: Generates a standalone HTML performance report with charts.
+- `--csv metrics`: Exports raw CSV latency, failure, and throughput data.
+
+### 3.2 Interactive Web UI Execution
+
+To launch Locust with its interactive web interface:
+
+```bash
+cd services/api
+poetry run locust -f tests/load/locustfile.py --host http://localhost:8000 --web-port 8089
+```
+
+1. Open your browser and navigate to `http://localhost:8089`.
+2. Enter the target number of users (e.g. `500`) and spawn rate (e.g. `50`).
+3. Click **Start swarming** to initiate real-time graph tracking.
+4. Monitor live requests per second (RPS), response time percentiles (p50, p95, p99), and failure rates.
+
+---
+
+## 4. Test Suite Architecture & User Classes
+
+The Locust script in `services/api/tests/load/locustfile.py` implements a multi-tier user model to reflect realistic production traffic distribution:
+
+```
+                  GrahvaniUserBase (Abstract HttpUser)
+                                   │
+         ┌─────────────────────────┼─────────────────────────┐
+         ▼                         ▼                         ▼
+     FreeUser                 TrialUser                 PremiumUser
+   (Weight: 60%)            (Weight: 20%)             (Weight: 20%)
+   - 3 queries/day          - 100 queries/day         - 100 queries/day
+   - Trial activation       - Chart calculation       - RAG SSE streaming
+   - Entitlement checks     - Dignities endpoint      - Dignities calculation
+```
+
+### Authentication Bypass
+Load tests use `Authorization: Bearer demo-token-<tier>-<id>` headers. When `APP_ENV == "development"`, `app/core/security.py` automatically intercepts `demo-` tokens and bypasses external Firebase verification, enabling high-concurrency performance testing without third-party network bottlenecks.
+
+### Custom SSE Instrumentation
+Locust's standard HTTP client measures response time up to initial response headers or full content download. For Server-Sent Events (SSE), `locustfile.py` utilizes custom `events.request.fire` hooks:
+
+1. **`SSE_TTFB`**: Fired as soon as the first `data: ` line containing content is received.
+2. **`SSE_STREAM`**: Fired when the `done` event is received or stream closes.
+3. **`SSE_QUOTA`**: Fired when quota rate limit (HTTP 429 / `ENTITLEMENT_REQUIRED`) is hit.
+
+### Quota Limit (HTTP 429) Handling
+Free tier users are capped at 3 daily AI queries. In load tests, when a `FreeUser` receives an `ENTITLEMENT_REQUIRED` error (HTTP 429 or status 400 with entitlement detail), `locustfile.py` captures the event as `response.success()`. This ensures that rate limiting mechanisms are validated without distorting system error statistics.
+
+---
+
+## 5. Interpreting Results & Troubleshooting
+
+### 5.1 Analyzing Latency Metrics
+- **TTFB vs Total Duration**:
+  - High `SSE_TTFB` (> 2,500 ms p95): Indicates slowdown in vector search (`text-embedding-004`), BGE cross-encoder reranking, or LLM prompt construction.
+  - High `SSE_STREAM` (> 7,000 ms p95): Indicates slow token generation from the underlying LLM provider or network socket buffering.
+- **Chart Endpoint Latency**:
+  - If `POST /api/v1/charts/dignities` or `GET /api/v1/profiles` exceeds 100 ms p95, inspect database index coverage or CPU saturation during Swiss Ephemeris calculations.
+
+### 5.2 Distinguishing Rate Limits from System Failures
+- **Expected Rate Limits**: HTTP 429 or `ENTITLEMENT_REQUIRED` errors indicate that user quotas are functioning properly.
+- **System Failures**: HTTP 500 (Internal Server Error), HTTP 502/503 (Bad Gateway / Service Unavailable), or connection timeouts indicate backend resource exhaustion.
+
+### 5.3 Troubleshooting Bottlenecks
+1. **PostgreSQL Connection Exhaustion**:
+   - Symptom: HTTP 500 errors with `TooManyConnectionsError` or `asyncpg.exceptions.TooManyConnectionsError`.
+   - Fix: Increase DB connection pool size in `app/core/db.py` or scale `pgBouncer`.
+2. **Redis Task Queue Congestion**:
+   - Symptom: High latency in `POST /api/v1/charts/calculate` job execution.
+   - Fix: Increase Dramatiq worker concurrency or scale Redis instance memory.
+3. **App Runner / CPU Scaling Lag**:
+   - Symptom: Response time spike during initial user ramp up.
+   - Fix: Adjust auto-scaling min instances or decrease target CPU threshold in deployment config.
+
+---
+
+## 6. Pre-Release Load Test Sign-Off Checklist
+
+Before approving any major release to production:
+
+- [ ] Run 500 user headless load test for at least 5 minutes (`poetry run locust ... -u 500 -r 50 --run-time 5m`).
+- [ ] Verify `GET /api/v1/billing/entitlements` p95 < 100 ms.
+- [ ] Verify `POST /api/v1/charts/dignities` p95 < 150 ms.
+- [ ] Verify `POST /api/v1/chat/stream` TTFB p95 < 2,500 ms.
+- [ ] Confirm non-quota error rate is < 0.1% across all HTTP endpoints.
+- [ ] Export HTML report (`load_test_report.html`) and archive in `docs/testing/reports/`.
+
+---
+
+## Related Documents
+- [TESTING_STRATEGY.md](TESTING_STRATEGY.md) — Risk-weighted testing philosophy
+- [UNIT_TESTS.md](UNIT_TESTS.md) — Unit testing guidelines
+- [INTEGRATION_TESTS.md](INTEGRATION_TESTS.md) — Integration test suite
+- [E2E_TESTS.md](E2E_TESTS.md) — Maestro mobile UI testing
