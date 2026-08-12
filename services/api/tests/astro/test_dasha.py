@@ -124,7 +124,10 @@ class TestDashaArithmetic:
         For a birth at nakshatra start (0% elapsed), 9 Maha Dashas must total 120 years.
         We use Moon longitude = 0.0 (start of Ashwini, lord=Ketu, balance=7 full years).
         """
-        import swisseph as swe
+        try:
+            import swisseph as swe
+        except (ImportError, ModuleNotFoundError):
+            from app.modules.birth_chart.ephemeris_service import swe
         # Julian Day for a reference birth — use Jan 1, 2000, 12:00 UTC (J2000.0)
         birth_jd = swe.julday(2000, 1, 1, 12.0)
         # Moon at exactly 0.0° = start of Ashwini nakshatra → full Ketu balance

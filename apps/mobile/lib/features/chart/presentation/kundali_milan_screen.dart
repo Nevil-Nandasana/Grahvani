@@ -5,12 +5,11 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../profile/domain/profile_model.dart';
 import '../../profile/domain/profile_provider.dart';
-import '../../core/api_client.dart';
+import '../../../core/api_client.dart';
 
 // ─── Ashtakoot Score Model ────────────────────────────────────────────────────
 

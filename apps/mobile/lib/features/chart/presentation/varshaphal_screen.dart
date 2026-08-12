@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/api_client.dart';
 import '../domain/chart_model.dart';
 import '../domain/chart_provider.dart';
 import 'chart_screen.dart';
@@ -45,7 +46,7 @@ class VarshaphalScreen extends ConsumerStatefulWidget {
 }
 
 class _VarshaphalScreenState extends ConsumerState<VarshaphalScreen>
-    with SingleTibrationStateMixin {
+    with SingleTickerProviderStateMixin {
   late TabController _tabs;
   bool _isLoading = false;
   bool _isPdfLoading = false;
@@ -209,8 +210,6 @@ class _VarshaphalScreenState extends ConsumerState<VarshaphalScreen>
                   tooltip: 'Export PDF',
                   onPressed: _data != null ? () => _exportPdf(context) : null,
                 ),
-        ],
-        actions: [
           // Year picker
           IconButton(
             icon: const Icon(Icons.chevron_left, color: Color(0xFF7C6EFA)),

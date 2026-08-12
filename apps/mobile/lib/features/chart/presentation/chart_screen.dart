@@ -1,7 +1,4 @@
 /// Chart Screen — North Indian & South Indian charts, dasha timeline, house bottom sheet
-library;
-
-import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -1346,7 +1343,6 @@ class _AntarDashaRowState extends State<_AntarDashaRow> {
     final antarStart = DateTime.tryParse(widget.antar.startDate);
     final antarEnd = DateTime.tryParse(widget.antar.endDate);
     if (antarStart == null || antarEnd == null) return [];
-    final antarDays = antarEnd.difference(antarStart).inDays.toDouble();
     final antarYears = widget.antar.durationYears;
 
     // Start from the lord's next planet in sequence
