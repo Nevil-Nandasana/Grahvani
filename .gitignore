@@ -1,5 +1,5 @@
-# Python
-__pycache__/
+# Python & Virtual Environments
+**/__pycache__/
 *.py[cod]
 *.pyo
 *.pyd
@@ -12,21 +12,33 @@ build/
 .venv/
 venv/
 env/
+**/.venv/
+**/venv/
+**/env/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
 htmlcov/
 .coverage
 *.cover
 coverage.xml
+**/.coverage
 
-# Environment & Secrets
+# Environment & Secrets (NEVER COMMIT SECRETS)
 .env
 .env.local
 .env.production
+.env.staging
+.env.*.local
+!*.env.example
 *.pem
 *.key
 firebase-service-account.json
+**/firebase-service-account.json
+!firebase-service-account.json.example
 .firebase/
 .firebaserc
 firebase.json
@@ -34,18 +46,16 @@ apps/mobile/firebase.json
 **/google-services.json
 **/GoogleService-Info.plist
 
-# Alembic
-# (keep versions tracked, exclude compiled)
-
-# IDE
+# IDE & OS Files
 .vscode/
 .idea/
 *.iml
 .DS_Store
 Thumbs.db
 
-# Docker
+# Docker & Logs
 *.log
+**/logs/
 
 # Flutter / Dart
 apps/mobile/.dart_tool/
@@ -54,15 +64,15 @@ apps/mobile/.packages
 apps/mobile/.flutter-plugins
 apps/mobile/.flutter-plugins-dependencies
 apps/mobile/pubspec.lock
+**/.dart_tool/
 
-# AWS / Cloud
+# AWS & Cloud / Terraform
 .aws/
 *.tfstate
+*.tfstate.*
 *.tfvars
-terraform.tfstate.backup
+!terraform.tfvars.example
 
-FeatTracking
-description_plan.md
-Simple_des.md
-MULTI_KEY_RATE_LIMITING_PLAN.md
-
+# AI Assistant Workspace State
+.claude
+.agents/
