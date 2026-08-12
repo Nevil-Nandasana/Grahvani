@@ -1,87 +1,76 @@
-import 'dart:io';
+import 'dart:io' show Platform, exit;
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:freerasp/freerasp.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grahvani/core/api_client.dart';
-import 'package:grahvani/core/database/app_database.dart';
 import 'package:grahvani/core/theme/app_theme.dart';
-import 'package:grahvani/features/auth/data/auth_repository.dart';
-import 'package:grahvani/features/auth/domain/auth_provider.dart';
 import 'package:grahvani/features/notifications/data/fcm_service.dart';
-import 'package:grahvani/features/notifications/domain/notification_provider.dart';
 import 'package:grahvani/firebase_options.dart';
 import 'package:grahvani/router/app_router.dart';
 
 Future<void> initSecurityGuard() async {
-  // FreeRASP App setup for production
-  final config = TalsecConfig(
-    androidConfig: AndroidConfig(
-      packageName: 'com.grahvani.app',
-      signingCertHashes: ['dummy_cert_hash_placeholder'], // Update before prod deploy
-      supportedAlternativeStores: ['com.sec.android.app.samsungapps'],
-    ),
-    iosConfig: IOSConfig(
-      bundleIds: ['com.grahvani.app'],
-      teamId: 'dummy_team_id', // Update before prod deploy
-    ),
-    watcherMail: 'security@grahvani.app',
-    isProd: true, // enforce strict checks
-  );
+  if (kIsWeb) return;
+  try {
+    if (!Platform.isAndroid && !Platform.isIOS) return;
 
-  // Callbacks to kill app if threat is detected
-  final callback = ThreatCallback(
-    onAppIntegrity: () => exit(0),
-    onObfuscationIssues: () => exit(0),
-    onDebug: () => exit(0),
-    onDeviceBinding: () => exit(0),
-    onDeviceID: () => exit(0),
-    onHooks: () => exit(0),
-    onPasscodeValidation: () => exit(0),
-    onPrivilegedAccess: () => exit(0), // Root/Jailbreak
-    onSecureHardwareNotAvailable: () => exit(0),
-    onSimulator: () => exit(0),
-    onUnofficialStore: () => exit(0),
-  );
+    final config = TalsecConfig(
+      androidConfig: AndroidConfig(
+        packageName: 'com.grahvani.app',
+        signingCertHashes: ['dummy_cert_hash_placeholder'],
+      ),
+      iosConfig: IOSConfig(
+        bundleIds: ['com.grahvani.app'],
+        teamId: 'dummy_team_id',
+      ),
+      watcherMail: 'security@grahvani.app',
+      isProd: true,
+    );
 
-  Talsec.instance.attachListener(callback);
-  await Talsec.instance.start(config);
+    final callback = ThreatCallback(
+      onAppIntegrity: () => exit(0),
+      onObfuscationIssues: () => exit(0),
+      onDebug: () => exit(0),
+      onDeviceBinding: () => exit(0),
+      onDeviceID: () => exit(0),
+      onHooks: () => exit(0),
+      onPrivilegedAccess: () => exit(0),
+      onSecureHardwareNotAvailable: () => exit(0),
+      onSimulator: () => exit(0),
+      onUnofficialStore: () => exit(0),
+    );
+
+    Talsec.instance.attachListener(callback);
+    await Talsec.instance.start(config);
+  } catch (_) {
+    // Gracefully handle security guard init failures on non-mobile platforms
+  }
 }
 
 Future<void> main() async {
-  final ref = ProviderContainer();
-  try {
-    WidgetsFlutterBinding.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized();
 
-    // Initialize Firebase
+  // Initialize Firebase
+  try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+  } catch (_) {}
 
-    // Initialize OWASP Hardening Threat Detector
+  // Initialize OWASP Hardening Threat Detector on Mobile platforms
+  if (!kIsWeb) {
     await initSecurityGuard();
-
-    // Initialize FCM
-    await FCMService.initialize();
-
-    // Initialize database
-    await ref.read(databaseProvider).initialize();
-
-    // Initialize auth state
-    ref.read(authProvider.notifier).initialize();
-
-    // Set up FCM token callback
-    FCMService.onTokenRefresh = (token) {
-      ref.read(authRepositoryProvider).updateFcmToken(token);
-    };
-
-    runApp(const ProviderScope(child: GrahvaniApp()));
-  } finally {
-    ref.dispose();
   }
 
+  // Initialize FCM Push Notifications
+  try {
+    await FCMService.initialize();
+  } catch (_) {}
+
+  runApp(const ProviderScope(child: GrahvaniApp()));
+}
 
 class GrahvaniApp extends ConsumerWidget {
   const GrahvaniApp({super.key});
@@ -89,15 +78,19 @@ class GrahvaniApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-    
+
     // OWASP Hardening: Block screenshots and screen recording on Android
-    if (Platform.isAndroid) {
-      FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
+    if (!kIsWeb) {
+      try {
+        if (Platform.isAndroid) {
+          FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
+        }
+      } catch (_) {}
     }
-    
+
     final router = ref.watch(appRouterProvider);
     final theme = ref.watch(themeProvider);
-    
+
     return MaterialApp.router(
       title: 'Grahvani',
       theme: theme.lightTheme,

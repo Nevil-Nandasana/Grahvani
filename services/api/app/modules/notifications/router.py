@@ -179,9 +179,9 @@ async def send_test_notification(
 @router.get("/history/{profile_id}", status_code=status.HTTP_200_OK)
 async def get_notification_history(
     profile_id: UUID,
+    current_user: CurrentUser,
     limit: int = 50,
     offset: int = 0,
-    current_user: CurrentUser = Depends(CurrentUser),
     db: AsyncSession = Depends(get_db),
 ):
     """Get notification history for a profile."""

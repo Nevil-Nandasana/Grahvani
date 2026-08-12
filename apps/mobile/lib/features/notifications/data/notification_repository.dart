@@ -34,7 +34,7 @@ class NotificationRepository {
         '/api/v1/notifications/preferences/$profileId',
       );
       final data = response.data?['data'] ?? response.data ?? {};
-      return ProfileNotificationStatus.fromJson(data);
+      return ProfileNotificationStatus.fromJson(data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw ApiException.fromDioException(e);
     }
@@ -51,7 +51,7 @@ class NotificationRepository {
         data: preferences.toJson(),
       );
       final data = response.data?['data'] ?? response.data ?? {};
-      return ProfileNotificationStatus.fromJson(data);
+      return ProfileNotificationStatus.fromJson(data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw ApiException.fromDioException(e);
     }
@@ -64,7 +64,7 @@ class NotificationRepository {
         '/api/v1/notifications/preferences/$profileId/toggle',
       );
       final data = response.data?['data'] ?? response.data ?? {};
-      return ProfileNotificationStatus.fromJson(data);
+      return ProfileNotificationStatus.fromJson(data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw ApiException.fromDioException(e);
     }
@@ -93,8 +93,8 @@ class NotificationRepository {
         queryParameters: {'limit': limit, 'offset': offset},
       );
       final data = response.data?['data'] ?? response.data ?? {};
-      final notifications = data['notifications'] as List? ?? [];
-      return notifications.map((n) => PushNotification.fromJson(n)).toList();
+      final notifications = (data as Map<String, dynamic>)['notifications'] as List? ?? [];
+      return notifications.map((n) => PushNotification.fromJson(n as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
       throw ApiException.fromDioException(e);
     }

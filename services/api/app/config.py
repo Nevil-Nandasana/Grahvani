@@ -41,6 +41,14 @@ class Settings(BaseSettings):
     LLM_MODEL_NAME: str = "gemini-2.0-flash"  # Default Google Gemini model
     LLM_FALLBACK_PROVIDER: str = "nvidia"  # Fallback when primary fails
 
+    # Reranker Configuration
+    RERANKER_ENABLED: bool = True
+    RERANKER_TYPE: str = "mock"  # mock | huggingface | sentence_transformers
+    RERANKER_MODEL_NAME: str = "BAAI/bge-reranker-large"
+    RERANKER_MIN_SCORE_THRESHOLD: float = 0.35
+    RERANKER_CANDIDATE_POOL_SIZE: int = 20
+    RERANKER_TOP_K: int = 4
+
     # NVIDIA API (fallback)
     NVIDIA_API_KEY: str = ""
     NVIDIA_MODEL_NAME: str = "nvidia/nemotron-3-ultra-550b-instruct"

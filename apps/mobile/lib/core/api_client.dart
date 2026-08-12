@@ -2,21 +2,38 @@
 /// Singleton with Firebase JWT bearer token injection and JSON envelope unwrapping.
 library;
 
+import 'dart:io' show HttpClient, Platform, X509Certificate;
 import 'package:dio/dio.dart';
-import 'dart:io';
 import 'package:dio/io.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// Replace with your deployed API URL (e.g. from AWS App Runner)
-const String _kBaseUrl =
-    String.fromEnvironment('API_BASE_URL', defaultValue: 'http://10.0.2.2:8000');
+/// Resolves the default API base URL depending on platform.
+/// - Web / Windows Desktop: http://localhost:8000
+/// - Android Emulator: http://10.0.2.2:8000
+String get defaultApiBaseUrl {
+  const envUrl = String.fromEnvironment('API_BASE_URL', defaultValue: '');
+  if (envUrl.isNotEmpty) return envUrl;
+
+  if (kIsWeb) {
+    return 'http://localhost:8000';
+  }
+
+  try {
+    if (Platform.isAndroid) {
+      return 'http://10.0.2.2:8000';
+    }
+  } catch (_) {}
+
+  return 'http://localhost:8000';
+}
 
 /// Dio singleton provider — shared across all repository classes.
 final apiClientProvider = Provider<Dio>((ref) {
   final dio = Dio(
     BaseOptions(
-      baseUrl: _kBaseUrl,
+      baseUrl: defaultApiBaseUrl,
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 30),
       headers: {
@@ -26,14 +43,17 @@ final apiClientProvider = Provider<Dio>((ref) {
     ),
   );
 
-  // OWASP Hardening: Strictly reject bad certificates (prevent MITM)
-  dio.httpClientAdapter = IOHttpClientAdapter(
-    createHttpClient: () {
-      final client = HttpClient();
-      client.badCertificateCallback = (X509Certificate cert, String host, int port) => false;
-      return client;
-    },
-  );
+  // OWASP Hardening: Strictly reject bad certificates on native platforms
+  if (!kIsWeb) {
+    dio.httpClientAdapter = IOHttpClientAdapter(
+      createHttpClient: () {
+        final client = HttpClient();
+        client.badCertificateCallback =
+            (X509Certificate cert, String host, int port) => false;
+        return client;
+      },
+    );
+  }
 
   // Intercept every request: attach a fresh Firebase ID token as Bearer token.
   dio.interceptors.add(_FirebaseAuthInterceptor());
@@ -55,13 +75,10 @@ class _FirebaseAuthInterceptor extends Interceptor {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        // forceRefresh=false: uses cached token unless within 5 min of expiry.
         final token = await user.getIdToken(false);
         options.headers['Authorization'] = 'Bearer $token';
       }
-    } catch (_) {
-      // If token fetch fails, proceed without auth (will get 401 from server).
-    }
+    } catch (_) {}
     handler.next(options);
   }
 
@@ -70,7 +87,6 @@ class _FirebaseAuthInterceptor extends Interceptor {
     DioException err,
     ErrorInterceptorHandler handler,
   ) async {
-    // On 401: force-refresh the token and retry once.
     if (err.response?.statusCode == 401) {
       try {
         final user = FirebaseAuth.instance.currentUser;
@@ -95,7 +111,6 @@ class _EnvelopeInterceptor extends Interceptor {
   void onResponse(Response response, ResponseInterceptorHandler handler) {
     final data = response.data;
 
-    // Only unwrap JSON object envelopes.
     if (data is Map<String, dynamic> && data.containsKey('success')) {
       if (data['success'] == true) {
         response.data = data['data'];

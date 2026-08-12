@@ -1,15 +1,15 @@
 # Multi-stage production Dockerfile for Grahvani FastAPI backend
-FROM python:3.12-slim AS builder
+FROM python:3.12-slim-bookworm AS builder
 
 # Install system build dependencies for pyswisseph C extension
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Poetry
-RUN pip install poetry==1.8.3
+RUN pip install --no-cache-dir poetry==1.8.3
 
 WORKDIR /build
 
@@ -21,9 +21,10 @@ RUN poetry config virtualenvs.create false \
     && poetry install --only main --no-interaction --no-ansi
 
 # ----------------------------------------------------------------
-FROM python:3.12-slim AS runtime
+FROM python:3.12-slim-bookworm AS runtime
 
-RUN apt-get update && apt-get install -y \
+# Install runtime system libraries for WeasyPrint PDF engine & Postgres client
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     libcairo2 \
     libpango-1.0-0 \

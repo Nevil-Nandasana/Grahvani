@@ -4,8 +4,11 @@ Grahvani — Request ID & Logging Middleware
 import time
 import uuid
 
-from fastapi import Request, Response
+from fastapi import FastAPI, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+
+from app.config import settings
 
 
 class RequestIDMiddleware(BaseHTTPMiddleware):
@@ -25,3 +28,17 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
         response.headers["X-Response-Time-Ms"] = f"{duration_ms:.2f}"
 
         return response
+
+
+def add_middleware(app: FastAPI) -> None:
+    """Register CORS and RequestID tracing middleware onto the FastAPI app instance."""
+    origins = ["*"] if settings.APP_ENV == "development" else settings.CORS_ORIGINS
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True if origins != ["*"] else False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    app.add_middleware(RequestIDMiddleware)
+
