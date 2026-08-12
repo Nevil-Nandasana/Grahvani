@@ -11,6 +11,7 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 
 import '../data/subscription_repository.dart';
 import '../domain/subscription_provider.dart';
+import 'trial_banner.dart';
 
 // ─── IAP Product IDs ──────────────────────────────────────────────────────────
 const _kMonthlyId = 'grahvani_premium_monthly';
@@ -27,13 +28,6 @@ final _iapProductsProvider =
   final response = await iap.queryProductDetails(
       {_kMonthlyId, _kYearlyId});
   return response.productDetails;
-});
-
-// ─── Purchase Stream Notifier ─────────────────────────────────────────────────
-final _purchaseProvider =
-    StreamProvider<List<PurchaseDetails>>((ref) {
-  if (kIsWeb) return const Stream.empty();
-  return InAppPurchase.instance.purchaseStream;
 });
 
 class PaywallSheet extends ConsumerWidget {
@@ -175,6 +169,11 @@ class PaywallSheet extends ConsumerWidget {
             _ComparisonTable(),
 
             const SizedBox(height: 28),
+
+            // Trial Banner
+            const TrialBanner(),
+
+            const SizedBox(height: 16),
 
             // Price cards
             _PriceCard(

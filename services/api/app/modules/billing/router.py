@@ -5,7 +5,7 @@ Routes: /billing
 import hashlib
 import hmac
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from sqlalchemy import select, update
@@ -21,6 +21,9 @@ from app.modules.billing.schemas import (
     RazorpayWebhookPayload,
     SubscriptionProvider,
     SubscriptionResponse,
+    SubscriptionStatus,
+    SubscriptionTier,
+    TrialActivationResponse,
     WebhookEventResponse,
 )
 from app.modules.billing.google_play_webhook import google_play_handler
@@ -49,6 +52,8 @@ async def get_entitlements(
     if not user:
         raise NotFoundError("User")
 
+    now = datetime.now(timezone.utc)
+
     # Get active subscription (if any)
     result = await db.execute(
         select(Subscription)
@@ -61,28 +66,147 @@ async def get_entitlements(
     )
     subscription = result.scalar_one_or_none()
 
-    # Default to free tier if no active subscription
-    tier = subscription.tier if subscription else "free"
-    expires_at = subscription.expires_at if subscription else None
-    is_active = subscription is not None and (
-        expires_at is None or expires_at > datetime.now(timezone.utc)
-    )
+    is_trial = False
+    trial_expires_at = None
+    expires_at = None
+    is_active = False
 
-    # Daily query limits by tier
+    if subscription:
+        expires_at = subscription.expires_at
+        if expires_at and expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+        if subscription.is_trial:
+            is_trial = True
+            trial_expires_at = expires_at
+            if expires_at and expires_at <= now:
+                # Expired trial -> revert tier to free and mark subscription status expired
+                tier = SubscriptionTier.FREE
+                is_active = False
+                subscription.status = "expired"
+                if user.tier != "free":
+                    user.tier = "free"
+                await db.commit()
+            else:
+                tier = SubscriptionTier(subscription.tier) if subscription.tier in SubscriptionTier._value2member_map_ else SubscriptionTier.PREMIUM
+                is_active = True
+        else:
+            if expires_at and expires_at <= now:
+                tier = SubscriptionTier.FREE
+                is_active = False
+                subscription.status = "expired"
+                if user.tier != "free":
+                    user.tier = "free"
+                await db.commit()
+            else:
+                tier = SubscriptionTier(subscription.tier) if subscription.tier in SubscriptionTier._value2member_map_ else SubscriptionTier.PREMIUM
+                is_active = True
+    else:
+        tier = SubscriptionTier.FREE
+        is_active = False
+        expires_at = None
+
+    if tier == SubscriptionTier.FREE and user.tier != "free":
+        user.tier = "free"
+        await db.commit()
+
     daily_limits = {
-        "free": 3,
-        "premium": 100,
-        "family": 500,
-        "pro": 1000,
+        SubscriptionTier.FREE: 3,
+        SubscriptionTier.PREMIUM: 100,
+        SubscriptionTier.FAMILY: 500,
+        SubscriptionTier.PRO: 1000,
     }
     queries_remaining = daily_limits.get(tier, 3)
 
     return EntitlementsResponse(
         tier=tier,
         is_active=is_active,
-        daily_queries_limit=daily_limits[tier],
+        daily_queries_limit=daily_limits.get(tier, 3),
         queries_remaining=queries_remaining,
         expires_at=expires_at,
+        is_trial=is_trial,
+        trial_expires_at=trial_expires_at,
+        trial_eligible=not user.is_trial_used,
+    )
+
+
+@router.post(
+    "/billing/trial/activate",
+    response_model=TrialActivationResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def activate_trial(
+    current_user: CurrentUser,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Activate 7-day free premium trial for authenticated user.
+    Enforces anti-abuse (single trial per user) and prevents activation
+    if user already has an active paid subscription.
+    """
+    firebase_uid = current_user.get("uid")
+    result = await db.execute(select(User).where(User.firebase_uid == firebase_uid))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise NotFoundError("User")
+
+    if user.is_trial_used:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Trial has already been redeemed for this account.",
+        )
+
+    now = datetime.now(timezone.utc)
+
+    # Check for active paid subscription
+    result = await db.execute(
+        select(Subscription).where(
+            Subscription.user_id == user.id,
+            Subscription.status == "active",
+        )
+    )
+    active_subs = result.scalars().all()
+    has_active_paid = any(
+        not sub.is_trial
+        and (
+            sub.expires_at is None
+            or (
+                sub.expires_at.replace(tzinfo=timezone.utc)
+                if sub.expires_at.tzinfo is None
+                else sub.expires_at
+            )
+            > now
+        )
+        for sub in active_subs
+    )
+    if has_active_paid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User currently has an active premium subscription.",
+        )
+
+    trial_expires_at = now + timedelta(days=7)
+
+    # Update user state & mark trial used
+    user.is_trial_used = True
+    user.tier = SubscriptionTier.PREMIUM.value
+
+    subscription = Subscription(
+        user_id=user.id,
+        provider=SubscriptionProvider.TRIAL.value,
+        tier=SubscriptionTier.PREMIUM.value,
+        status=SubscriptionStatus.ACTIVE.value,
+        expires_at=trial_expires_at,
+        is_trial=True,
+    )
+    db.add(subscription)
+    await db.commit()
+
+    return TrialActivationResponse(
+        status="success",
+        trial_started_at=now,
+        trial_expires_at=trial_expires_at,
+        is_trial=True,
     )
 
 

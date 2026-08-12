@@ -33,6 +33,7 @@ class Subscription(Base, TimestampMixin):
         String(32), nullable=False, default="premium"  # free | premium | family | pro
     )
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    is_trial: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     user: Mapped["User"] = relationship("User", backref="subscriptions")
 
