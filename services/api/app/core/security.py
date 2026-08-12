@@ -1,7 +1,9 @@
 """
 Grahvani — Firebase JWT Authentication Security Layer
 """
-import uuid
+import os
+import json
+import logging
 from typing import Annotated, Any
 
 import firebase_admin
@@ -12,15 +14,34 @@ from firebase_admin import auth as firebase_auth, credentials
 from app.config import settings
 from app.core.exceptions import AuthenticationError
 
+logger = logging.getLogger(__name__)
+
 # ─── Firebase Admin SDK Initialization ───────────────────────────────────────
 _firebase_initialized = False
 
 def _init_firebase():
     global _firebase_initialized
     if not _firebase_initialized:
-        cred = credentials.Certificate(settings.FIREBASE_SERVICE_ACCOUNT_PATH)
-        firebase_admin.initialize_app(cred)
-        _firebase_initialized = True
+        try:
+            if settings.FIREBASE_SERVICE_ACCOUNT_PATH and os.path.exists(settings.FIREBASE_SERVICE_ACCOUNT_PATH):
+                cred = credentials.Certificate(settings.FIREBASE_SERVICE_ACCOUNT_PATH)
+                firebase_admin.initialize_app(cred)
+                _firebase_initialized = True
+            elif settings.FIREBASE_SERVICE_ACCOUNT_JSON:
+                cred_dict = json.loads(settings.FIREBASE_SERVICE_ACCOUNT_JSON)
+                cred = credentials.Certificate(cred_dict)
+                firebase_admin.initialize_app(cred)
+                _firebase_initialized = True
+            else:
+                # In development/test without service account file, initialize default app or skip
+                try:
+                    firebase_admin.initialize_app()
+                except ValueError:
+                    pass  # Already initialized
+                _firebase_initialized = True
+        except Exception as e:
+            logger.warning(f"Firebase Admin SDK initialization skipped or failed: {e}")
+            _firebase_initialized = True
 
 
 _init_firebase()

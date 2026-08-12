@@ -8,7 +8,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../features/auth/domain/auth_state.dart';
 import '../features/auth/presentation/consent_screen.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/chart/presentation/chart_screen.dart';
@@ -23,6 +22,7 @@ import '../features/notifications/presentation/notification_settings_screen.dart
 import '../features/profile/presentation/add_profile_screen.dart';
 import '../features/profile/presentation/profiles_screen.dart';
 import '../features/subscriptions/presentation/paywall_sheet.dart';
+import '../features/subscriptions/presentation/trial_banner.dart';
 import '../features/auth/data/auth_repository.dart';
 
 // ─── Route Paths ──────────────────────────────────────────────────────────────────────────────
@@ -350,67 +350,71 @@ class _HomeScreen extends ConsumerWidget {
         ],
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Welcome back',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Your Vedic birth chart awaits.',
-                style: TextStyle(color: Color(0xFF6B6B99)),
-              ),
-              const SizedBox(height: 32),
-              _HomeCard(
-                icon: '🌙',
-                title: 'Birth Profiles',
-                subtitle: 'Manage and view saved charts',
-                onTap: () => context.push('/home/profiles'),
-              ),
-              const SizedBox(height: 14),
-              _HomeCard(
-                icon: '💬',
-                title: 'AI Interpretation',
-                subtitle: 'Chat with Grahvani AI',
-                onTap: () => context.push('/home/profiles'),
-              ),
-              const SizedBox(height: 14),
-              _HomeCard(
-                icon: '❤️',
-                title: 'Kundali Milan',
-                subtitle: 'Ashtakoot compatibility matching',
-                onTap: () => context.push('/home/kundali-milan'),
-              ),
-              const SizedBox(height: 14),
-              _HomeCard(
-                icon: '🔭',
-                title: 'Synastry',
-                subtitle: 'Dual-chart aspect overlay',
-                onTap: () => context.push('/home/synastry'),
-              ),
-              const SizedBox(height: 14),
-              _HomeCard(
-                icon: '☀️',
-                title: 'Varshaphal',
-                subtitle: 'Annual Solar Return chart',
-                onTap: () => context.push('/home/profiles'),
-              ),
-              const SizedBox(height: 14),
-              _HomeCard(
-                icon: '⭐',
-                title: 'Upgrade to Premium',
-                subtitle: '100 daily AI interpretations',
-                highlight: true,
-                onTap: () => PaywallSheet.show(context),
-              ),
-            ],
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Welcome back',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Your Vedic birth chart awaits.',
+                  style: TextStyle(color: Color(0xFF6B6B99)),
+                ),
+                const SizedBox(height: 16),
+                const TrialBanner(),
+                const SizedBox(height: 20),
+                _HomeCard(
+                  icon: '🌙',
+                  title: 'Birth Profiles',
+                  subtitle: 'Manage and view saved charts',
+                  onTap: () => context.push('/home/profiles'),
+                ),
+                const SizedBox(height: 14),
+                _HomeCard(
+                  icon: '💬',
+                  title: 'AI Interpretation',
+                  subtitle: 'Chat with Grahvani AI',
+                  onTap: () => context.push('/home/profiles'),
+                ),
+                const SizedBox(height: 14),
+                _HomeCard(
+                  icon: '❤️',
+                  title: 'Kundali Milan',
+                  subtitle: 'Ashtakoot compatibility matching',
+                  onTap: () => context.push('/home/kundali-milan'),
+                ),
+                const SizedBox(height: 14),
+                _HomeCard(
+                  icon: '🔭',
+                  title: 'Synastry',
+                  subtitle: 'Dual-chart aspect overlay',
+                  onTap: () => context.push('/home/synastry'),
+                ),
+                const SizedBox(height: 14),
+                _HomeCard(
+                  icon: '☀️',
+                  title: 'Varshaphal',
+                  subtitle: 'Annual Solar Return chart',
+                  onTap: () => context.push('/home/profiles'),
+                ),
+                const SizedBox(height: 14),
+                _HomeCard(
+                  icon: '⭐',
+                  title: 'Upgrade to Premium',
+                  subtitle: '100 daily AI interpretations',
+                  highlight: true,
+                  onTap: () => PaywallSheet.show(context),
+                ),
+              ],
+            ),
           ),
         ),
       ),
