@@ -5,8 +5,6 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
-
 import '../data/transit_repository.dart';
 
 class SadeSatiScreen extends ConsumerWidget {
@@ -35,7 +33,10 @@ class SadeSatiScreen extends ConsumerWidget {
       ),
       body: statusAsync.when(
         loading: () => const _LoadingView(),
-        error: (e, _) => _ErrorView(error: e.toString()),
+        error: (e, _) => _ErrorView(
+          error: e.toString(),
+          onRetry: () => ref.refresh(sadeSatiStatusProvider(profileId)),
+        ),
         data: (status) => _SadeSatiContent(status: status),
       ),
     );
@@ -522,8 +523,9 @@ class _LoadingView extends StatelessWidget {
 }
 
 class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.error});
+  const _ErrorView({required this.error, this.onRetry});
   final String error;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -555,8 +557,7 @@ class _ErrorView extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              onPressed: () => context.go('/home/sade-sati/${Uri.encodeComponent(
-                  (ModalRoute.of(context)?.settings.arguments as Map?)?['profileId'] ?? '')}'),
+              onPressed: onRetry ?? () => context.pop(),
             ),
           ],
         ),

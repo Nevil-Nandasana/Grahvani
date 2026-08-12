@@ -21,9 +21,8 @@ from app.modules.identity.models import BirthProfile, User
 # ─── FCM Initialization ───────────────────────────────────────────────────────
 def _init_fcm():
     """Initialize Firebase Admin SDK if not already initialized."""
-    if not firebase_admin._apps:
-        cred = credentials.ApplicationDefault()
-        firebase_admin.initialize_app(cred)
+    from app.core.security import _init_firebase
+    _init_firebase()
 
 
 # ─── Transit Calculation Helpers ──────────────────────────────────────────────
@@ -36,7 +35,11 @@ def _calculate_planet_position(
 ) -> dict:
     """Calculate a single planet's position for a given date/time."""
     from app.modules.birth_chart.ephemeris_service import PLANETS, AYANAMSA_MAP, ZODIAC_SIGNS
-    import swisseph as swe
+    try:
+        # pyrefly: ignore [missing-import]
+        import swisseph as swe
+    except (ImportError, ModuleNotFoundError):
+        from app.modules.birth_chart.ephemeris_service import swe
 
     sid_mode = AYANAMSA_MAP.get(ayanamsa, swe.SIDM_LAHIRI)
     swe.set_sid_mode(sid_mode)
