@@ -19,6 +19,7 @@ class SubscriptionProvider(str, Enum):
     RAZORPAY = "razorpay"
     GOOGLE_PLAY = "google_play"
     APPLE = "apple"
+    TRIAL = "trial"
 
 
 class SubscriptionStatus(str, Enum):
@@ -43,6 +44,14 @@ class SubscriptionResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class TrialActivationResponse(BaseModel):
+    """API response schema for trial activation."""
+    status: str = "success"
+    trial_started_at: datetime
+    trial_expires_at: datetime
+    is_trial: bool = True
+
+
 class EntitlementsResponse(BaseModel):
     """API response schema for user entitlements."""
     tier: SubscriptionTier
@@ -50,6 +59,9 @@ class EntitlementsResponse(BaseModel):
     daily_queries_limit: int
     queries_remaining: int
     expires_at: datetime | None
+    is_trial: bool = False
+    trial_expires_at: datetime | None = None
+    trial_eligible: bool = True
 
 
 class RazorpayWebhookPayload(BaseModel):
