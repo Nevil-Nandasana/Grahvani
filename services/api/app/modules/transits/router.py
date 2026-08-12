@@ -2,7 +2,7 @@
 Transit API Routes — Endpoints for Sade Sati status, transit alerts, and planetary positions.
 """
 from datetime import datetime, timezone, timedelta
-from typing import Optional
+from typing import Optional, Dict, Any, List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status, HTTPException
@@ -50,6 +50,29 @@ class TransitAlertRequest(BaseModel):
     sade_sati_alerts: Optional[bool] = None
     dasha_alerts: Optional[bool] = None
     major_transit_alerts: Optional[bool] = None
+
+
+class SadeSatiResponse(BaseModel):
+    profile_id: Optional[str] = None
+    profile_name: Optional[str] = None
+    moon_sign: str = ""
+    saturn_sign: str = ""
+    is_sade_sati_active: bool = False
+    phase: Optional[str] = None
+    phase_name: Optional[str] = None
+    description: Optional[str] = None
+    remedies: List[str] = Field(default_factory=list)
+    checked_at: Optional[str] = None
+
+
+class PlanetPositionInfo(BaseModel):
+    planet: str
+    zodiac_sign: str
+    longitude: float
+
+
+class CurrentPositionsResponse(BaseModel):
+    positions: List[PlanetPositionInfo] = Field(default_factory=list)
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
