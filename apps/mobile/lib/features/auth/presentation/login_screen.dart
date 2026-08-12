@@ -7,7 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../data/auth_repository.dart';
 import '../domain/auth_state.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {

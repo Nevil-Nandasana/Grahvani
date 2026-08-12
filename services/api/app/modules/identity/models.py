@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func, JSON
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, func, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -28,6 +28,7 @@ class User(Base, TimestampMixin):
     consent_given_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     fcm_token: Mapped[str | None] = mapped_column(String(512), nullable=True)  # For push notifications
+    is_trial_used: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     profiles: Mapped[list["BirthProfile"]] = relationship("BirthProfile", back_populates="user")
 
