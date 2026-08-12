@@ -35,6 +35,17 @@ from app.modules.identity.models import User
 from app.modules.interpretation.models import ChatMessage, ChatSession
 from app.modules.interpretation.llm_provider import LLMProviderFactory, BillingError
 
+try:
+    from google.genai import types as genai_types
+except (ImportError, ModuleNotFoundError):
+    genai_types = None
+
+
+def _get_genai_client():
+    from google import genai
+    return genai.Client(api_key=settings.GEMINI_API_KEY)
+
+
 router = APIRouter()
 
 # ─── LLM Provider Factory ────────────────────────────────────────────────────
@@ -155,17 +166,22 @@ async def _check_daily_quota(user: User, db: AsyncSession) -> None:
 
 # ─── Helper: Hybrid RAG Search ────────────────────────────────────────────────
 
-async def _hybrid_search(query: str, db: AsyncSession, top_k: int = 5) -> list[dict]:
+async def _hybrid_search(query: str, db: AsyncSession, top_k: int = 4) -> list[dict]:
     """
-    Reciprocal Rank Fusion (RRF) over:
-    - HNSW cosine vector similarity (dense embedding)
-    - BM25 GIN tsvector full-text search (sparse keyword)
+    Reciprocal Rank Fusion (RRF) + Cross-Encoder BGE Reranking:
+    1. Embeds query via text-embedding-004.
+    2. Retrieves candidate pool (top 20) via HNSW dense vector search.
+    3. Retrieves candidate pool (top 20) via BM25 sparse tsvector search.
+    4. Computes RRF scores to merge top 20 candidate shlokas.
+    5. Reranks candidate pool via BGE Reranker (top_k=4, min_threshold=0.35).
 
-    Returns top_k chunks ordered by combined RRF score.
+    Returns top_k (4) reranked chunks.
     """
+    candidate_pool_size = settings.RERANKER_CANDIDATE_POOL_SIZE
+
     client = _get_genai_client()
 
-    # 1. Embed the query
+    # 1. Embed query
     embed_response = client.models.embed_content(
         model="text-embedding-004",
         contents=query,
@@ -173,31 +189,31 @@ async def _hybrid_search(query: str, db: AsyncSession, top_k: int = 5) -> list[d
     )
     query_vector = embed_response.embeddings[0].values
 
-    # 2. Vector search (HNSW cosine)
+    # 2. Vector search (HNSW cosine - Top 20)
     vector_sql = text("""
         SELECT id, source_title, kanda_or_chapter, sloka_number, content,
                ROW_NUMBER() OVER (ORDER BY embedding <=> :query_vector::vector) AS vector_rank
         FROM document_chunks
         ORDER BY embedding <=> :query_vector::vector
-        LIMIT :top_k
+        LIMIT :candidate_pool_size
     """)
 
-    # 3. BM25 full-text search (GIN tsvector)
+    # 3. BM25 full-text search (GIN tsvector - Top 20)
     fts_sql = text("""
         SELECT id, source_title, kanda_or_chapter, sloka_number, content,
                ROW_NUMBER() OVER (ORDER BY ts_rank(fts_vector_col, plainto_tsquery('english', :query)) DESC) AS fts_rank
         FROM document_chunks
         WHERE fts_vector_col @@ plainto_tsquery('english', :query)
         ORDER BY ts_rank(fts_vector_col, plainto_tsquery('english', :query)) DESC
-        LIMIT :top_k
+        LIMIT :candidate_pool_size
     """)
 
     # Execute both searches
     vector_result = await db.execute(
         vector_sql,
-        {"query_vector": f"[{','.join(str(v) for v in query_vector)}]", "top_k": top_k * 2},
+        {"query_vector": f"[{','.join(str(v) for v in query_vector)}]", "candidate_pool_size": candidate_pool_size},
     )
-    fts_result = await db.execute(fts_sql, {"query": query, "top_k": top_k * 2})
+    fts_result = await db.execute(fts_sql, {"query": query, "candidate_pool_size": candidate_pool_size})
 
     vector_rows = {str(row.id): {"rank": row.vector_rank, "row": row} for row in vector_result}
     fts_rows = {str(row.id): {"rank": row.fts_rank, "row": row} for row in fts_result}
@@ -215,21 +231,32 @@ async def _hybrid_search(query: str, db: AsyncSession, top_k: int = 5) -> list[d
             score += 1.0 / (k + fts_rows[chunk_id]["rank"])
         rrf_scores[chunk_id] = score
 
-    # Sort by RRF score descending and return top_k
-    sorted_ids = sorted(rrf_scores, key=lambda x: rrf_scores[x], reverse=True)[:top_k]
+    # Sort by RRF score descending and take top candidate_pool_size
+    sorted_candidate_ids = sorted(rrf_scores, key=lambda x: rrf_scores[x], reverse=True)[:candidate_pool_size]
 
-    results = []
-    for chunk_id in sorted_ids:
+    candidates = []
+    for chunk_id in sorted_candidate_ids:
         row_data = (vector_rows.get(chunk_id) or fts_rows.get(chunk_id))["row"]
-        results.append({
+        candidates.append({
             "id": chunk_id,
             "source_title": row_data.source_title,
             "chapter": row_data.kanda_or_chapter,
             "sloka_number": row_data.sloka_number,
             "content": row_data.content,
+            "rrf_score": round(rrf_scores[chunk_id], 6),
         })
 
-    return results
+    # 5. BGE Reranker post-retrieval cross-encoder reranking
+    from app.modules.interpretation.reranker import get_reranker
+    reranker = get_reranker()
+    reranked_chunks = reranker.rerank(
+        query=query,
+        candidates=candidates,
+        top_k=top_k,
+        min_threshold=settings.RERANKER_MIN_SCORE_THRESHOLD,
+    )
+
+    return reranked_chunks
 
 
 # ─── API Endpoints ────────────────────────────────────────────────────────────
@@ -271,6 +298,7 @@ async def create_chat_session(
 
 
 @router.post("/chat/stream")
+@router.post("/interpretation/query")
 async def stream_chat_response(
     body: StreamChatRequest,
     current_user: CurrentUser,
@@ -320,9 +348,9 @@ async def stream_chat_response(
         tier=user_tier,
     )
 
-    # ── 4 & 5. Hybrid RAG search ──────────────────────────────────────────────
+    # ── 4 & 5. Hybrid RAG search & Cross-Encoder Reranking ─────────────────
     rag_start = time.time()
-    retrieved_chunks = await _hybrid_search(body.prompt, db, top_k=5)
+    retrieved_chunks = await _hybrid_search(body.prompt, db, top_k=settings.RERANKER_TOP_K)
     rag_duration_ms = (time.time() - rag_start) * 1000
 
     # Record RAG retrieval span in Langfuse
@@ -347,6 +375,7 @@ async def stream_chat_response(
             "chapter": chunk["chapter"],
             "sloka_number": chunk["sloka_number"],
             "content": chunk["content"],
+            "rerank_score": chunk.get("rerank_score"),
         })
 
     context_block = "\n\n---\n\n".join(context_lines) if context_lines else "No classical texts retrieved."

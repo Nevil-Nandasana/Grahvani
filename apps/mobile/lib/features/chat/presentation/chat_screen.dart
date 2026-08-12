@@ -6,9 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/chat_repository.dart';
 import '../domain/chat_model.dart';
 import '../domain/chat_provider.dart';
+import '../../subscriptions/presentation/paywall_sheet.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key, required this.chartId});
@@ -159,7 +159,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
           ),
           TextButton(
-            onPressed: () {},
+            onPressed: () => PaywallSheet.show(context),
             style: TextButton.styleFrom(padding: EdgeInsets.zero),
             child: const Text('Upgrade',
                 style: TextStyle(
