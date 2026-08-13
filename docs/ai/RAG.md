@@ -10,9 +10,9 @@
 
 ---
 
-## 2. Hybrid Search Architecture
+## 2. 3-Stage Hybrid Search & Reranking Architecture
 
-Grahvani combines two complementary retrieval strategies, merged with **Reciprocal Rank Fusion (RRF)**:
+Grahvani combines two complementary retrieval strategies, merged with **Reciprocal Rank Fusion (RRF)**, and refined via a deep cross-encoder reranking model (**`BAAI/bge-reranker-large`**):
 
 ```mermaid
 flowchart TD
@@ -28,18 +28,21 @@ flowchart TD
     FilterMetadata --> VectorSearch
     FilterMetadata --> FTSearch
 
-    VectorSearch --> RRF["Reciprocal Rank Fusion\nMerge & Re-rank both lists"]
+    VectorSearch --> RRF["Reciprocal Rank Fusion\nMerge & RRF Score candidate lists"]
     FTSearch --> RRF
-    RRF --> TopK["Top-4 Most Relevant Classical Chunks\n(≤ 512 tokens each)"]
-    TopK --> ThresholdFilter["Confidence Threshold Filter\nMin cosine similarity: 0.65"]
+    RRF --> Reranker["Post-Retrieval Cross-Encoder Reranker\nBAAI/bge-reranker-large (or Mock Fallback)"]
+    Reranker --> TopK["Top-4 Most Relevant Classical Chunks\n(≤ 512 tokens each)"]
+    TopK --> ThresholdFilter["Confidence Threshold Filter\nMin cross-encoder score: 0.35"]
     ThresholdFilter -->|All chunks pass| PromptAssembly["Assemble Prompt Context"]
     ThresholdFilter -->|All chunks fail| LowConfidence["Return 'Insufficient Sources' Response"]
 ```
 
-**Why hybrid search?**
+**Why hybrid search & cross-encoder reranking?**
 - **Vector search alone** misses exact keyword matches ("Sade Sati", "Vimshottari", specific planet names in Sanskrit).
 - **Full-text search alone** misses semantically related content ("career" matches "professional success" and "livelihood" via vector, but not keyword).
-- **Combined RRF** consistently outperforms either method alone with no additional latency.
+- **Combined RRF** merges candidates from both retrieval models.
+- **Cross-Encoder Reranking (`bge-reranker-large`)** evaluates deep sentence-pair cross-attention between user query and retrieved classical text chunks, sorting candidates by precise semantic relevance.
+
 
 ---
 

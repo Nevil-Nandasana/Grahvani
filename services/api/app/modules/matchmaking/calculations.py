@@ -83,3 +83,43 @@ def compute_ashtakoot(p1_sign: str, p1_nak: str, p2_sign: str, p2_nak: str) -> d
         "nadi": nadi,
         "total": total
     }
+
+
+def compute_synastry_aspects(chart1: dict, chart2: dict) -> list:
+    """
+    Compute planetary aspects between two charts for synastry dual-chart comparison.
+    """
+    aspects = []
+    planets1 = chart1.get("planets", [])
+    planets2 = chart2.get("planets", [])
+
+    aspect_definitions = [
+        ("Conjunction", 0, 8, True),
+        ("Sextile", 60, 6, True),
+        ("Square", 90, 6, False),
+        ("Trine", 120, 8, True),
+        ("Opposition", 180, 8, False),
+    ]
+
+    for p1 in planets1:
+        p1_deg = p1.get("longitude", 0.0)
+        for p2 in planets2:
+            p2_deg = p2.get("longitude", 0.0)
+            diff = abs(p1_deg - p2_deg) % 360
+            if diff > 180:
+                diff = 360 - diff
+
+            for name, target_angle, max_orb, is_harm in aspect_definitions:
+                orb = abs(diff - target_angle)
+                if orb <= max_orb:
+                    aspects.append({
+                        "planet1": p1.get("name", "Unknown"),
+                        "planet2": p2.get("name", "Unknown"),
+                        "aspect_type": name,
+                        "orb": round(orb, 2),
+                        "is_harmonious": is_harm,
+                    })
+                    break
+
+    return aspects
+

@@ -1,0 +1,56 @@
+appId: com.grahvani.app
+---
+- launchApp
+
+# 1. Navigate to Birth Profiles Management
+- tapOn: "Birth Profiles"
+- assertVisible: "Birth Profiles"
+
+# 2. Trigger Add Birth Profile Multi-Step Form
+- tapOn: "Add Profile"
+- assertVisible: "Add Birth Profile"
+
+# Step 0: User Name Input
+- assertVisible: "What is the name?"
+- tapOn: "e.g. Aditya Sharma"
+- inputText: "Test User"
+- tapOn: "Next"
+
+# Step 1: Date of Birth Selection
+- assertVisible: "Date of Birth"
+- tapOn: "Select date"
+- tapOn: "OK"
+- tapOn: "Next"
+
+# Step 2: Time of Birth Selection
+- assertVisible: "Time of Birth"
+- tapOn: "Select time"
+- tapOn: "OK"
+- tapOn: "Next"
+
+# Step 3: Birthplace Geocoding Input & Profile Submission
+- assertVisible: "Place of Birth"
+- tapOn: "Search city or place..."
+- inputText: "Mumbai"
+- tapOn: "Mumbai, India"
+- assertVisible: "Lat: 19.0760"
+- tapOn: "Create Profile"
+
+# 3. Select Created Profile & Trigger Ephemeris Calculation
+- assertVisible: "Test User"
+- tapOn: "Test User"
+
+# 4. Verify D1 Rasi Chart Rendering & Ayanamsa Header
+- assertVisible: "Birth Chart"
+- assertVisible: "D1 Rasi"
+- assertVisible: "LAHIRI AYANAMSA"
+
+# 5. Switch to D9 Navamsha Divisional Chart & Verify Rendering
+- tapOn: "D9 Navamsha"
+- assertVisible: "D9 LAGNA"
+
+# 6. Toggle South/North Indian Chart Layout Styles
+- tapOn: "South"
+- assertVisible: "South"
+- tapOn: "North"
+- assertVisible: "North"

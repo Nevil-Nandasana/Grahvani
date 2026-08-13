@@ -12,7 +12,7 @@ from app.core.exceptions import NotFoundError
 from app.modules.identity.models import BirthProfile
 from app.modules.birth_chart.ephemeris_service import calculate_chart
 from app.modules.matchmaking.schemas import MatchmakingRequest
-from app.modules.matchmaking.calculations import compute_ashtakoot
+from app.modules.matchmaking.calculations import compute_ashtakoot, compute_synastry_aspects
 
 router = APIRouter()
 

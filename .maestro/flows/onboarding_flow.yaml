@@ -1,0 +1,29 @@
+appId: com.grahvani.app
+---
+- launchApp:
+    clearState: true        # Fresh install simulation
+
+# Step 1: Login with Google
+- tapOn: "Sign in with Google"
+- assertVisible: "Grahvani"   # Google sign-in modal opens, then returns
+
+# Step 2: Consent screen
+- assertVisible: "We need your consent"
+- tapOn: "I Agree and Continue"
+
+# Step 3: Add first birth profile
+- assertVisible: "Add Your Birth Profile"
+- tapOn: "Full Name"
+- inputText: "Test User"
+- tapOn: "Date of Birth"
+- selectDatePickerValue: "1990-01-15"
+- tapOn: "Time of Birth"
+- selectTimePickerValue: "06:30"
+- tapOn: "Birth City"
+- inputText: "Mumbai"
+- tapOn: "Mumbai, Maharashtra, India"   # Autocomplete suggestion
+
+# Step 4: Calculate chart
+- tapOn: "Calculate My Birth Chart"
+- assertVisible: "Calculating..."       # Loading state
+- assertVisible: "Scorpio Ascendant"   # Chart result (seeded test vector)

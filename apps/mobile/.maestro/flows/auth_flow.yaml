@@ -1,0 +1,35 @@
+appId: com.grahvani.app
+---
+- launchApp:
+    clearState: true
+
+# 1. Splash & Auth Screen Verification
+- assertVisible: "Grahvani"
+- assertVisible: "Vedic Astrology, Precisely."
+- assertVisible: "Continue with Google"
+- assertVisible: "Continue with Phone"
+
+# 2. Phone Auth Registration / Login Flow
+- tapOn: "Continue with Phone"
+- assertVisible: "Enter your phone number"
+- tapOn: "+91 9876543210"
+- inputText: "+91 9999999999"
+- tapOn: "Send OTP"
+
+# 3. OTP Verification & Token/Session Validation
+- assertVisible: "Enter the OTP sent to"
+- tapOn: "6-digit OTP"
+- inputText: "123456"
+- tapOn: "Verify OTP"
+
+# 4. DPDP Data Privacy & Consent Flow
+- assertVisible: "Data Privacy & Consent"
+- assertVisible: "I have read and agree to the"
+- tapOn:
+    id: "consent_switch"
+- tapOn: "I Agree & Continue"
+
+# 5. Session Validation & Home Dashboard Arrival
+- assertVisible: "Welcome back"
+- assertVisible: "Your Vedic birth chart awaits."
+- assertVisible: "Birth Profiles"

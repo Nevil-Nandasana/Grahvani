@@ -1,0 +1,15 @@
+appId: com.grahvani.app
+---
+- launchApp
+
+# Select birth profile
+- tapOn: "Test User"
+
+# Open chart tab
+- tapOn: "View Birth Chart"
+- assertVisible: "D1 Rasi Chart"
+- assertVisible: "Scorpio Ascendant"
+
+# Switch house system / divisional chart
+- tapOn: "D9 Navamsha"
+- assertVisible: "D9 Navamsha Chart"

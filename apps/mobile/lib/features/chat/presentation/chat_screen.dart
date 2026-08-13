@@ -222,6 +222,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
               const SizedBox(width: 10),
               GestureDetector(
+                key: const Key('chat_send_button'),
                 onTap: isStreaming || quotaExhausted ? null : _sendMessage,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),

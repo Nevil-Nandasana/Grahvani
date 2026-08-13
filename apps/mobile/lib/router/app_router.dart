@@ -6,7 +6,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../features/auth/presentation/consent_screen.dart';
 import '../features/auth/presentation/login_screen.dart';
@@ -140,6 +139,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
 
           // AI Chat (chartId passed to create a session)
+          GoRoute(
+            path: 'chat',
+            builder: (BuildContext context, GoRouterState state) =>
+                const ChatScreen(chartId: 'default'),
+          ),
           GoRoute(
             path: 'chat/:chartId',
             builder: (BuildContext context, GoRouterState state) {
@@ -382,7 +386,7 @@ class _HomeScreen extends ConsumerWidget {
                   icon: '💬',
                   title: 'AI Interpretation',
                   subtitle: 'Chat with Grahvani AI',
-                  onTap: () => context.push('/home/profiles'),
+                  onTap: () => context.push('/home/chat/default'),
                 ),
                 const SizedBox(height: 14),
                 _HomeCard(

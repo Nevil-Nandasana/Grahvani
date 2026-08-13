@@ -1,0 +1,21 @@
+appId: com.grahvani.app
+---
+- launchApp
+
+# Trigger free tier limit
+- repeat:
+    times: 3
+    commands:
+      - tapOn: "Ask AI"
+      - inputText: "Tell me about my chart"
+      - tapOn: "Send"
+      - waitForAnimationToEnd:
+          timeout: 10000
+      - tapOn: "Back"
+
+# 4th question should hit paywall
+- tapOn: "Ask AI"
+- inputText: "Tell me about my Jupiter"
+- tapOn: "Send"
+- assertVisible: "Upgrade to Premium"   # Paywall bottom sheet
+- assertVisible: "299"                   # Show price

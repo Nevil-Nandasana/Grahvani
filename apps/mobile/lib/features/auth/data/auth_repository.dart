@@ -28,8 +28,8 @@ class AuthRepository {
   Future<void> updateFcmToken(String token) async {
     try {
       await _dio.post<Map<String, dynamic>>(
-        '/api/v1/auth/fcm-token',
-        data: {'token': token},
+        '/api/v1/notifications/fcm-token',
+        data: {'fcm_token': token},
       );
     } catch (_) {}
   }
