@@ -142,12 +142,26 @@ class GeminiProvider(LLMProvider):
 
 
 class NVIDIAProvider(LLMProvider):
-    """NVIDIA Nemotron provider implementation."""
+    """NVIDIA Nemotron provider implementation supporting multi-key failover."""
 
-    def __init__(self, model_name: str, api_key: str):
+    def __init__(self, model_name: str, api_key: str | list[str]):
         self.model_name = model_name
-        self.api_key = api_key
+        if isinstance(api_key, str):
+            self.api_keys = [k.strip() for k in api_key.split(",") if k.strip()]
+        else:
+            self.api_keys = [k.strip() for k in api_key if k.strip()]
+
+        if not self.api_keys:
+            self.api_keys = [""]
+
         self.base_url = "https://integrate.api.nvidia.com/v1"
+        self._current_index = 0
+
+    def _get_next_index(self) -> int:
+        """Get current key index and advance for round-robin rotation."""
+        idx = self._current_index
+        self._current_index = (self._current_index + 1) % len(self.api_keys)
+        return idx
 
     async def generate_stream(
         self,
@@ -157,48 +171,72 @@ class NVIDIAProvider(LLMProvider):
         max_tokens: int = 1500,
         rate_limit_key: Optional[str] = None,
     ) -> AsyncGenerator[str, None]:
-        """Generate and stream response from NVIDIA Nemotron."""
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-
-        payload = {
-            "model": self.model_name,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_message},
-            ],
-            "temperature": temperature,
-            "max_tokens": max_tokens,
-            "stream": True,
-        }
-
+        """Generate and stream response from NVIDIA Nemotron with multi-key failover."""
         import httpx
 
-        async with httpx.AsyncClient() as client:
-            async with client.stream("POST", f"{self.base_url}/chat/completions", json=payload, headers=headers) as response:
-                if response.status_code != 200:
-                    error_body = await response.aread()
-                    error_text = error_body.decode("utf-8", errors="ignore")
-                    if response.status_code in (402, 429) or "quota" in error_text.lower() or "billing" in error_text.lower():
-                        raise BillingError(f"NVIDIA API rate/billing error ({response.status_code}): {error_text}")
-                    raise HTTPException(
-                        status_code=response.status_code,
-                        detail=f"NVIDIA API error ({response.status_code}): {error_text}",
-                    )
+        num_keys = len(self.api_keys)
+        start_idx = self._get_next_index()
+        last_exception = None
 
-                # Use aiter_lines to safely parse SSE lines across chunk boundaries
-                async for line in response.aiter_lines():
-                    if line.startswith("data: ") and line.strip() != "data: [DONE]":
-                        try:
-                            data = json.loads(line[6:])
-                            if "choices" in data and len(data) > 0:
-                                content = data["choices"][0].get("delta", {}).get("content", "")
-                                if content:
-                                    yield content
-                        except json.JSONDecodeError:
-                            continue
+        for attempt in range(num_keys):
+            key_idx = (start_idx + attempt) % num_keys
+            key = self.api_keys[key_idx]
+
+            headers = {
+                "Authorization": f"Bearer {key}",
+                "Content-Type": "application/json",
+            }
+
+            payload = {
+                "model": self.model_name,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_message},
+                ],
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+                "stream": True,
+            }
+
+            try:
+                async with httpx.AsyncClient() as client:
+                    async with client.stream("POST", f"{self.base_url}/chat/completions", json=payload, headers=headers) as response:
+                        if response.status_code != 200:
+                            error_body = await response.aread()
+                            error_text = error_body.decode("utf-8", errors="ignore")
+                            if response.status_code in (402, 429) or "quota" in error_text.lower() or "billing" in error_text.lower():
+                                logger.warning(f"NVIDIA API Key index {key_idx} rate/billing error ({response.status_code}). Trying next key...")
+                                last_exception = BillingError(f"NVIDIA API rate/billing error ({response.status_code}): {error_text}")
+                                continue
+                            raise HTTPException(
+                                status_code=response.status_code,
+                                detail=f"NVIDIA API error ({response.status_code}): {error_text}",
+                            )
+
+                        # Use aiter_lines to safely parse SSE lines across chunk boundaries
+                        async for line in response.aiter_lines():
+                            if line.startswith("data: ") and line.strip() != "data: [DONE]":
+                                try:
+                                    data = json.loads(line[6:])
+                                    if "choices" in data and len(data) > 0:
+                                        content = data["choices"][0].get("delta", {}).get("content", "")
+                                        if content:
+                                            yield content
+                                except json.JSONDecodeError:
+                                    continue
+                        return  # Success
+            except BillingError:
+                continue
+            except HTTPException:
+                raise
+            except Exception as e:
+                logger.warning(f"NVIDIA API Key index {key_idx} exception: {e}")
+                last_exception = e
+                continue
+
+        # All NVIDIA keys failed
+        logger.error("All NVIDIA API keys in pool failed or exhausted quota.")
+        raise BillingError(f"All NVIDIA API keys exhausted: {last_exception}") from last_exception
 
 
 class RateLimiter:

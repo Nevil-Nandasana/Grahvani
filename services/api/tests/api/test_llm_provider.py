@@ -113,3 +113,26 @@ async def test_fallback_provider_raises_429_when_rate_limit_exceeded():
 
     assert exc_info.value.status_code == 429
     assert "Rate limit exceeded" in exc_info.value.detail
+
+
+@pytest.mark.asyncio
+async def test_gemini_provider_multi_key_parsing_and_rotation():
+    """GeminiProvider should parse comma-separated keys and rotate across them."""
+    provider = GeminiProvider(
+        model_name="gemini-2.0-flash",
+        api_key="key_1, key_2, key_3",
+    )
+    assert provider.api_keys == ["key_1", "key_2", "key_3"]
+    assert len(provider._clients) == 3
+
+
+@pytest.mark.asyncio
+async def test_nvidia_provider_multi_key_parsing_and_rotation():
+    """NVIDIAProvider should parse comma-separated keys and rotate across them."""
+    provider = NVIDIAProvider(
+        model_name="nvidia/nemotron-3-ultra-550b-instruct",
+        api_key="nv_key_1, nv_key_2",
+    )
+    assert provider.api_keys == ["nv_key_1", "nv_key_2"]
+
+
