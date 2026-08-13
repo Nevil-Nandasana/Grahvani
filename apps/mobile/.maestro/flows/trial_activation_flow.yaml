@@ -1,0 +1,24 @@
+appId: com.grahvani.app
+---
+- launchApp
+
+# 1. Verify Home Dashboard & Premium Trial Banner Display
+- assertVisible: "Welcome back"
+- assertVisible: "LIMITED TIME OFFER"
+- assertVisible: "Start 7-Day Free Premium Trial"
+
+# 2. Open Premium Paywall Modal Sheet
+- tapOn: "Upgrade to Premium"
+- assertVisible: "Unlock Grahvani Premium"
+- assertVisible: "Full access to Vedic AI interpretation"
+- assertVisible: "Monthly"
+- assertVisible: "Yearly"
+- assertVisible: "₹299"
+- assertVisible: "₹1,999"
+
+# 3. Execute 7-Day Free Premium Trial Activation CTA Tap
+- tapOn: "Start 7-Day Free Premium Trial"
+
+# 4. Verify Immediate Entitlement Status Update & Banner State
+- assertVisible: "7-Day Premium Trial Active"
+- assertVisible: "7 days remaining"

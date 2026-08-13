@@ -2,24 +2,24 @@
 
 > [!NOTE]
 > **Document Purpose**: This master feature tracking backlog consolidates **every feature, technical capability, and system requirement** identified across the entire Grahvani documentation suite. It serves as an authoritative source for engineering sprint planning, implementation ticketing, scope boundary verification, and product roadmap tracking.
-> **Last Verified**: August 6, 2026 (Codebase Audit Completed)
+> **Last Verified**: August 12, 2026 (Codebase Audit & Batch 1 Completion Verified)
 
 ---
 
 ## 1. Executive Summary & Feature Breakdown
 
-- **Total Features Documented**: 70 Features
-- **Implemented (Backend API, Core Astrology, RAG & Mobile UI)**: 48 Features
-- **In Progress (DevOps & Hardening)**: 1 Feature
-- **Planned (Phase 2/3/4 Expansion Features)**: 21 Features
+- **Total Features Documented**: 71 Features
+- **Implemented (Core Backend, Ephemeris, RAG, Mobile UI & Testing)**: 54 Features
+- **Implemented (Scaffold — Requires Business/Compliance Review Before Activation)**: 4 Features
+- **Planned (Future Expansion Roadmap)**: 13 Features
 - **Deprecated / Out of Scope**: 0 Features
 - **Unknown / Ambiguous Status**: 0 Features
 
 ```mermaid
 pie title Feature Status Breakdown
-    "Implemented (Core, Mobile & Localization)" : 48
-    "In Progress (DevOps & Hardening)" : 1
-    "Planned (Phase 2/3/4)" : 21
+    "Implemented (Core, Mobile, RAG & Testing)" : 54
+    "Implemented (Scaffold — Compliance Review)" : 4
+    "Planned (Future Expansion Roadmap)" : 13
 ```
 
 ---
@@ -63,7 +63,7 @@ pie title Feature Status Breakdown
 | **Chat History Retention (7 Days Free / 12 Months Premium)** | `Implemented` | `High` | **AI & RAG**: Automated cleanup worker schemas for free vs premium sessions. |
 | **AI Content Guardrails (Medical, Financial, Legal, Prompt Injection)** | `Implemented` | `Critical` | **AI & RAG**: Hard blocking rules preventing non-astrological or dangerous advice. |
 | **Langfuse AI Trace Logging & Cost Accounting** | `Implemented` | `High` | **AI & RAG**: LLM tracing, prompt cost accounting, and hallucination evaluation setup (`app/core/tracing.py`). |
-| **Post-Retrieval Reranking (`bge-reranker-large`)** | `Planned` | `Medium` | **AI & RAG**: Cross-encoder reranking model planned for Phase 3 retrieval enhancement. |
+| **Post-Retrieval Reranking (`bge-reranker-large`)** | `Implemented` | `Medium` | **AI & RAG**: Cross-encoder reranking engine (`BAAI/bge-reranker-large`) and mock fallback implemented in `app/modules/interpretation/reranker.py` with test suite `test_reranker.py`. (Completed: August 12, 2026) |
 | **LangGraph Multi-Step Admin Editorial Ingestion Pipeline** | `Planned` | `Medium` | **AI & RAG**: Admin pipeline for classical text ingestion, citation checking, and human review. |
 | **Server-Side Entitlement Engine & 403 `ENTITLEMENT_REQUIRED` Interceptor** | `Implemented` | `Critical` | **Billing**: Global API entitlement check catching limits (`/billing/entitlements`). |
 | **Free Tier Daily AI Question Limit Enforcement (3 Qs/Day)** | `Implemented` | `Critical` | **Billing**: Rate limit check returning HTTP 403 when daily quota is exhausted. |
@@ -71,9 +71,9 @@ pie title Feature Status Breakdown
 | **Apple App Store In-App Purchases & Server Notifications v2** | `Implemented` | `Critical` | **Billing**: Native iOS IAP and App Store Server Notifications v2 handler built. |
 | **Razorpay Web / UPI Subscription Checkout & Webhooks** | `Implemented` | `High` | **Billing**: India web subscription checkout and HMAC signature verification webhooks built. |
 | **Flutter Modal Bottom Sheet Upgrade Paywall UI** | `Implemented` | `High` | **Billing**: Flutter `PaywallSheet` UI built with comparison table & price cards. |
-| **7-Day Free Premium Trial** | `Planned` | `Medium` | **Billing**: Friction reduction trial flow planned post-launch. |
-| **Family Plan Subscription Sharing (up to 5 profiles)** | `Planned` | `Medium` | **Billing**: Multi-profile subscription tier planned for Phase 3. |
-| **Lifetime License Option** | `Planned` | `Low` | **Billing**: One-time purchase tier planned for Phase 3. |
+| **7-Day Free Premium Trial** | `Implemented` | `Medium` | **Billing**: Activation endpoint `/billing/trial/activate`, 7-day expiration logic, anti-abuse checks, and trial user state handling implemented and verified in `test_billing_trial.py`. (Completed: August 12, 2026) |
+| **Family Plan Subscription Sharing (up to 5 profiles)** | `Implemented (scaffold — requires business/compliance review before activation)` | `Medium` | **Billing**: Multi-profile family entitlement data model and sharing scaffold created; requires compliance review prior to commercial enablement. |
+| **Lifetime License Option** | `Implemented (scaffold — requires business/compliance review before activation)` | `Low` | **Billing**: One-time purchase entitlement scaffold defined in billing schema; requires financial and compliance review prior to release. |
 | **FastAPI Modular Monolith Architecture (Python 3.12)** | `Implemented` | `Critical` | **Backend Architecture**: Async backend structure with isolated domain modules. |
 | **SQLAlchemy 2.0 AsyncEngine & PGBouncer Connection Pooling** | `Implemented` | `Critical` | **Backend Architecture**: High-concurrency async database connection pool. |
 | **Dramatiq Worker Task Queue (Redis 7 Message Broker)** | `Implemented` | `Critical` | **Backend Architecture**: Async background task processing for ephemeris & heavy jobs. |
@@ -98,19 +98,19 @@ pie title Feature Status Breakdown
 | **50-Vector Ephemeris Precision Test Suite (`pytest tests/astro/`)** | `Implemented` | `Critical` | **QA & Testing**: Verification suite matching NASA JPL ephemeris benchmarks. |
 | **Vimshottari Dasha Reference Test Suite** | `Implemented` | `Critical` | **QA & Testing**: Test suite validating Dasha period dates. |
 | **Pytest Integration Tests with Testcontainers** | `Implemented` | `High` | **QA & Testing**: Backend API and PostgreSQL integration testing suite. |
-| **Maestro Cross-Platform Mobile E2E Test Flows** | `Planned` | `High` | **QA & Testing**: End-to-end mobile user journey automation scripts. |
-| **Locust Performance & Load Testing Scripts** | `Planned` | `High` | **QA & Testing**: Concurrent user simulation and latency SLA verification. |
+| **Maestro Cross-Platform Mobile E2E Test Flows** | `Implemented` | `High` | **QA & Testing**: E2E mobile automation flows (onboarding, chart calculation, AI chat, paywall) defined in `tests/e2e/flows/` and `.maestro/flows/`. (Completed: August 12, 2026) |
+| **Locust Performance & Load Testing Scripts** | `Implemented` | `High` | **QA & Testing**: Multi-tier load test suite simulating Free, Trial, and Premium traffic against SSE chat streaming, trial activation, and ephemeris endpoints in `services/api/tests/load/locustfile.py`. (Completed: August 12, 2026) |
 | **Push Notifications for Dasha Period Changes & Transits** | `Implemented` | `High` | **Transits & Notifications**: FCM token API (`/notifications/fcm-token`), per-profile preferences, & Flutter UI. |
 | **Sade Sati Saturn Transit Tracker & Notifications** | `Implemented` | `High` | **Transits & Notifications**: Sade Sati API endpoint (`/transits/sade-sati/{id}`) & Flutter `SadeSatiScreen` built. |
 | **Flutter Web Build (`flutter build web`)** | `Planned` | `Medium` | **Future Roadmap (Phase 2)**: Web application deployment on S3 + CloudFront. |
 | **Multi-Language Support (Hindi, Tamil, Telugu, Marathi)** | `Implemented` | `High` | **Localization**: Flutter `l10n` engine with English, Hindi, Gujarati ARB files (`app_en.arb`, `app_hi.arb`, `app_gu.arb`) & app localizations built. |
 | **Voice AI Astrological Consultation (STT Whisper + WebRTC + TTS)** | `Planned` | `Medium` | **Future Roadmap (Phase 3)**: Real-time voice-to-voice Q&A interaction. |
-| **Synastry / Relationship Compatibility Chart Comparison** | `Planned` | `High` | **Future Roadmap (Phase 3)**: Partner chart overlays and compatibility scoring. |
+| **Synastry / Relationship Compatibility Chart Comparison** | `Implemented` | `High` | **Future Roadmap (Phase 3)**: Dual-chart comparison engine, aspect calculations (`compute_synastry_aspects`), PDF export, and Flutter `SynastryScreen` UI built. |
 | **Multi-Profile Chart Overlay Comparison** | `Planned` | `Medium` | **Future Roadmap (Phase 3)**: Family member chart visual comparison. |
-| **Yearly Varshaphal (Solar Return) Chart Calculation** | `Planned` | `Medium` | **Future Roadmap (Phase 3)**: Annual solar return predictive chart. |
+| **Yearly Varshaphal (Solar Return) Chart Calculation** | `Implemented` | `Medium` | **Future Roadmap (Phase 3)**: Annual solar return calculation engine, PDF report generation (`generate_varshaphal_pdf`), and Flutter `VarshaphalScreen` UI built. |
 | **Matchmaking (Kundali Milan / Ashta Koota Scoring)** | `Implemented` | `High` | **Future Roadmap (Phase 3)**: API endpoints and Flutter screen successfully built and integrated. |
-| **International Payment Integration (Stripe / Paddle)** | `Planned` | `Medium` | **Future Roadmap (Phase 3)**: Multi-currency billing for US/UK/EU diaspora. |
-| **Verified Human Astrologer Marketplace** | `Planned` | `Medium` | **Future Roadmap (Phase 4)**: Live video consultation marketplace & astrologer payouts. |
+| **International Payment Integration (Stripe / Paddle)** | `Implemented (scaffold — requires business/compliance review before activation)` | `Medium` | **Future Roadmap (Phase 3)**: Backend payment adapter interface and billing scaffolding created; live payment activation pending business/compliance sign-off. |
+| **Verified Human Astrologer Marketplace** | `Implemented (scaffold — requires business/compliance review before activation)` | `Medium` | **Future Roadmap (Phase 4)**: Marketplace API schema and consultation booking scaffolding established; payouts and live consultation activation require business/compliance review. |
 | **Astrologer Pro Tools & Client Management Dashboard** | `Planned` | `Medium` | **Future Roadmap (Phase 4)**: Professional dashboard for client report generation. |
 | **Muhurta (Auspicious Event Timing) Engine & Calendar Sync** | `Planned` | `Medium` | **Future Roadmap (Phase 4)**: Auspicious timing finder and calendar integration. |
 | **Public B2B API Developer Tier** | `Planned` | `Low` | **Future Roadmap (Phase 4)**: Usage-based API keys for third-party ephemeris/RAG access. |

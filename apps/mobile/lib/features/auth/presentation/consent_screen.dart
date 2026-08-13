@@ -212,6 +212,7 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
                     ),
                     const SizedBox(width: 16),
                     Switch(
+                      key: const Key('consent_switch'),
                       value: _isConsentGiven,
                       onChanged: (value) {
                         setState(() {

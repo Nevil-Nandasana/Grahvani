@@ -1,0 +1,21 @@
+appId: com.grahvani.app
+---
+- launchApp
+
+# Navigate to chart
+- tapOn: "Test User"
+
+# Open AI chat
+- tapOn: "Ask AI"
+- assertVisible: "What would you like to know?"
+
+# Ask a question
+- tapOn: "Type your question..."
+- inputText: "What does my Sun placement mean?"
+- tapOn: "Send"
+
+# Wait for streaming response
+- waitForAnimationToEnd:
+    timeout: 15000
+- assertVisible: "BPHS"    # Citation must appear in response
+- assertNotVisible: "error" # No error state

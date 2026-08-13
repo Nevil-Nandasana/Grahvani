@@ -115,6 +115,7 @@ async def get_chart_status(
 
 
 @router.post("/charts/{chart_id}/export/pdf", status_code=status.HTTP_202_ACCEPTED)
+@router.post("/charts/{chart_id}/export-pdf", status_code=status.HTTP_202_ACCEPTED, include_in_schema=False)
 async def trigger_pdf_export(
     chart_id: uuid.UUID,
     current_user: CurrentUser,
@@ -149,6 +150,7 @@ async def trigger_pdf_export(
 
 
 @router.post("/varshaphal/export-pdf", status_code=status.HTTP_200_OK, response_model=Dict[str, Any])
+@router.post("/charts/varshaphal/export-pdf", status_code=status.HTTP_200_OK, response_model=Dict[str, Any], include_in_schema=False)
 async def export_varshaphal_pdf(
     profile_id: UUID,
     year: int,

@@ -43,21 +43,42 @@ class LLMProvider(ABC):
 
 
 class GeminiProvider(LLMProvider):
-    """Google Gemini provider implementation supporting both google-genai and google.generativeai SDKs."""
+    """Google Gemini provider implementation supporting multi-key rotation and SDK fallbacks."""
 
-    def __init__(self, model_name: str, api_key: str):
+    def __init__(self, model_name: str, api_key: str | list[str]):
         self.model_name = model_name
-        self.api_key = api_key
-        try:
-            # Modern google-genai SDK (v1.0+)
-            self.client = genai.Client(api_key=api_key)
-            self._use_new_sdk = True
-        except (AttributeError, TypeError):
-            # Legacy google.generativeai fallback
-            import google.generativeai as legacy_genai
-            legacy_genai.configure(api_key=api_key)
-            self.legacy_model = legacy_genai.GenerativeModel(model_name=model_name)
-            self._use_new_sdk = False
+        if isinstance(api_key, str):
+            # Parse comma-separated keys if provided
+            self.api_keys = [k.strip() for k in api_key.split(",") if k.strip()]
+        else:
+            self.api_keys = [k.strip() for k in api_key if k.strip()]
+
+        if not self.api_keys:
+            self.api_keys = [""]
+
+        self._clients = []
+        self._legacy_models = []
+        self._use_new_sdk = True
+        self._current_index = 0
+
+        for key in self.api_keys:
+            try:
+                # Modern google-genai SDK (v1.0+)
+                client = genai.Client(api_key=key)
+                self._clients.append(client)
+            except (AttributeError, TypeError):
+                # Legacy google.generativeai fallback
+                import google.generativeai as legacy_genai
+                legacy_genai.configure(api_key=key)
+                model = legacy_genai.GenerativeModel(model_name=model_name)
+                self._legacy_models.append(model)
+                self._use_new_sdk = False
+
+    def _get_next_index(self) -> int:
+        """Get current key index and advance for round-robin rotation."""
+        idx = self._current_index
+        self._current_index = (self._current_index + 1) % len(self.api_keys)
+        return idx
 
     async def generate_stream(
         self,
@@ -67,40 +88,57 @@ class GeminiProvider(LLMProvider):
         max_tokens: int = 1500,
         rate_limit_key: Optional[str] = None,
     ) -> AsyncGenerator[str, None]:
-        """Generate and stream response from Google Gemini."""
+        """Generate and stream response from Google Gemini with multi-key failover."""
         full_prompt = f"{system_prompt}\n\n{user_message}"
-        try:
-            if self._use_new_sdk:
-                from google.genai import types
-                response = await self.client.aio.models.generate_content_stream(
-                    model=self.model_name,
-                    contents=full_prompt,
-                    config=types.GenerateContentConfig(
-                        temperature=temperature,
-                        max_output_tokens=max_tokens,
-                    ),
-                )
-                async for chunk in response:
-                    if chunk.text:
-                        yield chunk.text
-            else:
-                response = await self.legacy_model.generate_content_async(
-                    full_prompt,
-                    stream=True,
-                    generation_config={
-                        "temperature": temperature,
-                        "max_output_tokens": max_tokens,
-                    },
-                )
-                async for chunk in response:
-                    if chunk.text:
-                        yield chunk.text
-        except (GoogleAPICallError, GoogleAPIError, Exception) as e:
-            err_msg = str(e).lower()
-            if "quota" in err_msg or "billing" in err_msg or "credit" in err_msg or "429" in err_msg or "exceeded" in err_msg:
-                logger.warning(f"Google Gemini billing/quota error: {e}")
-                raise BillingError(f"Google Gemini API error: {e}") from e
-            raise
+        num_keys = len(self.api_keys)
+        start_idx = self._get_next_index()
+        last_exception = None
+
+        for attempt in range(num_keys):
+            key_idx = (start_idx + attempt) % num_keys
+            try:
+                if self._use_new_sdk:
+                    from google.genai import types
+                    client = self._clients[key_idx]
+                    response = await client.aio.models.generate_content_stream(
+                        model=self.model_name,
+                        contents=full_prompt,
+                        config=types.GenerateContentConfig(
+                            temperature=temperature,
+                            max_output_tokens=max_tokens,
+                        ),
+                    )
+                    async for chunk in response:
+                        if chunk.text:
+                            yield chunk.text
+                    return  # Success
+                else:
+                    model = self._legacy_models[key_idx]
+                    response = await model.generate_content_async(
+                        full_prompt,
+                        stream=True,
+                        generation_config={
+                            "temperature": temperature,
+                            "max_output_tokens": max_tokens,
+                        },
+                    )
+                    async for chunk in response:
+                        if chunk.text:
+                            yield chunk.text
+                    return  # Success
+            except (GoogleAPICallError, GoogleAPIError, Exception) as e:
+                last_exception = e
+                err_msg = str(e).lower()
+                if "quota" in err_msg or "billing" in err_msg or "credit" in err_msg or "429" in err_msg or "exceeded" in err_msg:
+                    logger.warning(
+                        f"Gemini API Key index {key_idx} quota/billing error: {e}. Trying next key..."
+                    )
+                    continue
+                raise
+
+        # All keys failed
+        logger.error("All Gemini API keys in pool failed or exhausted quota.")
+        raise BillingError(f"All Google Gemini API keys exhausted: {last_exception}") from last_exception
 
 
 class NVIDIAProvider(LLMProvider):

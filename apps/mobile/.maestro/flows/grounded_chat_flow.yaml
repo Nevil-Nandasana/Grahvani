@@ -1,0 +1,29 @@
+appId: com.grahvani.app
+---
+- launchApp
+
+# 1. Navigate to Grounded AI Chat Session
+- tapOn: "AI Interpretation"
+- assertVisible: "Grahvani AI"
+- assertVisible: "Grounded Vedic Interpretation"
+- assertVisible: "Ask Grahvani"
+
+# 2. Enter Astrological RAG Query
+- tapOn: "Ask about your chart..."
+- inputText: "What does my Sun placement mean for my career?"
+
+# 3. Transmit Query & Trigger SSE Streaming Response
+- tapOn:
+    id: "chat_send_button"
+
+# 4. Receive Streaming Interpretation & Verify No Error State
+- waitForAnimationToEnd:
+    timeout: 15000
+- assertNotVisible: "error"
+
+# 5. Verify Classical Text Citation Rendering (BPHS / Phaladeepika)
+- assertVisible: "Brihat Parashara Hora Shastra"
+
+# 6. Open Citation Details Modal & Verify Source Text Verification
+- tapOn: "Brihat Parashara Hora Shastra"
+- assertVisible: "Source Text"

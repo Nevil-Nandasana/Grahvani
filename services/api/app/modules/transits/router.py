@@ -25,7 +25,7 @@ from app.tasks.transit_monitor import (
     _is_saturn_in_sade_sati,
 )
 
-router = APIRouter(prefix="", tags=["Transits & Sade Sati"])
+router = APIRouter(prefix="/transits", tags=["Transits & Sade Sati"])
 
 # Directory to store generated PDFs
 PDF_STORAGE = Path(tempfile.gettempdir()) / "grahvani_pdfs"
@@ -76,6 +76,15 @@ class CurrentPositionsResponse(BaseModel):
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
+
+async def _get_authenticated_user(current_user: CurrentUser, db: AsyncSession) -> User:
+    firebase_uid = current_user.get("uid")
+    res = await db.execute(select(User).where(User.firebase_uid == firebase_uid))
+    user = res.scalar_one_or_none()
+    if not user:
+        raise NotFoundError("User")
+    return user
+
 
 async def _get_profile_for_user(profile_id: UUID, user_id: UUID, db: AsyncSession) -> BirthProfile:
     """Get a birth profile for the authenticated user."""
@@ -141,8 +150,9 @@ async def export_sade_sati_pdf(
     Generate and return a PDF report for Sade Sati (Saturn Transit) analysis.
     Returns a URL to download the PDF.
     """
-    # Get profile
-    profile = await _get_profile_for_user(profile_id, UUID(current_user["uid"]), db)
+    # Get user & profile
+    user = await _get_authenticated_user(current_user, db)
+    profile = await _get_profile_for_user(profile_id, user.id, db)
     
     # Get Sade Sati data
     sade_sati_data = await get_sade_sati_status(profile_id, current_user, db)
@@ -189,8 +199,9 @@ async def get_sade_sati_status(
         - Human-readable description of the phase
         - Estimated start/end dates and days remaining
     """
-    # Get profile
-    profile = await _get_profile_for_user(profile_id, UUID(current_user["uid"]), db)
+    # Get user & profile
+    user = await _get_authenticated_user(current_user, db)
+    profile = await _get_profile_for_user(profile_id, user.id, db)
     
     # Get Moon sign from birth chart
     moon_sign = _get_moon_sign(profile)

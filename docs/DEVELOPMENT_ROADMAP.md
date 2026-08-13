@@ -64,10 +64,13 @@ Focus: Reliability, background job queues, cloud deployment, billing entitlement
    - Amazon RDS PostgreSQL Multi-AZ cluster setup with automated daily backups.
    - Private AWS S3 buckets for document and export storage.
    - AWS Secrets Manager integration for API key rotation.
-4. **Observability & QA**:
+4. **Observability, QA & Hardening (Completed Batch 1)**:
+   - `bge-reranker-large` integration for post-retrieval cross-encoder reranking (`app/modules/interpretation/reranker.py`).
+   - 7-Day Free Premium Trial entitlement flow and anti-abuse protection (`/billing/trial/activate`).
+   - Multi-tier Locust performance & load testing suite (`services/api/tests/load/locustfile.py`).
+   - Cross-platform Maestro mobile UI E2E test flows (`tests/e2e/flows/` & `.maestro/flows/`).
    - Langfuse setup for AI trace logging, prompt cost accounting, and hallucination evaluation.
    - Sentry exception tracking and AWS CloudWatch metrics.
-   - E2E testing flows with Maestro.
 
 ---
 
@@ -78,9 +81,9 @@ Focus: Editorial workflows, advanced search features, voice interface, and multi
 ### Deliverables
 1. **LangGraph Editorial Ingestion Workflow**:
    - Multi-step admin editorial pipeline (Source ingestion -> Automated citation check -> Human expert review -> Vector DB publishing).
-2. **Advanced Search & Retrieval Enhancements**:
-   - `bge-reranker-large` integration for post-retrieval reranking.
-   - Expansion of astrological corpus to cover specialized divisional charts (D10, D12, D60).
+2. **Advanced Search & Specialized Chart Enhancements**:
+   - Expansion of astrological corpus to cover specialized divisional charts (D10, D12, D60) and Synastry / Varshaphal PDF exports.
+
 3. **Voice Interface & Localization**:
    - Multi-language support (Hindi, Tamil, Telugu, Marathi).
    - Voice-to-text input and streaming text-to-speech AI answers.
