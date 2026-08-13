@@ -17,7 +17,7 @@ from app.core.exceptions import NotFoundError
 from app.core.security import CurrentUser
 from app.db.session import get_db
 from app.modules.birth_chart.ephemeris_service import calculate_chart
-from app.modules.identity.models import BirthProfile
+from app.modules.identity.models import BirthProfile, User
 from app.tasks.transit_monitor import (
     _calculate_saturn_position,
     _get_moon_sign,
