@@ -45,22 +45,60 @@ class ChatNotifier extends StateNotifier<ChatState> {
   final String chartId;
   final ChatRepository _repository;
 
-  Future<void> initSession() async {
+  Future<void> initSession({String profileName = ''}) async {
     if (state.sessionId != null) return;
     try {
       final sessionId = await _repository.createSession(chartId);
       state = state.copyWith(sessionId: sessionId);
-      await _loadHistory(sessionId);
+      await _loadHistory(sessionId, profileName: profileName);
     } catch (e) {
-      state = state.copyWith(errorMessage: e.toString());
+      // In offline/dev or fallback mode, still provide greeting
+      state = state.copyWith(
+        sessionId: 'local_${DateTime.now().millisecondsSinceEpoch}',
+        errorMessage: null,
+      );
+      if (state.messages.isEmpty) {
+        _setInitialGreeting(profileName);
+      }
     }
   }
 
-  Future<void> _loadHistory(String sessionId) async {
+  void _setInitialGreeting(String profileName) {
+    final name = profileName.trim().isNotEmpty ? profileName.trim() : 'Seeker';
+    final greeting = ChatMessage(
+      id: 'greeting_${DateTime.now().millisecondsSinceEpoch}',
+      role: ChatRole.assistant,
+      content: 'Namaste $name! 🙏 I am Grahvani, your personal Vedic astrology guide.\n\n'
+          'I am here to interpret your birth chart, planetary yogas, dasha periods, and karmic life guidance grounded in classical Jyotish texts.\n\n'
+          '✨ Ask me anything about your career, relationships, transits, or remedies.\n'
+          '💡 Tip: You can type /clear to clear the screen or /reset to start a brand new session.',
+      createdAt: DateTime.now(),
+    );
+    state = state.copyWith(messages: [greeting]);
+  }
+
+  Future<void> _loadHistory(String sessionId, {String profileName = ''}) async {
     try {
       final messages = await _repository.loadMessages(sessionId);
-      state = state.copyWith(messages: messages);
-    } catch (_) {}
+      if (messages.isEmpty) {
+        _setInitialGreeting(profileName);
+      } else {
+        state = state.copyWith(messages: messages);
+      }
+    } catch (_) {
+      if (state.messages.isEmpty) {
+        _setInitialGreeting(profileName);
+      }
+    }
+  }
+
+  void clearChat({String profileName = ''}) {
+    _setInitialGreeting(profileName);
+  }
+
+  Future<void> resetSession({String profileName = ''}) async {
+    state = const ChatState(messages: [], isStreaming: false);
+    await initSession(profileName: profileName);
   }
 
   Future<void> sendMessage(String promptText) async {

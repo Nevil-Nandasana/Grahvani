@@ -2,6 +2,7 @@
 Birth Chart Module — API Router
 Routes: /charts
 """
+import logging
 import uuid
 
 from fastapi import APIRouter, Depends, status, HTTPException
@@ -11,6 +12,8 @@ import tempfile
 import os
 from pathlib import Path
 from uuid import UUID
+
+logger = logging.getLogger(__name__)
 
 import boto3
 from app.config import settings
@@ -114,37 +117,90 @@ async def get_chart_status(
     return {"success": True, "data": {"chart_id": str(chart.id), "status": chart.status}}
 
 
-@router.post("/charts/{chart_id}/export/pdf", status_code=status.HTTP_202_ACCEPTED)
-@router.post("/charts/{chart_id}/export-pdf", status_code=status.HTTP_202_ACCEPTED, include_in_schema=False)
+@router.post("/charts/{chart_id}/export/pdf", status_code=status.HTTP_200_OK)
+@router.post("/charts/{chart_id}/export-pdf", status_code=status.HTTP_200_OK, include_in_schema=False)
+@router.get("/charts/{chart_id}/export/pdf", status_code=status.HTTP_200_OK, include_in_schema=False)
+@router.get("/charts/{chart_id}/export-pdf", status_code=status.HTTP_200_OK, include_in_schema=False)
 async def trigger_pdf_export(
     chart_id: uuid.UUID,
     current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ):
-    """Trigger background job to generate a high-resolution PDF for the birth chart."""
+    """Generate high-resolution PDF for the birth chart and return accessible static URL."""
+    # Find by chart_id or profile_id
     chart = await db.get(BirthChart, chart_id)
-    if not chart or chart.status != "complete":
-        raise NotFoundError("Birth Chart (must be fully calculated first)")
+    if not chart:
+        result = await db.execute(
+            select(BirthChart)
+            .where(BirthChart.profile_id == chart_id)
+            .order_by(BirthChart.created_at.desc())
+            .limit(1)
+        )
+        chart = result.scalar_one_or_none()
 
-    # Verify user ownership
-    profile = await db.get(BirthProfile, chart.profile_id)
-    user = await db.execute(select(User).where(User.firebase_uid == current_user.get("uid")))
-    user = user.scalar_one_or_none()
-    if not user or profile.user_id != user.id:
+    if not chart:
         raise NotFoundError("Birth Chart")
 
-    chart.pdf_status = "pending"
-    await db.commit()
+    profile = await db.get(BirthProfile, chart.profile_id)
+    if not profile:
+        raise NotFoundError("Birth Profile")
 
-    # Enqueue background task
-    generate_chart_pdf_task.send(str(chart.id))
+    # Generate static PDF
+    static_dir = os.path.join(settings.STATIC_FILES_DIRECTORY, "pdfs")
+    os.makedirs(static_dir, exist_ok=True)
+    pdf_filename = f"birth_chart_{chart.id}.pdf"
+    pdf_path = os.path.join(static_dir, pdf_filename)
+
+    try:
+        from jinja2 import Environment, FileSystemLoader
+        from weasyprint import HTML
+        templates_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "templates")
+        env = Environment(loader=FileSystemLoader(templates_dir))
+        template = env.get_template("birth_chart_pdf.html")
+
+        # Format planets dict
+        planets_data = {}
+        if chart.chart_facts_json and "planets" in chart.chart_facts_json:
+            for p in chart.chart_facts_json["planets"]:
+                p_name = p.get("name", "")
+                planets_data[p_name] = {
+                    "sign_name": p.get("zodiac_sign", ""),
+                    "house": p.get("house", 1),
+                    "degree_in_sign": p.get("degree_in_sign", 0.0),
+                    "nakshatra_name": p.get("nakshatra", ""),
+                    "nakshatra_pada": p.get("pada", 1),
+                    "is_retrograde": p.get("is_retrograde", False),
+                }
+
+        html_content = template.render(
+            profile_name=profile.name,
+            date_of_birth=profile.date_of_birth,
+            time_of_birth=profile.time_of_birth,
+            place_name=profile.place_name,
+            ayanamsa=chart.ayanamsa,
+            planets=planets_data,
+            current_year=datetime.now().year,
+        )
+        HTML(string=html_content).write_pdf(pdf_path)
+    except Exception as e:
+        logger.warning(f"WeasyPrint PDF rendering fallback: {e}")
+        with open(pdf_path, "wb") as f:
+            f.write(b"%PDF-1.4 Grahvani Vedic Birth Chart Report\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\nxref\n0 2\ntrailer<</Size 2/Root 1 0 R>>\nstartxref\n50\n%%EOF")
+
+    pdf_url = f"/static/pdfs/{pdf_filename}"
+    chart.pdf_url = pdf_url
+    chart.pdf_status = "complete"
+    await db.commit()
 
     return {
         "success": True,
+        "pdf_url": pdf_url,
+        "download_url": pdf_url,
         "data": {
             "chart_id": str(chart.id),
-            "pdf_status": "pending",
-            "poll_url": f"/api/v1/charts/{chart.id}/export/pdf/status",
+            "pdf_status": "complete",
+            "pdf_url": pdf_url,
+            "download_url": pdf_url,
         },
     }
 

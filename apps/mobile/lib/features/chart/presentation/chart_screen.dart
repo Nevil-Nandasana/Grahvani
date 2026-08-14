@@ -50,21 +50,42 @@ class _ChartScreenState extends ConsumerState<ChartScreen>
     setState(() => _isPdfLoading = true);
     try {
       final dio = ref.read(apiClientProvider);
-      final response = await dio.get<Map<String, dynamic>>(
+      final response = await dio.post(
         '/api/v1/charts/${widget.chartId}/export-pdf',
       );
-      final pdfUrl = response.data?['pdf_url'] as String? ??
-          response.data?['url'] as String?;
-      if (pdfUrl != null) {
+      final dynamic raw = response.data;
+      final Map<String, dynamic> data = raw is Map
+          ? (raw.containsKey('data') && raw['data'] is Map
+              ? Map<String, dynamic>.from(raw['data'] as Map)
+              : Map<String, dynamic>.from(raw))
+          : {};
+
+      String? pdfUrl = data['pdf_url'] as String? ??
+          data['download_url'] as String? ??
+          data['url'] as String?;
+
+      if (pdfUrl != null && pdfUrl.isNotEmpty) {
+        if (pdfUrl.startsWith('/')) {
+          pdfUrl = '$defaultApiBaseUrl$pdfUrl';
+        }
         final uri = Uri.parse(pdfUrl);
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } else {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Opening PDF at $pdfUrl'),
+                backgroundColor: AppColors.primaryBurgundy,
+              ),
+            );
+          }
         }
       } else {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('PDF export is a Premium feature.'),
+              content: Text('PDF generated. Check /static/pdfs in your backend.'),
               backgroundColor: AppColors.primaryBurgundyDark,
             ),
           );
@@ -463,40 +484,49 @@ class _NorthIndianChartPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final s = size.width;
-    final paint = Paint()
-      ..color = AppColors.darkBgSecondary
-      ..strokeWidth = 1.2
+
+    // Glowing outer & inner line paint (Sacred Gold)
+    final goldPaint = Paint()
+      ..color = const Color(0xFFE5B869)
+      ..strokeWidth = 2.2
+      ..style = PaintingStyle.stroke;
+
+    final outerGoldPaint = Paint()
+      ..color = const Color(0xFFFFD700)
+      ..strokeWidth = 2.8
+      ..style = PaintingStyle.stroke;
+
+    final glowPaint = Paint()
+      ..color = const Color(0xFFFFD700).withOpacity(0.15)
+      ..strokeWidth = 4.5
       ..style = PaintingStyle.stroke;
 
     final bgPaint = Paint()
-      ..color = const Color(0xFF10102A)
+      ..color = const Color(0xFF0D0A18)
       ..style = PaintingStyle.fill;
 
     // Outer square
     final outerRect = Rect.fromLTWH(0, 0, s, s);
     canvas.drawRect(outerRect, bgPaint);
-    canvas.drawRect(outerRect, paint);
+    canvas.drawRect(outerRect, glowPaint);
+    canvas.drawRect(outerRect, outerGoldPaint);
 
-    // Diagonal lines (corners)
-    canvas.drawLine(Offset(0, 0), Offset(s / 3, s / 3), paint);
-    canvas.drawLine(Offset(s, 0), Offset(s * 2 / 3, s / 3), paint);
-    canvas.drawLine(Offset(0, s), Offset(s / 3, s * 2 / 3), paint);
-    canvas.drawLine(Offset(s, s), Offset(s * 2 / 3, s * 2 / 3), paint);
+    // North Indian Kundali Sacred Geometry:
+    // 1. Diagonal corner lines (corner to corner cross)
+    canvas.drawLine(Offset(0, 0), Offset(s, s), glowPaint);
+    canvas.drawLine(Offset(0, 0), Offset(s, s), goldPaint);
+    canvas.drawLine(Offset(s, 0), Offset(0, s), glowPaint);
+    canvas.drawLine(Offset(s, 0), Offset(0, s), goldPaint);
 
-    // Inner diamond (the central 4-triangle zone)
+    // 2. Inner diamond (connecting midpoints: top, right, bottom, left)
     final diamondPath = Path()
-      ..moveTo(s / 2, s / 3)
-      ..lineTo(s * 2 / 3, s / 2)
-      ..lineTo(s / 2, s * 2 / 3)
-      ..lineTo(s / 3, s / 2)
+      ..moveTo(s / 2, 0)
+      ..lineTo(s, s / 2)
+      ..lineTo(s / 2, s)
+      ..lineTo(0, s / 2)
       ..close();
-    canvas.drawPath(diamondPath, paint);
-
-    // Cross lines
-    canvas.drawLine(Offset(s / 3, s / 3), Offset(s * 2 / 3, s / 3), paint);
-    canvas.drawLine(Offset(s * 2 / 3, s / 3), Offset(s * 2 / 3, s * 2 / 3), paint);
-    canvas.drawLine(Offset(s * 2 / 3, s * 2 / 3), Offset(s / 3, s * 2 / 3), paint);
-    canvas.drawLine(Offset(s / 3, s * 2 / 3), Offset(s / 3, s / 3), paint);
+    canvas.drawPath(diamondPath, glowPaint);
+    canvas.drawPath(diamondPath, goldPaint);
 
     // House numbers and planets
     for (final entry in _houseCenters.entries) {
@@ -504,19 +534,22 @@ class _NorthIndianChartPainter extends CustomPainter {
       final center = Offset(entry.value.dx * s, entry.value.dy * s);
       final planetsHere = chart.planetsInDivisionalHouse(houseNum, division);
 
-      // House number
+      // House number in luminous warm gold
       _drawText(
         canvas,
         '$houseNum',
-        center.translate(0, -10),
+        center.translate(0, -11),
         const TextStyle(
-          color: Color(0xFF4A4A7A),
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
+          color: Color(0xFFFFDF80),
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          shadows: [
+            Shadow(color: Colors.black, blurRadius: 4, offset: Offset(0, 1)),
+          ],
         ),
       );
 
-      // Planet abbreviations
+      // Planet abbreviations with vibrant colored badges
       if (planetsHere.isNotEmpty) {
         final labels = planetsHere.map((p) {
           final abbr = _planetAbbr(p.name);
@@ -527,11 +560,15 @@ class _NorthIndianChartPainter extends CustomPainter {
           _drawText(
             canvas,
             labels[i],
-            center.translate(0, 4 + i * 12.0),
+            center.translate(0, 4 + i * 13.0),
             TextStyle(
               color: _planetColor(planetsHere[i].name),
-              fontSize: 9,
-              fontWeight: FontWeight.w600,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              shadows: const [
+                Shadow(color: Colors.black, blurRadius: 4, offset: Offset(0, 1)),
+                Shadow(color: Colors.black87, blurRadius: 6),
+              ],
             ),
           );
         }
@@ -556,15 +593,15 @@ class _NorthIndianChartPainter extends CustomPainter {
 
   static Color _planetColor(String name) {
     return const {
-      'Sun':     Color(0xFFFFB347),
-      'Moon':    Color(0xFFE0E0FF),
-      'Mars':    Color(0xFFFF6B6B),
-      'Mercury': Color(0xFF64FF8A),
-      'Jupiter': AppColors.gold,
-      'Venus':   Color(0xFFFF9ECD),
-      'Saturn':  Color(0xFF87CEEB),
-      'Rahu':    Color(0xFFB0B0B0),
-      'Ketu':    Color(0xFFD2A679),
+      'Sun':     Color(0xFFFFB74D), // Luminous Sun Amber
+      'Moon':    Color(0xFFE8EAFF), // Luminous Moon Pearl
+      'Mars':    Color(0xFFFF5252), // Luminous Mars Coral
+      'Mercury': Color(0xFF69F0AE), // Luminous Mercury Jade
+      'Jupiter': Color(0xFFFFD700), // Luminous Jupiter Sacred Gold
+      'Venus':   Color(0xFFFF80AB), // Luminous Venus Rose
+      'Saturn':  Color(0xFF80D8FF), // Luminous Saturn Azure
+      'Rahu':    Color(0xFFB39DDB), // Luminous Rahu Slate Violet
+      'Ketu':    Color(0xFFFFCC80), // Luminous Ketu Sandstone
     }[name] ?? Colors.white;
   }
 
@@ -574,8 +611,6 @@ class _NorthIndianChartPainter extends CustomPainter {
 }
 
 // ─── South Indian Chart ─────────────────────────────────────────────────────
-// Fixed 4×4 grid with signs running clockwise from top-left corner (Pisces/Aries
-// convention). Ascendant house is highlighted.
 
 class SouthIndianChart extends StatelessWidget {
   const SouthIndianChart({
@@ -586,11 +621,6 @@ class SouthIndianChart extends StatelessWidget {
   final BirthChartFacts chart;
   final String division;
 
-  // South Indian fixed sign order (column-major, top-left → right → down)
-  // Row 0: Pisces(12), Aries(1), Taurus(2), Gemini(3)
-  // Row 1: Aquarius(11), [center-TL], [center-TR], Cancer(4)
-  // Row 2: Capricorn(10), [center-BL], [center-BR], Leo(5)
-  // Row 3: Sagittarius(9), Scorpio(8), Libra(7), Virgo(6)
   static const _signGrid = [
     [12, 1, 2, 3],
     [11, -1, -1, 4],
@@ -620,8 +650,9 @@ class SouthIndianChart extends StatelessWidget {
               width: size,
               height: size,
               decoration: BoxDecoration(
-                color: const Color(0xFF10102A),
-                border: Border.all(color: AppColors.darkBgSecondary, width: 1.2),
+                color: const Color(0xFF0D0A18),
+                border: Border.all(color: const Color(0xFFFFD700), width: 2.2),
+                borderRadius: BorderRadius.circular(4),
               ),
             ),
             // Grid lines
@@ -664,10 +695,11 @@ class _SouthIndianGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppColors.darkBgSecondary
-      ..strokeWidth = 1.0
+      ..color = const Color(0xFFE5B869)
+      ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
     final cell = size.width / 4;
+
     // Horizontal lines
     for (int i = 1; i < 4; i++) {
       canvas.drawLine(Offset(0, i * cell), Offset(size.width, i * cell), paint);
@@ -676,18 +708,18 @@ class _SouthIndianGridPainter extends CustomPainter {
     for (int i = 1; i < 4; i++) {
       canvas.drawLine(Offset(i * cell, 0), Offset(i * cell, size.height), paint);
     }
-    // Inner hollow: draw the inner 2×2 as a filled rectangle (center empty)
+    // Inner hollow: center 2x2
     final innerPaint = Paint()
-      ..color = const Color(0xFF080818)
+      ..color = const Color(0xFF07050F)
       ..style = PaintingStyle.fill;
-    canvas.drawRect(
-      Rect.fromLTWH(cell, cell, cell * 2, cell * 2),
-      innerPaint,
-    );
-    canvas.drawRect(
-      Rect.fromLTWH(cell, cell, cell * 2, cell * 2),
-      paint,
-    );
+    final innerGoldBorder = Paint()
+      ..color = const Color(0xFFFFD700).withOpacity(0.5)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+
+    final centerRect = Rect.fromLTWH(cell, cell, cell * 2, cell * 2);
+    canvas.drawRect(centerRect, innerPaint);
+    canvas.drawRect(centerRect, innerGoldBorder);
   }
 
   @override
@@ -696,6 +728,7 @@ class _SouthIndianGridPainter extends CustomPainter {
 
 class _SouthIndianCell extends StatelessWidget {
   const _SouthIndianCell({
+    super.key,
     required this.left,
     required this.top,
     required this.size,
@@ -721,11 +754,12 @@ class _SouthIndianCell extends StatelessWidget {
       child: Container(
         decoration: isAscendant
             ? BoxDecoration(
-                color: AppColors.primaryBurgundy.withOpacity(0.12),
-                border: Border.all(color: AppColors.primaryBurgundy, width: 1.5),
+                color: const Color(0xFFE5B869).withOpacity(0.18),
+                border: Border.all(color: const Color(0xFFFFD700), width: 1.8),
+                borderRadius: BorderRadius.circular(2),
               )
             : null,
-        padding: const EdgeInsets.all(3),
+        padding: const EdgeInsets.all(4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -734,26 +768,35 @@ class _SouthIndianCell extends StatelessWidget {
                 Text(
                   '$signNumber',
                   style: TextStyle(
-                    color: isAscendant
-                        ? AppColors.primaryBurgundy
-                        : AppColors.darkBgStrong,
-                    fontSize: 9,
-                    fontWeight: FontWeight.bold,
+                    color: isAscendant ? const Color(0xFFFFD700) : const Color(0xFFFFDF80),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
                 if (isAscendant) ...[
-                  const SizedBox(width: 2),
-                  const Text('Asc',
+                  const SizedBox(width: 3),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 0.5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFD700),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                    child: const Text(
+                      'ASC',
                       style: TextStyle(
-                          color: AppColors.primaryBurgundy,
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold)),
+                        color: Colors.black,
+                        fontSize: 7.5,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
                 ],
               ],
             ),
+            const SizedBox(height: 2),
             Expanded(
               child: Wrap(
-                spacing: 1,
+                spacing: 2,
                 runSpacing: 1,
                 children: planets.map((p) {
                   final abbr = _NorthIndianChartPainter._planetAbbr(p.name);
@@ -761,8 +804,11 @@ class _SouthIndianCell extends StatelessWidget {
                     p.isRetrograde ? '$abbr(R)' : abbr,
                     style: TextStyle(
                       color: _NorthIndianChartPainter._planetColor(p.name),
-                      fontSize: 8.5,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w800,
+                      shadows: const [
+                        Shadow(color: Colors.black, blurRadius: 3),
+                      ],
                     ),
                   );
                 }).toList(),

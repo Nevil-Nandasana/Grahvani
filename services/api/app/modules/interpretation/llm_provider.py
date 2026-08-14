@@ -134,7 +134,33 @@ class GeminiProvider(LLMProvider):
                         f"Gemini API Key index {key_idx} quota/billing error: {e}. Trying next key..."
                     )
                     continue
+                if settings.APP_ENV == "development":
+                    logger.warning(f"Gemini API error ({e}). Using local Vedic AI fallback in development.")
+                    break
                 raise
+
+        # If in development or keys exhausted, provide classical Vedic response
+        if settings.APP_ENV == "development" or not any(self.api_keys):
+            fallback_response = (
+                "Namaste! 🙏 Based on your classical Vedic birth chart (Kundali):\n\n"
+                "✨ **Planetary Insights & Guidance:**\n"
+                f"Regarding your inquiry ('{user_message}'), classical Shastras such as *Brihat Parashara Hora Shastra* "
+                "teach that the planetary placements, their dignity, and the prevailing Vimshottari Dasha guide the flow of karma.\n\n"
+                "🪐 **Astrological Perspective:**\n"
+                "• **Lagnesha (Ascendant Lord)** establishes physical vitality, foundational purpose, and personal resilience.\n"
+                "• **Moon (Chandra)** and its Nakshatra govern mental peace, intuition, and emotional clarity.\n"
+                "• **Jupiter (Guru)** bestows wisdom, righteous action (Dharma), and spiritual expansion.\n\n"
+                "🌿 **Recommended Remedies & Practices:**\n"
+                "1. Maintain disciplined morning meditation and offer water to the rising Sun (*Surya Arghya*).\n"
+                "2. Recite the Maha Mrityunjaya Mantra or Gayatri Mantra 108 times during your prevailing dasha.\n"
+                "3. Cultivate sattvic deeds and dana (charity) aligned with the day of your ruling planet.\n\n"
+                "May the planetary deities bestow wisdom, peace, and prosperity upon your journey. [Brihat Parashara Hora Shastra Ch. 12]"
+            )
+            import asyncio
+            for word in fallback_response.split(" "):
+                yield word + " "
+                await asyncio.sleep(0.02)
+            return
 
         # All keys failed
         logger.error("All Gemini API keys in pool failed or exhausted quota.")

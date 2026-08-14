@@ -8,6 +8,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/chat_model.dart';
 import '../domain/chat_provider.dart';
+import '../../profile/domain/profile_provider.dart';
+import '../../profile/domain/profile_model.dart';
 import '../../subscriptions/presentation/paywall_sheet.dart';
 import '../../theme/app_colors.dart';
 
@@ -22,6 +24,8 @@ class ChatScreen extends ConsumerStatefulWidget {
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _promptController = TextEditingController();
   final _scrollController = ScrollController();
+  late String _activeChartId;
+  String _activeProfileName = '';
   int _charCount = 0;
 
   static const int _maxChars = 500;
@@ -29,8 +33,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    _activeChartId = widget.chartId;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(chatNotifierProvider(widget.chartId).notifier).initSession();
+      final profiles = ref.read(profilesNotifierProvider).valueOrNull ?? [];
+      if (profiles.isNotEmpty) {
+        final current = profiles.firstWhere(
+          (p) => p.id == _activeChartId,
+          orElse: () => profiles.first,
+        );
+        _activeProfileName = current.name;
+        _activeChartId = current.id;
+      }
+      ref.read(chatNotifierProvider(_activeChartId).notifier).initSession(
+            profileName: _activeProfileName,
+          );
     });
   }
 
@@ -53,40 +69,115 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
   }
 
-  Future<void> _sendMessage() async {
-    final text = _promptController.text.trim();
+  Future<void> _sendMessage([String? directText]) async {
+    final text = (directText ?? _promptController.text).trim();
     if (text.isEmpty) return;
     _promptController.clear();
     setState(() => _charCount = 0);
 
+    // Slash command handling: /clear
+    if (text.toLowerCase() == '/clear') {
+      ref
+          .read(chatNotifierProvider(_activeChartId).notifier)
+          .clearChat(profileName: _activeProfileName);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Chat display cleared.'),
+            duration: Duration(seconds: 1),
+            backgroundColor: Color(0xFF2A1B38),
+          ),
+        );
+      }
+      return;
+    }
+
+    // Slash command handling: /reset
+    if (text.toLowerCase() == '/reset') {
+      ref
+          .read(chatNotifierProvider(_activeChartId).notifier)
+          .resetSession(profileName: _activeProfileName);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Chat session reset. Fresh reading initialized.'),
+            duration: Duration(seconds: 1),
+            backgroundColor: AppColors.primaryBurgundy,
+          ),
+        );
+      }
+      return;
+    }
+
     await ref
-        .read(chatNotifierProvider(widget.chartId).notifier)
+        .read(chatNotifierProvider(_activeChartId).notifier)
         .sendMessage(text);
     _scrollToBottom();
   }
 
   @override
   Widget build(BuildContext context) {
-    final chatState = ref.watch(chatNotifierProvider(widget.chartId));
+    final chatState = ref.watch(chatNotifierProvider(_activeChartId));
+    final profilesAsync = ref.watch(profilesNotifierProvider);
+    final profiles = profilesAsync.valueOrNull ?? [];
+
+    // Sync profile name if available
+    if (profiles.isNotEmpty) {
+      final matched = profiles.firstWhere(
+        (p) => p.id == _activeChartId,
+        orElse: () => profiles.first,
+      );
+      if (_activeProfileName != matched.name) {
+        _activeProfileName = matched.name;
+      }
+    }
 
     // Scroll when new messages arrive
-    ref.listen(chatNotifierProvider(widget.chartId), (_, __) => _scrollToBottom());
+    ref.listen(chatNotifierProvider(_activeChartId), (_, __) => _scrollToBottom());
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: const Color(0xFF0A0713),
       appBar: AppBar(
-        backgroundColor: AppColors.darkBg,
+        backgroundColor: const Color(0xFF0F0B1E),
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Grahvani AI',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            Text('Grounded Vedic Interpretation',
-                style: TextStyle(color: AppColors.textMutedDark, fontSize: 11)),
-          ],
-        ),
+        titleSpacing: 0,
+        title: _buildProfileSelector(profiles),
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: AppColors.gold),
+            color: const Color(0xFF1B1128),
+            onSelected: (val) {
+              if (val == 'clear') {
+                _sendMessage('/clear');
+              } else if (val == 'reset') {
+                _sendMessage('/reset');
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'clear',
+                child: Row(
+                  children: [
+                    Icon(Icons.cleaning_services_outlined, color: Colors.white70, size: 18),
+                    SizedBox(width: 8),
+                    Text('Clear Screen (/clear)', style: TextStyle(color: Colors.white)),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'reset',
+                child: Row(
+                  children: [
+                    Icon(Icons.restart_alt, color: AppColors.gold, size: 18),
+                    SizedBox(width: 8),
+                    Text('Reset Session (/reset)', style: TextStyle(color: AppColors.gold)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -111,6 +202,81 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           // Input bar
           _buildInputBar(context, chatState.isStreaming, chatState.quotaExhausted),
         ],
+      ),
+    );
+  }
+
+  Widget _buildProfileSelector(List<BirthProfile> profiles) {
+    if (profiles.isEmpty) {
+      return const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Grahvani AI',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+          Text('Grounded Vedic Interpretation',
+              style: TextStyle(color: AppColors.textMutedDark, fontSize: 11)),
+        ],
+      );
+    }
+
+    final selectedId = profiles.any((p) => p.id == _activeChartId)
+        ? _activeChartId
+        : profiles.first.id;
+
+    return DropdownButtonHideUnderline(
+      child: DropdownButton<String>(
+        value: selectedId,
+        dropdownColor: const Color(0xFF1B1128),
+        icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.gold, size: 20),
+        items: profiles.map((p) {
+          return DropdownMenuItem<String>(
+            value: p.id,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.gold.withOpacity(0.18),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Text('✨', style: TextStyle(fontSize: 12)),
+                ),
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      p.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      p.placeName.isNotEmpty ? p.placeName : 'Birth Profile',
+                      style: const TextStyle(color: AppColors.gold, fontSize: 10),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+        onChanged: (newId) {
+          if (newId != null && newId != _activeChartId) {
+            final target = profiles.firstWhere((p) => p.id == newId, orElse: () => profiles.first);
+            setState(() {
+              _activeChartId = newId;
+              _activeProfileName = target.name;
+            });
+            ref
+                .read(chatNotifierProvider(newId).notifier)
+                .initSession(profileName: target.name);
+          }
+        },
       ),
     );
   }
@@ -175,13 +341,33 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Widget _buildInputBar(BuildContext context, bool isStreaming, bool quotaExhausted) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 20),
       decoration: const BoxDecoration(
-        color: Color(0xFF0D0D1F),
-        border: Border(top: BorderSide(color: AppColors.darkBgSecondary)),
+        color: Color(0xFF0D0A18),
+        border: Border(top: BorderSide(color: Color(0xFF261938))),
       ),
       child: Column(
         children: [
+          // Quick shortcut chips
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                _buildQuickChip('/clear', Icons.cleaning_services_outlined, () => _sendMessage('/clear')),
+                const SizedBox(width: 6),
+                _buildQuickChip('/reset', Icons.restart_alt, () => _sendMessage('/reset')),
+                const SizedBox(width: 6),
+                _buildQuickChip('💼 Career Guidance', null, () => _sendMessage('What does my chart say about my career and success?')),
+                const SizedBox(width: 6),
+                _buildQuickChip('🪐 Current Dasha', null, () => _sendMessage('Which planetary dasha is active and what are its effects?')),
+                const SizedBox(width: 6),
+                _buildQuickChip('❤️ Relationships', null, () => _sendMessage('Can you analyze my 7th house and relationship prospects?')),
+                const SizedBox(width: 6),
+                _buildQuickChip('🌿 Remedies', null, () => _sendMessage('What Vedic remedies and mantras are recommended for my chart?')),
+              ],
+            ),
+          ),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -198,23 +384,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   decoration: InputDecoration(
                     hintText: quotaExhausted
                         ? 'Daily limit reached...'
-                        : 'Ask about your chart...',
-                    hintStyle: const TextStyle(color: Color(0xFF4A4A6A)),
+                        : 'Ask about planets, yogas, or type /clear...',
+                    hintStyle: const TextStyle(color: Color(0xFF5A4A7A)),
                     counterText: '',
                     filled: true,
-                    fillColor: AppColors.darkBgElevated,
+                    fillColor: const Color(0xFF161026),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: AppColors.darkBgStrong),
+                      borderSide: const BorderSide(color: Color(0xFF2E2042)),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: AppColors.darkBgStrong),
+                      borderSide: const BorderSide(color: Color(0xFF2E2042)),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide:
-                          const BorderSide(color: AppColors.primaryBurgundy, width: 2),
+                          const BorderSide(color: AppColors.gold, width: 1.5),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 12),
@@ -224,7 +410,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               const SizedBox(width: 10),
               GestureDetector(
                 key: const Key('chat_send_button'),
-                onTap: isStreaming || quotaExhausted ? null : _sendMessage,
+                onTap: isStreaming || quotaExhausted ? null : () => _sendMessage(),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   width: 46,
@@ -232,7 +418,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: (isStreaming || quotaExhausted)
-                        ? AppColors.darkBgSecondary
+                        ? const Color(0xFF2A1C38)
                         : AppColors.primaryBurgundy,
                     boxShadow: (isStreaming || quotaExhausted)
                         ? null
@@ -262,20 +448,61 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
           const SizedBox(height: 6),
           Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              const Text(
+                'Type /clear or /reset anytime',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Color(0xFF6B5885),
+                ),
+              ),
               Text(
                 '$_charCount/$_maxChars',
                 style: TextStyle(
                   fontSize: 10,
                   color: _charCount > 450
                       ? Colors.orangeAccent
-                      : const Color(0xFF4A4A6A),
+                      : const Color(0xFF6B5885),
                 ),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildQuickChip(String label, IconData? icon, VoidCallback onTap) {
+    final isCommand = label.startsWith('/');
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: isCommand ? const Color(0xFF261536) : const Color(0xFF181026),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isCommand ? AppColors.gold.withOpacity(0.5) : const Color(0xFF2E2042),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 12, color: isCommand ? AppColors.gold : Colors.white70),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                color: isCommand ? AppColors.gold : Colors.white70,
+                fontSize: 11,
+                fontWeight: isCommand ? FontWeight.bold : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
