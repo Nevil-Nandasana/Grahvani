@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:grahvani/router/app_router.dart';
 import 'package:grahvani/features/auth/data/auth_repository.dart';
 import 'package:grahvani/features/auth/domain/auth_state.dart';
+import '../../theme/app_colors.dart';
 
 class ConsentScreen extends ConsumerStatefulWidget {
   const ConsentScreen({super.key});
@@ -62,7 +63,7 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
     final theme = Theme.of(context);
     
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A1A),
+      backgroundColor: AppColors.darkBg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -73,12 +74,12 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2A2A4A),
+                  color: AppColors.darkBgSecondary,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   Icons.privacy_tip_outlined,
-                  color: Color(0xFF7C6EFA),
+                  color: AppColors.primaryBurgundy,
                   size: 32,
                 ),
               ),
@@ -94,7 +95,7 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
               Text(
                 'To provide accurate Vedic astrology interpretations, we need to collect and process specific personal data in accordance with the Digital Personal Data Protection (DPDP) Act, 2023.',
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFF9B93CC),
+                  color: AppColors.textSecondaryDark,
                   height: 1.5,
                 ),
               ),
@@ -106,9 +107,9 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF12122A),
+                      color: AppColors.darkBgElevated,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFF2A2A4A)),
+                      border: Border.all(color: AppColors.darkBgSecondary),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -131,7 +132,7 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
                           description: 'Name and contact information.',
                         ),
                         const SizedBox(height: 20),
-                        const Divider(color: Color(0xFF2A2A4A)),
+                        const Divider(color: AppColors.darkBgSecondary),
                         const SizedBox(height: 20),
                         Text(
                           'Why we need this:',
@@ -144,7 +145,7 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
                         Text(
                           'This data is strictly necessary to calculate planetary positions and generate your personalized astrological chart. We do not sell your personal data.',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: const Color(0xFF9B93CC),
+                            color: AppColors.textSecondaryDark,
                             height: 1.5,
                           ),
                         ),
@@ -161,12 +162,12 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: _isConsentGiven 
-                      ? const Color(0xFF3B2FBE).withOpacity(0.2)
+                      ? AppColors.primaryBurgundyDark.withOpacity(0.2)
                       : Colors.transparent,
                   border: Border.all(
                     color: _isConsentGiven 
-                        ? const Color(0xFF7C6EFA)
-                        : const Color(0xFF2A2A4A),
+                        ? AppColors.primaryBurgundy
+                        : AppColors.darkBgSecondary,
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -187,7 +188,7 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
                             TextSpan(
                               text: 'Terms of Service',
                               style: const TextStyle(
-                                color: Color(0xFF7C6EFA),
+                                color: AppColors.primaryBurgundy,
                                 fontWeight: FontWeight.bold,
                               ),
                               recognizer: TapGestureRecognizer()
@@ -197,7 +198,7 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
                             TextSpan(
                               text: 'Privacy Policy',
                               style: const TextStyle(
-                                color: Color(0xFF7C6EFA),
+                                color: AppColors.primaryBurgundy,
                                 fontWeight: FontWeight.bold,
                               ),
                               recognizer: TapGestureRecognizer()
@@ -219,8 +220,8 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
                           _isConsentGiven = value;
                         });
                       },
-                      activeColor: const Color(0xFF7C6EFA),
-                      activeTrackColor: const Color(0xFF3B2FBE),
+                      activeColor: AppColors.primaryBurgundy,
+                      activeTrackColor: AppColors.primaryBurgundyDark,
                     ),
                   ],
                 ),
@@ -235,8 +236,8 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
                 child: ElevatedButton(
                   onPressed: _isConsentGiven && !_isSubmitting ? _handleAccept : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF7C6EFA),
-                    disabledBackgroundColor: const Color(0xFF2A2A4A),
+                    backgroundColor: AppColors.primaryBurgundy,
+                    disabledBackgroundColor: AppColors.darkBgSecondary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -293,7 +294,7 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: const Color(0xFF7C6EFA), size: 24),
+        Icon(icon, color: AppColors.primaryBurgundy, size: 24),
         const SizedBox(width: 16),
         Expanded(
           child: Column(
@@ -311,7 +312,7 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
               Text(
                 description,
                 style: const TextStyle(
-                  color: Color(0xFF9B93CC),
+                  color: AppColors.textSecondaryDark,
                   fontSize: 14,
                 ),
               ),

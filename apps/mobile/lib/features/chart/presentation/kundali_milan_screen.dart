@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../profile/domain/profile_model.dart';
 import '../../profile/domain/profile_provider.dart';
 import '../../../core/api_client.dart';
+import '../../theme/app_colors.dart';
 
 // ─── Ashtakoot Score Model ────────────────────────────────────────────────────
 
@@ -132,7 +133,7 @@ class _KundaliMilanScreenState extends ConsumerState<KundaliMilanScreen>
   Color _compatibilityColor(double score) {
     if (score >= 28) return const Color(0xFF64FF8A);
     if (score >= 24) return const Color(0xFFB0FF6F);
-    if (score >= 18) return const Color(0xFFFFD700);
+    if (score >= 18) return AppColors.gold;
     if (score >= 12) return const Color(0xFFFFB347);
     return const Color(0xFFFF6B6B);
   }
@@ -184,7 +185,7 @@ class _KundaliMilanScreenState extends ConsumerState<KundaliMilanScreen>
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('PDF export is a Premium feature.'),
-              backgroundColor: Color(0xFF3B2FBE),
+              backgroundColor: AppColors.primaryBurgundyDark,
             ),
           );
         }
@@ -211,9 +212,9 @@ class _KundaliMilanScreenState extends ConsumerState<KundaliMilanScreen>
     final hasMatch = _profile1 != null && _profile2 != null && !_isLoading && _errorMessage == null;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A1A),
+      backgroundColor: AppColors.darkBg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0A1A),
+        backgroundColor: AppColors.darkBg,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
@@ -230,24 +231,24 @@ class _KundaliMilanScreenState extends ConsumerState<KundaliMilanScreen>
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Color(0xFFFFD700),
+                      color: AppColors.gold,
                     ),
                   ),
                 )
               : IconButton(
-                  icon: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFFFFD700)),
+                  icon: const Icon(Icons.picture_as_pdf_outlined, color: AppColors.gold),
                   tooltip: 'Export PDF',
                   onPressed: hasMatch ? () => _exportPdf(context) : null,
                 ),
           IconButton(
-            icon: const Icon(Icons.help_outline, color: Color(0xFF9B93CC)),
+            icon: const Icon(Icons.help_outline, color: AppColors.textSecondaryDark),
             onPressed: () => _showInfoDialog(context),
           ),
         ],
       ),
       body: profilesAsync.when(
         loading: () =>
-            const Center(child: CircularProgressIndicator(color: Color(0xFF7C6EFA))),
+            const Center(child: CircularProgressIndicator(color: AppColors.primaryBurgundy)),
         error: (e, _) => Center(
           child: Text(e.toString(),
               style: const TextStyle(color: Colors.white54)),
@@ -282,9 +283,9 @@ class _KundaliMilanScreenState extends ConsumerState<KundaliMilanScreen>
                           height: 40,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: const Color(0xFF5B4FDB).withOpacity(0.15),
+                            color: AppColors.primaryBurgundy.withOpacity(0.15),
                             border: Border.all(
-                                color: const Color(0xFF5B4FDB).withOpacity(0.4)),
+                                color: AppColors.primaryBurgundy.withOpacity(0.4)),
                           ),
                           child: const Center(
                             child: Text('❤️', style: TextStyle(fontSize: 18)),
@@ -313,7 +314,7 @@ class _KundaliMilanScreenState extends ConsumerState<KundaliMilanScreen>
               if (!hasMatch) ...[
                 const SizedBox(height: 40),
                 if (_isLoading)
-                  const Center(child: CircularProgressIndicator(color: Color(0xFF7C6EFA)))
+                  const Center(child: CircularProgressIndicator(color: AppColors.primaryBurgundy))
                 else if (_errorMessage != null)
                   Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.redAccent)))
                 else
@@ -380,7 +381,7 @@ class _KundaliMilanScreenState extends ConsumerState<KundaliMilanScreen>
                         Text(
                           '${_profile1!.name}  &  ${_profile2!.name}',
                           style: const TextStyle(
-                              color: Color(0xFF6B6B99), fontSize: 13),
+                              color: AppColors.textMutedDark, fontSize: 13),
                         ),
                       ],
                     );
@@ -392,9 +393,9 @@ class _KundaliMilanScreenState extends ConsumerState<KundaliMilanScreen>
                 // ── Ashtakoot Table ─────────────────────────────────────
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFF12122A),
+                    color: AppColors.darkBgElevated,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFF2A2A4A)),
+                    border: Border.all(color: AppColors.darkBgSecondary),
                   ),
                   child: Column(
                     children: [
@@ -413,7 +414,7 @@ class _KundaliMilanScreenState extends ConsumerState<KundaliMilanScreen>
                               flex: 3,
                               child: Text('Koota',
                                   style: TextStyle(
-                                      color: Color(0xFF6B6B99),
+                                      color: AppColors.textMutedDark,
                                       fontSize: 11,
                                       fontWeight: FontWeight.bold)),
                             ),
@@ -421,13 +422,13 @@ class _KundaliMilanScreenState extends ConsumerState<KundaliMilanScreen>
                               flex: 3,
                               child: Text('Aspect',
                                   style: TextStyle(
-                                      color: Color(0xFF6B6B99),
+                                      color: AppColors.textMutedDark,
                                       fontSize: 11,
                                       fontWeight: FontWeight.bold)),
                             ),
                             Text('Score',
                                 style: TextStyle(
-                                    color: Color(0xFF6B6B99),
+                                    color: AppColors.textMutedDark,
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold)),
                           ],
@@ -449,7 +450,7 @@ class _KundaliMilanScreenState extends ConsumerState<KundaliMilanScreen>
                             borderRadius: BorderRadius.vertical(
                                 bottom: Radius.circular(16)),
                             border: Border(
-                                top: BorderSide(color: Color(0xFF2A2A4A))),
+                                top: BorderSide(color: AppColors.darkBgSecondary)),
                           ),
                           child: Row(
                             children: [
@@ -503,13 +504,13 @@ class _KundaliMilanScreenState extends ConsumerState<KundaliMilanScreen>
           'Ashtakoot (8-fold) compatibility matching is based on the Vimshottari nakshatra system. '
           'A score ≥ 18 is considered acceptable, ≥ 24 is very good, ≥ 28 is excellent.\n\n'
           'This is a traditional Vedic system — not a definitive judgement of compatibility.',
-          style: TextStyle(color: Color(0xFF9B93CC), height: 1.6),
+          style: TextStyle(color: AppColors.textSecondaryDark, height: 1.6),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Close',
-                style: TextStyle(color: Color(0xFF7C6EFA))),
+                style: TextStyle(color: AppColors.primaryBurgundy)),
           ),
         ],
       ),
@@ -538,12 +539,12 @@ class _ProfilePicker extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF12122A),
+        color: AppColors.darkBgElevated,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: selected != null
-              ? const Color(0xFF5B4FDB).withOpacity(0.5)
-              : const Color(0xFF2A2A4A),
+              ? AppColors.primaryBurgundy.withOpacity(0.5)
+              : AppColors.darkBgSecondary,
         ),
       ),
       child: Column(
@@ -555,7 +556,7 @@ class _ProfilePicker extends StatelessWidget {
               const SizedBox(width: 6),
               Text(label,
                   style: const TextStyle(
-                      color: Color(0xFF6B6B99),
+                      color: AppColors.textMutedDark,
                       fontSize: 11,
                       fontWeight: FontWeight.bold)),
             ],
@@ -567,16 +568,16 @@ class _ProfilePicker extends StatelessWidget {
               value: selected,
               dropdownColor: const Color(0xFF16163A),
               hint: const Text('Select person',
-                  style: TextStyle(color: Color(0xFF3D3266), fontSize: 12)),
+                  style: TextStyle(color: AppColors.darkBgStrong, fontSize: 12)),
               style: const TextStyle(color: Colors.white, fontSize: 13),
               icon: const Icon(Icons.arrow_drop_down,
-                  color: Color(0xFF7C6EFA)),
+                  color: AppColors.primaryBurgundy),
               items: [
                 const DropdownMenuItem(
                   value: null,
                   child: Text('Select person',
                       style:
-                          TextStyle(color: Color(0xFF6B6B99), fontSize: 12)),
+                          TextStyle(color: AppColors.textMutedDark, fontSize: 12)),
                 ),
                 ...profiles.map((p) => DropdownMenuItem(
                       value: p,
@@ -615,7 +616,7 @@ class _KootaRow extends StatelessWidget {
     final color = ratio >= 0.7
         ? const Color(0xFF64FF8A)
         : ratio >= 0.4
-            ? const Color(0xFFFFD700)
+            ? AppColors.gold
             : const Color(0xFFFF6B6B);
     final isDosha =
         koota.name == 'Nadi' && koota.obtainedPoints == 0;
@@ -648,7 +649,7 @@ class _KootaRow extends StatelessWidget {
             flex: 3,
             child: Text(koota.description,
                 style:
-                    const TextStyle(color: Color(0xFF6B6B99), fontSize: 11),
+                    const TextStyle(color: AppColors.textMutedDark, fontSize: 11),
                 maxLines: 2),
           ),
           Column(
@@ -692,9 +693,9 @@ class _PromptCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFF12122A),
+        color: AppColors.darkBgElevated,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF2A2A4A)),
+        border: Border.all(color: AppColors.darkBgSecondary),
       ),
       child: Column(
         children: [
@@ -713,7 +714,7 @@ class _PromptCard extends StatelessWidget {
             'Grahvani will calculate Ashtakoot compatibility\nusing Vimshottari Nakshatra analysis.',
             textAlign: TextAlign.center,
             style: TextStyle(
-                color: Color(0xFF6B6B99), fontSize: 13, height: 1.5),
+                color: AppColors.textMutedDark, fontSize: 13, height: 1.5),
           ),
         ],
       ),
@@ -729,14 +730,14 @@ class _Disclaimer extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF5B4FDB).withOpacity(0.06),
+        color: AppColors.primaryBurgundy.withOpacity(0.06),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-            color: const Color(0xFF5B4FDB).withOpacity(0.2)),
+            color: AppColors.primaryBurgundy.withOpacity(0.2)),
       ),
       child: const Row(
         children: [
-          Icon(Icons.info_outline, color: Color(0xFF7C6EFA), size: 16),
+          Icon(Icons.info_outline, color: AppColors.primaryBurgundy, size: 16),
           SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -744,7 +745,7 @@ class _Disclaimer extends StatelessWidget {
               'A score ≥18/36 is generally considered compatible. '
               'Nadi dosha (0 pts) is considered significant.',
               style: TextStyle(
-                  color: Color(0xFF6B6B99), fontSize: 11, height: 1.5),
+                  color: AppColors.textMutedDark, fontSize: 11, height: 1.5),
             ),
           ),
         ],

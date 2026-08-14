@@ -13,6 +13,7 @@ import '../../profile/domain/profile_provider.dart';
 import '../domain/chart_model.dart';
 import '../domain/chart_provider.dart';
 import 'chart_screen.dart';
+import '../../theme/app_colors.dart';
 
 // ─── Aspect Model ─────────────────────────────────────────────────────────────
 
@@ -44,10 +45,10 @@ class SynastryAspect {
   Color get color {
     switch (type) {
       case 'Trine': return const Color(0xFF64FF8A);
-      case 'Sextile': return const Color(0xFF7C6EFA);
+      case 'Sextile': return AppColors.primaryBurgundy;
       case 'Square': return const Color(0xFFFF6B6B);
       case 'Opposition': return const Color(0xFFFF9B4F);
-      case 'Conjunction': return const Color(0xFFFFD700);
+      case 'Conjunction': return AppColors.gold;
       default: return Colors.white38;
     }
   }
@@ -153,7 +154,7 @@ class _SynastryScreenState extends ConsumerState<SynastryScreen>
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('PDF export is a Premium feature.'),
-              backgroundColor: Color(0xFF3B2FBE),
+              backgroundColor: AppColors.primaryBurgundyDark,
             ),
           );
         }
@@ -177,9 +178,9 @@ class _SynastryScreenState extends ConsumerState<SynastryScreen>
     final profilesAsync = ref.watch(profilesNotifierProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A1A),
+      backgroundColor: AppColors.darkBg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0A1A),
+        backgroundColor: AppColors.darkBg,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text('Synastry',
@@ -194,27 +195,27 @@ class _SynastryScreenState extends ConsumerState<SynastryScreen>
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Color(0xFFFFD700),
+                      color: AppColors.gold,
                     ),
                   ),
                 )
               : IconButton(
-                  icon: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFFFFD700)),
+                  icon: const Icon(Icons.picture_as_pdf_outlined, color: AppColors.gold),
                   tooltip: 'Export PDF',
                   onPressed: (_profile1 != null && _profile2 != null) ? () => _exportPdf(context) : null,
                 ),
         ],
         bottom: TabBar(
           controller: _tabs,
-          indicatorColor: const Color(0xFF5B4FDB),
-          labelColor: const Color(0xFF7C6EFA),
+          indicatorColor: AppColors.primaryBurgundy,
+          labelColor: AppColors.primaryBurgundy,
           unselectedLabelColor: Colors.white38,
           tabs: const [Tab(text: 'Charts'), Tab(text: 'Aspects')],
         ),
       ),
       body: profilesAsync.when(
         loading: () => const Center(
-            child: CircularProgressIndicator(color: Color(0xFF7C6EFA))),
+            child: CircularProgressIndicator(color: AppColors.primaryBurgundy)),
         error: (e, _) => Center(
           child: Text(e.toString(),
               style: const TextStyle(color: Colors.white54)),
@@ -230,7 +231,7 @@ class _SynastryScreenState extends ConsumerState<SynastryScreen>
                   Expanded(
                     child: _SynastryProfilePicker(
                       label: 'Person 1',
-                      color: const Color(0xFF7C6EFA),
+                      color: AppColors.primaryBurgundy,
                       selected: _profile1,
                       profiles:
                           profiles.where((p) => p != _profile2).toList(),
@@ -292,10 +293,10 @@ class _SynastryBody extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(color: Color(0xFF7C6EFA)),
+            CircularProgressIndicator(color: AppColors.primaryBurgundy),
             SizedBox(height: 12),
             Text('Loading charts…',
-                style: TextStyle(color: Color(0xFF9B93CC))),
+                style: TextStyle(color: AppColors.textSecondaryDark)),
           ],
         ),
       );
@@ -360,9 +361,9 @@ class _ChartsTab extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFF12122A),
+              color: AppColors.darkBgElevated,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFF2A2A4A)),
+              border: Border.all(color: AppColors.darkBgSecondary),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -384,7 +385,7 @@ class _ChartsTab extends StatelessWidget {
               Expanded(
                 child: Column(
                   children: [
-                    _ChartLabel(name: profile1Name, color: const Color(0xFF7C6EFA)),
+                    _ChartLabel(name: profile1Name, color: AppColors.primaryBurgundy),
                     const SizedBox(height: 6),
                     NorthIndianChart(chart: chart1),
                   ],
@@ -460,7 +461,7 @@ class _AspectStat extends StatelessWidget {
     return Column(
       children: [
         Text(value, style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.bold)),
-        Text(label, style: const TextStyle(color: Color(0xFF6B6B99), fontSize: 10)),
+        Text(label, style: const TextStyle(color: AppColors.textMutedDark, fontSize: 10)),
       ],
     );
   }
@@ -477,7 +478,7 @@ class _AspectTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFF12122A),
+          color: AppColors.darkBgElevated,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: aspect.color.withOpacity(0.3)),
         ),
@@ -503,7 +504,7 @@ class _AspectTile extends StatelessWidget {
                   Text(
                     'Orb: ${aspect.orb.toStringAsFixed(1)}°  •  ${aspect.isHarmonious ? "Harmonious" : "Tense"}',
                     style: const TextStyle(
-                        color: Color(0xFF6B6B99), fontSize: 11),
+                        color: AppColors.textMutedDark, fontSize: 11),
                   ),
                 ],
               ),
@@ -564,10 +565,10 @@ class _SynastryProfilePicker extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFF12122A),
+        color: AppColors.darkBgElevated,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: selected != null ? color.withOpacity(0.5) : const Color(0xFF2A2A4A),
+          color: selected != null ? color.withOpacity(0.5) : AppColors.darkBgSecondary,
         ),
       ),
       child: DropdownButtonHideUnderline(
@@ -584,7 +585,7 @@ class _SynastryProfilePicker extends StatelessWidget {
               value: null,
               child: Text(label,
                   style: const TextStyle(
-                      color: Color(0xFF6B6B99), fontSize: 12)),
+                      color: AppColors.textMutedDark, fontSize: 12)),
             ),
             ...profiles.map((p) => DropdownMenuItem(
                   value: p,
@@ -613,7 +614,7 @@ class _SelectPrompt extends StatelessWidget {
             height: 80,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFF5B4FDB).withOpacity(0.1),
+              color: AppColors.primaryBurgundy.withOpacity(0.1),
             ),
             child: const Center(
               child: Text('🔭', style: TextStyle(fontSize: 36)),
@@ -630,7 +631,7 @@ class _SelectPrompt extends StatelessWidget {
             'Grahvani will calculate cross-chart\nplanetary aspects between both horoscopes.',
             textAlign: TextAlign.center,
             style: TextStyle(
-                color: Color(0xFF6B6B99), fontSize: 13, height: 1.5),
+                color: AppColors.textMutedDark, fontSize: 13, height: 1.5),
           ),
         ],
       ),

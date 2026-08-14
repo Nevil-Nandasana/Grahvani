@@ -14,6 +14,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../theme/app_colors.dart';
 
 // ─── Voice State ──────────────────────────────────────────────────────────────
 
@@ -32,6 +33,7 @@ class VoiceQANotifier extends StateNotifier<VoiceState> {
   // These would be backed by real packages:
   // import 'package:speech_to_text/speech_to_text.dart';
   // import 'package:flutter_tts/flutter_tts.dart';
+
 
   Future<void> startListening() async {
     state = VoiceState.listening;
@@ -126,7 +128,7 @@ class VoiceQAScreen extends ConsumerWidget {
             TextButton(
               onPressed: () => notifier.clearTranscript(),
               child: const Text('Clear',
-                  style: TextStyle(color: Color(0xFF7C6EFA), fontSize: 12)),
+                  style: TextStyle(color: AppColors.primaryBurgundy, fontSize: 12)),
             ),
         ],
       ),
@@ -167,7 +169,7 @@ class VoiceQAScreen extends ConsumerWidget {
                                 ? 'Speaking response…'
                                 : 'Error — tap to retry',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Color(0xFF6B6B99), fontSize: 12),
+                style: const TextStyle(color: AppColors.textMutedDark, fontSize: 12),
               ),
             ),
           ),
@@ -212,7 +214,7 @@ class _IdleHint extends StatelessWidget {
             'Speak naturally about your birth chart,\ndasha periods, or planetary transits.',
             textAlign: TextAlign.center,
             style: TextStyle(
-                color: Color(0xFF6B6B99), fontSize: 13, height: 1.5),
+                color: AppColors.textMutedDark, fontSize: 13, height: 1.5),
           ),
           const SizedBox(height: 32),
           Wrap(
@@ -236,13 +238,13 @@ class _SuggestionChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: const Color(0xFF5B4FDB).withOpacity(0.12),
+        color: AppColors.primaryBurgundy.withOpacity(0.12),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF5B4FDB).withOpacity(0.3)),
+        border: Border.all(color: AppColors.primaryBurgundy.withOpacity(0.3)),
       ),
       child: Text(
         '"$text"',
-        style: const TextStyle(color: Color(0xFF9B93CC), fontSize: 12),
+        style: const TextStyle(color: AppColors.textSecondaryDark, fontSize: 12),
       ),
     );
   }
@@ -323,7 +325,7 @@ class _MessageBubble extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: const RadialGradient(
-                  colors: [Color(0xFF7C6EFA), Color(0xFF3B2FBE)],
+                  colors: [AppColors.primaryBurgundy, AppColors.primaryBurgundyDark],
                 ),
               ),
               child: const Center(
@@ -337,8 +339,8 @@ class _MessageBubble extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: isUser
-                    ? const Color(0xFF3B2FBE)
-                    : const Color(0xFF12122A),
+                    ? AppColors.primaryBurgundyDark
+                    : AppColors.darkBgElevated,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(16),
                   topRight: const Radius.circular(16),
@@ -347,7 +349,7 @@ class _MessageBubble extends StatelessWidget {
                 ),
                 border: isUser
                     ? null
-                    : Border.all(color: const Color(0xFF2A2A4A)),
+                    : Border.all(color: AppColors.darkBgSecondary),
               ),
               child: Text(
                 message.text,
@@ -366,10 +368,10 @@ class _MessageBubble extends StatelessWidget {
               height: 36,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF5B4FDB).withOpacity(0.2),
+                color: AppColors.primaryBurgundy.withOpacity(0.2),
               ),
               child: const Center(
-                child: Icon(Icons.mic, color: Color(0xFF7C6EFA), size: 16),
+                child: Icon(Icons.mic, color: AppColors.primaryBurgundy, size: 16),
               ),
             ),
           ],
@@ -394,14 +396,14 @@ class _LiveTranscriptBubble extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: const Color(0xFF3B2FBE).withOpacity(0.6),
+                color: AppColors.primaryBurgundyDark.withOpacity(0.6),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
                   bottomLeft: Radius.circular(16),
                   bottomRight: Radius.circular(4),
                 ),
-                border: Border.all(color: const Color(0xFF5B4FDB)),
+                border: Border.all(color: AppColors.primaryBurgundy),
               ),
               child: Text(
                 '$text…',
@@ -454,7 +456,7 @@ class _ThinkingBubbleState extends State<_ThinkingBubble>
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: const RadialGradient(
-                colors: [Color(0xFF7C6EFA), Color(0xFF3B2FBE)],
+                colors: [AppColors.primaryBurgundy, AppColors.primaryBurgundyDark],
               ),
             ),
             child:
@@ -464,9 +466,9 @@ class _ThinkingBubbleState extends State<_ThinkingBubble>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFF12122A),
+              color: AppColors.darkBgElevated,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF2A2A4A)),
+              border: Border.all(color: AppColors.darkBgSecondary),
             ),
             child: AnimatedBuilder(
               animation: _controller,
@@ -572,19 +574,19 @@ class _MicControlState extends State<_MicControl>
                 colors: isListening
                     ? [const Color(0xFFFF6B6B), const Color(0xFFFF4444)]
                     : isBusy
-                        ? [const Color(0xFF3B2FBE), const Color(0xFF1A1235)]
+                        ? [AppColors.primaryBurgundyDark, const Color(0xFF1A1235)]
                         : isError
                             ? [Colors.redAccent, Colors.red]
                             : [
-                                const Color(0xFF7C6EFA),
-                                const Color(0xFF3B2FBE)
+                                AppColors.primaryBurgundy,
+                                AppColors.primaryBurgundyDark
                               ],
               ),
               boxShadow: [
                 BoxShadow(
                   color: (isListening
                           ? const Color(0xFFFF6B6B)
-                          : const Color(0xFF5B4FDB))
+                          : AppColors.primaryBurgundy)
                       .withOpacity(0.4),
                   blurRadius: 24,
                   spreadRadius: 4,

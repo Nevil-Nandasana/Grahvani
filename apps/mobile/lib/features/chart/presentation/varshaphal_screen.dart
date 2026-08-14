@@ -11,6 +11,7 @@ import '../../../core/api_client.dart';
 import '../domain/chart_model.dart';
 import '../domain/chart_provider.dart';
 import 'chart_screen.dart';
+import '../../theme/app_colors.dart';
 
 // ─── Varshaphal Data Model ────────────────────────────────────────────────────
 
@@ -150,7 +151,7 @@ class _VarshaphalScreenState extends ConsumerState<VarshaphalScreen>
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('PDF export is a Premium feature.'),
-              backgroundColor: Color(0xFF3B2FBE),
+              backgroundColor: AppColors.primaryBurgundyDark,
             ),
           );
         }
@@ -174,9 +175,9 @@ class _VarshaphalScreenState extends ConsumerState<VarshaphalScreen>
     final year = ref.watch(_varshaphalYearProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A1A),
+      backgroundColor: AppColors.darkBg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0A1A),
+        backgroundColor: AppColors.darkBg,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         title: Column(
@@ -189,7 +190,7 @@ class _VarshaphalScreenState extends ConsumerState<VarshaphalScreen>
                     fontSize: 17)),
             Text('Solar Return $year',
                 style: const TextStyle(
-                    color: Color(0xFF6B6B99), fontSize: 11)),
+                    color: AppColors.textMutedDark, fontSize: 11)),
           ],
         ),
         actions: [
@@ -201,18 +202,18 @@ class _VarshaphalScreenState extends ConsumerState<VarshaphalScreen>
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Color(0xFFFFD700),
+                      color: AppColors.gold,
                     ),
                   ),
                 )
               : IconButton(
-                  icon: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFFFFD700)),
+                  icon: const Icon(Icons.picture_as_pdf_outlined, color: AppColors.gold),
                   tooltip: 'Export PDF',
                   onPressed: _data != null ? () => _exportPdf(context) : null,
                 ),
           // Year picker
           IconButton(
-            icon: const Icon(Icons.chevron_left, color: Color(0xFF7C6EFA)),
+            icon: const Icon(Icons.chevron_left, color: AppColors.primaryBurgundy),
             onPressed: () {
               ref.read(_varshaphalYearProvider.notifier).state = year - 1;
               _load();
@@ -226,7 +227,7 @@ class _VarshaphalScreenState extends ConsumerState<VarshaphalScreen>
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.chevron_right, color: Color(0xFF7C6EFA)),
+            icon: const Icon(Icons.chevron_right, color: AppColors.primaryBurgundy),
             onPressed: year < DateTime.now().year + 5
                 ? () {
                     ref.read(_varshaphalYearProvider.notifier).state =
@@ -238,8 +239,8 @@ class _VarshaphalScreenState extends ConsumerState<VarshaphalScreen>
         ],
         bottom: TabBar(
           controller: _tabs,
-          indicatorColor: const Color(0xFF5B4FDB),
-          labelColor: const Color(0xFF7C6EFA),
+          indicatorColor: AppColors.primaryBurgundy,
+          labelColor: AppColors.primaryBurgundy,
           unselectedLabelColor: Colors.white38,
           tabs: const [Tab(text: 'Annual Chart'), Tab(text: 'Predictions')],
         ),
@@ -251,10 +252,10 @@ class _VarshaphalScreenState extends ConsumerState<VarshaphalScreen>
                 children: [
                   Text('☀️', style: TextStyle(fontSize: 48)),
                   SizedBox(height: 16),
-                  CircularProgressIndicator(color: Color(0xFFFFD700)),
+                  CircularProgressIndicator(color: AppColors.gold),
                   SizedBox(height: 12),
                   Text('Calculating Solar Return...',
-                      style: TextStyle(color: Color(0xFF9B93CC))),
+                      style: TextStyle(color: AppColors.textSecondaryDark)),
                 ],
               ),
             )
@@ -273,7 +274,7 @@ class _VarshaphalScreenState extends ConsumerState<VarshaphalScreen>
                       const SizedBox(height: 16),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF5B4FDB)),
+                            backgroundColor: AppColors.primaryBurgundy),
                         onPressed: _load,
                         child: const Text('Retry'),
                       ),
@@ -311,9 +312,9 @@ class _ChartTab extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: const Color(0xFF12122A),
+              color: AppColors.darkBgElevated,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF2A2A4A)),
+              border: Border.all(color: AppColors.darkBgSecondary),
             ),
             child: Row(
               children: [
@@ -330,7 +331,7 @@ class _ChartTab extends StatelessWidget {
                               fontSize: 15)),
                       Text(data.solarReturnDate,
                           style: const TextStyle(
-                              color: Color(0xFF6B6B99), fontSize: 12)),
+                              color: AppColors.textMutedDark, fontSize: 12)),
                     ],
                   ),
                 ),
@@ -339,10 +340,10 @@ class _ChartTab extends StatelessWidget {
                   children: [
                     const Text('Varsesha',
                         style: TextStyle(
-                            color: Color(0xFF6B6B99), fontSize: 10)),
+                            color: AppColors.textMutedDark, fontSize: 10)),
                     Text(data.varsheshaPlanet,
                         style: const TextStyle(
-                            color: Color(0xFFFFD700),
+                            color: AppColors.gold,
                             fontWeight: FontWeight.bold,
                             fontSize: 14)),
                   ],
@@ -380,7 +381,7 @@ class _SrChartHeader extends StatelessWidget {
       children: [
         Expanded(child: _Badge('MUNTHA', muntha, const Color(0xFF64FF8A))),
         const SizedBox(width: 10),
-        Expanded(child: _Badge('VARSESHA', varsesha, const Color(0xFFFFD700))),
+        Expanded(child: _Badge('VARSESHA', varsesha, AppColors.gold)),
       ],
     );
   }
@@ -426,9 +427,9 @@ class _AnnualPlanetGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF12122A),
+        color: AppColors.darkBgElevated,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF2A2A4A)),
+        border: Border.all(color: AppColors.darkBgSecondary),
       ),
       child: Column(
         children: [
@@ -446,26 +447,26 @@ class _AnnualPlanetGrid extends StatelessWidget {
                     flex: 2,
                     child: Text('Planet',
                         style: TextStyle(
-                            color: Color(0xFF6B6B99),
+                            color: AppColors.textMutedDark,
                             fontSize: 11,
                             fontWeight: FontWeight.bold))),
                 Expanded(
                     flex: 2,
                     child: Text('Sign',
                         style: TextStyle(
-                            color: Color(0xFF6B6B99),
+                            color: AppColors.textMutedDark,
                             fontSize: 11,
                             fontWeight: FontWeight.bold))),
                 Expanded(
                     flex: 3,
                     child: Text('Nakshatra',
                         style: TextStyle(
-                            color: Color(0xFF6B6B99),
+                            color: AppColors.textMutedDark,
                             fontSize: 11,
                             fontWeight: FontWeight.bold))),
                 Text('H',
                     style: TextStyle(
-                        color: Color(0xFF6B6B99),
+                        color: AppColors.textMutedDark,
                         fontSize: 11,
                         fontWeight: FontWeight.bold)),
               ],
@@ -494,10 +495,10 @@ class _AnnualPlanetGrid extends StatelessWidget {
                         flex: 3,
                         child: Text('${p.nakshatra} P${p.pada}',
                             style: const TextStyle(
-                                color: Color(0xFF9B93CC), fontSize: 12))),
+                                color: AppColors.textSecondaryDark, fontSize: 12))),
                     Text('${p.house}',
                         style: const TextStyle(
-                            color: Color(0xFF6B6B99), fontSize: 12)),
+                            color: AppColors.textMutedDark, fontSize: 12)),
                   ],
                 ),
               )),
@@ -537,7 +538,7 @@ class _PredictionsTab extends StatelessWidget {
                 colors: [Color(0xFF1A1235), Color(0xFF120C2A)],
               ),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFF5B4FDB).withOpacity(0.4)),
+              border: Border.all(color: AppColors.primaryBurgundy.withOpacity(0.4)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -557,7 +558,7 @@ class _PredictionsTab extends StatelessWidget {
                 Text(
                   data.yearSummary,
                   style: const TextStyle(
-                      color: Color(0xFF9B93CC), fontSize: 13, height: 1.6),
+                      color: AppColors.textSecondaryDark, fontSize: 13, height: 1.6),
                 ),
               ],
             ),
@@ -580,14 +581,14 @@ class _PredictionsTab extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF5B4FDB).withOpacity(0.06),
+              color: AppColors.primaryBurgundy.withOpacity(0.06),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                  color: const Color(0xFF5B4FDB).withOpacity(0.2)),
+                  color: AppColors.primaryBurgundy.withOpacity(0.2)),
             ),
             child: const Row(
               children: [
-                Icon(Icons.info_outline, color: Color(0xFF7C6EFA), size: 16),
+                Icon(Icons.info_outline, color: AppColors.primaryBurgundy, size: 16),
                 SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -595,7 +596,7 @@ class _PredictionsTab extends StatelessWidget {
                     'Full accuracy requires your precise birth time and location. '
                     'Backend integration with /varshaphal endpoint pending.',
                     style: TextStyle(
-                        color: Color(0xFF6B6B99),
+                        color: AppColors.textMutedDark,
                         fontSize: 11,
                         height: 1.5),
                   ),
@@ -626,9 +627,9 @@ class _LifeAreaCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: const Color(0xFF12122A),
+          color: AppColors.darkBgElevated,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFF2A2A4A)),
+          border: Border.all(color: AppColors.darkBgSecondary),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -647,7 +648,7 @@ class _LifeAreaCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(prediction,
                       style: const TextStyle(
-                          color: Color(0xFF6B6B99),
+                          color: AppColors.textMutedDark,
                           fontSize: 12,
                           height: 1.5)),
                 ],
