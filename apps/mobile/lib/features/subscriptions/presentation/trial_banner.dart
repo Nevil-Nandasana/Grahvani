@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/subscription_provider.dart';
+import '../../theme/app_colors.dart';
 
 class TrialBanner extends ConsumerStatefulWidget {
   const TrialBanner({super.key, this.onSuccess});
@@ -30,7 +31,7 @@ class _TrialBannerState extends ConsumerState<TrialBanner> {
             content: Text(
               '🎉 7-Day Premium Trial Activated until ${result.trialExpiresAt.day}/${result.trialExpiresAt.month}!',
             ),
-            backgroundColor: const Color(0xFF3B2FBE),
+            backgroundColor: AppColors.primaryBurgundyDark,
           ),
         );
         widget.onSuccess?.call();
@@ -67,7 +68,7 @@ class _TrialBannerState extends ConsumerState<TrialBanner> {
                 colors: [Color(0xFF2A1B4E), Color(0xFF1A1238)],
               ),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFF7C6EFA)),
+              border: Border.all(color: AppColors.primaryBurgundy),
             ),
             child: Row(
               children: [
@@ -108,12 +109,12 @@ class _TrialBannerState extends ConsumerState<TrialBanner> {
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF4A3AFF), Color(0xFF7C6EFA)],
+                colors: [Color(0xFF4A3AFF), AppColors.primaryBurgundy],
               ),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF5B4FDB).withOpacity(0.4),
+                  color: AppColors.primaryBurgundy.withOpacity(0.4),
                   blurRadius: 16,
                   spreadRadius: 2,
                 )
@@ -169,7 +170,7 @@ class _TrialBannerState extends ConsumerState<TrialBanner> {
                     onPressed: _isActivating ? null : _handleActivateTrial,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
-                      foregroundColor: const Color(0xFF3B2FBE),
+                      foregroundColor: AppColors.primaryBurgundyDark,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -181,7 +182,7 @@ class _TrialBannerState extends ConsumerState<TrialBanner> {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Color(0xFF3B2FBE),
+                              color: AppColors.primaryBurgundyDark,
                             ),
                           )
                         : const Text(
@@ -206,20 +207,20 @@ class _TrialBannerState extends ConsumerState<TrialBanner> {
             decoration: BoxDecoration(
               color: const Color(0xFF1A122A),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF3D3266)),
+              border: Border.all(color: AppColors.darkBgStrong),
             ),
             child: Row(
               children: [
                 const Icon(
                   Icons.info_outline,
-                  color: Color(0xFF9B93CC),
+                  color: AppColors.textSecondaryDark,
                   size: 20,
                 ),
                 const SizedBox(width: 10),
                 const Expanded(
                   child: Text(
                     'Your 7-Day Free Trial has ended. Upgrade to Premium for full unlimited access.',
-                    style: TextStyle(color: Color(0xFF9B93CC), fontSize: 12),
+                    style: TextStyle(color: AppColors.textSecondaryDark, fontSize: 12),
                   ),
                 ),
               ],

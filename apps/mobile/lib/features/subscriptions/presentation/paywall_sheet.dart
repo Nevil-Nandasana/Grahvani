@@ -12,6 +12,7 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import '../data/subscription_repository.dart';
 import '../domain/subscription_provider.dart';
 import 'trial_banner.dart';
+import '../../theme/app_colors.dart';
 
 // ─── IAP Product IDs ──────────────────────────────────────────────────────────
 const _kMonthlyId = 'grahvani_premium_monthly';
@@ -51,7 +52,7 @@ class PaywallSheet extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Web subscriptions use Razorpay checkout.'),
-            backgroundColor: Color(0xFF3B2FBE),
+            backgroundColor: AppColors.primaryBurgundyDark,
           ),
         );
       }
@@ -64,7 +65,7 @@ class PaywallSheet extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Store not available. Check your connection.'),
-            backgroundColor: Color(0xFF3B2FBE),
+            backgroundColor: AppColors.primaryBurgundyDark,
           ),
         );
       }
@@ -82,7 +83,7 @@ class PaywallSheet extends ConsumerWidget {
           SnackBar(
             content: Text('Product $productId not found. '
                 'Ensure it is configured in the developer console.'),
-            backgroundColor: const Color(0xFF3B2FBE),
+            backgroundColor: AppColors.primaryBurgundyDark,
           ),
         );
       }
@@ -118,7 +119,7 @@ class PaywallSheet extends ConsumerWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF16103A), Color(0xFF0A0A1A)],
+            colors: [Color(0xFF16103A), AppColors.darkBg],
           ),
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
@@ -132,7 +133,7 @@ class PaywallSheet extends ConsumerWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3D3266),
+                  color: AppColors.darkBgStrong,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -159,7 +160,7 @@ class PaywallSheet extends ConsumerWidget {
               child: Text(
                 'Full access to Vedic AI interpretation\ngrounded in classical Shastra texts.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Color(0xFF9B93CC), fontSize: 13, height: 1.5),
+                style: TextStyle(color: AppColors.textSecondaryDark, fontSize: 13, height: 1.5),
               ),
             ),
 
@@ -231,9 +232,9 @@ class _ComparisonTable extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF12122A),
+        color: AppColors.darkBgElevated,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF2A2A4A)),
+        border: Border.all(color: AppColors.darkBgSecondary),
       ),
       child: Column(
         children: [
@@ -249,18 +250,18 @@ class _ComparisonTable extends StatelessWidget {
                 Expanded(
                   flex: 3,
                   child: Text('Feature',
-                      style: TextStyle(color: Color(0xFF6B6B99), fontSize: 11, fontWeight: FontWeight.bold)),
+                      style: TextStyle(color: AppColors.textMutedDark, fontSize: 11, fontWeight: FontWeight.bold)),
                 ),
                 Expanded(
                   child: Center(
                     child: Text('Free',
-                        style: TextStyle(color: Color(0xFF6B6B99), fontSize: 11, fontWeight: FontWeight.bold)),
+                        style: TextStyle(color: AppColors.textMutedDark, fontSize: 11, fontWeight: FontWeight.bold)),
                   ),
                 ),
                 Expanded(
                   child: Center(
                     child: Text('Premium',
-                        style: TextStyle(color: Color(0xFF7C6EFA), fontSize: 11, fontWeight: FontWeight.bold)),
+                        style: TextStyle(color: AppColors.primaryBurgundy, fontSize: 11, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -285,7 +286,7 @@ class _ComparisonTable extends StatelessWidget {
                           style: TextStyle(
                             color: row.$2 == '✗'
                                 ? const Color(0xFF4A4A6A)
-                                : const Color(0xFF6B6B99),
+                                : AppColors.textMutedDark,
                             fontSize: 13,
                           )),
                     ),
@@ -294,7 +295,7 @@ class _ComparisonTable extends StatelessWidget {
                     child: Center(
                       child: Text(row.$3,
                           style: const TextStyle(
-                            color: Color(0xFF7C6EFA),
+                            color: AppColors.primaryBurgundy,
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                           )),
@@ -337,21 +338,21 @@ class _PriceCard extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: isPopular
               ? const LinearGradient(
-                  colors: [Color(0xFF3B2FBE), Color(0xFF5B4FDB)],
+                  colors: [AppColors.primaryBurgundyDark, AppColors.primaryBurgundy],
                 )
               : null,
-          color: isPopular ? null : const Color(0xFF12122A),
+          color: isPopular ? null : AppColors.darkBgElevated,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isPopular
-                ? const Color(0xFF7C6EFA)
-                : const Color(0xFF2A2A4A),
+                ? AppColors.primaryBurgundy
+                : AppColors.darkBgSecondary,
             width: isPopular ? 2 : 1,
           ),
           boxShadow: isPopular
               ? [
                   BoxShadow(
-                    color: const Color(0xFF5B4FDB).withOpacity(0.3),
+                    color: AppColors.primaryBurgundy.withOpacity(0.3),
                     blurRadius: 20,
                     spreadRadius: 2,
                   )
@@ -431,17 +432,17 @@ class _QuotaStatus extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF12122A),
+        color: AppColors.darkBgElevated,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF2A2A4A)),
+        border: Border.all(color: AppColors.darkBgSecondary),
       ),
       child: Row(
         children: [
-          const Icon(Icons.bolt, color: Color(0xFF7C6EFA), size: 18),
+          const Icon(Icons.bolt, color: AppColors.primaryBurgundy, size: 18),
           const SizedBox(width: 10),
           Text(
             'Today: ${entitlements.queriesRemaining}/${entitlements.dailyQueriesLimit} queries remaining  •  ${entitlements.tier.toUpperCase()}',
-            style: const TextStyle(color: Color(0xFF9B93CC), fontSize: 12),
+            style: const TextStyle(color: AppColors.textSecondaryDark, fontSize: 12),
           ),
         ],
       ),

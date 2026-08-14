@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/api_client.dart';
 import '../domain/chart_model.dart';
 import '../domain/chart_provider.dart';
+import '../../theme/app_colors.dart';
 
 class ChartScreen extends ConsumerStatefulWidget {
   const ChartScreen({super.key, required this.chartId});
@@ -64,7 +65,7 @@ class _ChartScreenState extends ConsumerState<ChartScreen>
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('PDF export is a Premium feature.'),
-              backgroundColor: Color(0xFF3B2FBE),
+              backgroundColor: AppColors.primaryBurgundyDark,
             ),
           );
         }
@@ -88,9 +89,9 @@ class _ChartScreenState extends ConsumerState<ChartScreen>
     final chartAsync = ref.watch(chartNotifierProvider(widget.chartId));
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A1A),
+      backgroundColor: AppColors.darkBg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0A1A),
+        backgroundColor: AppColors.darkBg,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text('Birth Chart',
@@ -105,14 +106,14 @@ class _ChartScreenState extends ConsumerState<ChartScreen>
               decoration: BoxDecoration(
                 color: const Color(0xFF1A1A35),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFF3D3266)),
+                border: Border.all(color: AppColors.darkBgStrong),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
                   value: _selectedAyanamsa,
                   dropdownColor: const Color(0xFF16163A),
-                  style: const TextStyle(color: Color(0xFF9B93CC), fontSize: 11),
-                  icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF7C6EFA), size: 18),
+                  style: const TextStyle(color: AppColors.textSecondaryDark, fontSize: 11),
+                  icon: const Icon(Icons.arrow_drop_down, color: AppColors.primaryBurgundy, size: 18),
                   items: _ayanamsaOptions.map((opt) {
                     return DropdownMenuItem(
                       value: opt.$1,
@@ -139,24 +140,24 @@ class _ChartScreenState extends ConsumerState<ChartScreen>
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Color(0xFFFFD700),
+                      color: AppColors.gold,
                     ),
                   ),
                 )
               : IconButton(
-                  icon: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFFFFD700)),
+                  icon: const Icon(Icons.picture_as_pdf_outlined, color: AppColors.gold),
                   tooltip: 'Export PDF',
                   onPressed: () => _exportPdf(context),
                 ),
           // ── Sade Sati ─────────────────────────────────────────────────────
           IconButton(
-            icon: const Icon(Icons.public, color: Color(0xFFFFD700)),
+            icon: const Icon(Icons.public, color: AppColors.gold),
             tooltip: 'Sade Sati Tracker',
             onPressed: () => context.push('/home/sade-sati/${widget.chartId}'),
           ),
           // ── AI Chat ───────────────────────────────────────────────────────
           IconButton(
-            icon: const Icon(Icons.chat_bubble_outline, color: Color(0xFF7C6EFA)),
+            icon: const Icon(Icons.chat_bubble_outline, color: AppColors.primaryBurgundy),
             tooltip: 'Ask AI',
             onPressed: chartAsync.valueOrNull != null
                 ? () => context.push('/home/chat/new?chartId=${widget.chartId}')
@@ -165,8 +166,8 @@ class _ChartScreenState extends ConsumerState<ChartScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: const Color(0xFF5B4FDB),
-          labelColor: const Color(0xFF7C6EFA),
+          indicatorColor: AppColors.primaryBurgundy,
+          labelColor: AppColors.primaryBurgundy,
           unselectedLabelColor: Colors.white38,
           tabs: const [
             Tab(text: 'Chart'),
@@ -227,13 +228,13 @@ class _ChartTabState extends State<_ChartTab> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
             decoration: BoxDecoration(
-              color: const Color(0xFF5B4FDB).withOpacity(0.15),
+              color: AppColors.primaryBurgundy.withOpacity(0.15),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFF5B4FDB).withOpacity(0.4)),
+              border: Border.all(color: AppColors.primaryBurgundy.withOpacity(0.4)),
             ),
             child: Text(
               '${widget.selectedAyanamsa.toUpperCase()} AYANAMSA  •  $_selectedDivision LAGNA: $ascSign',
-              style: const TextStyle(color: Color(0xFF9B93CC), fontSize: 11, fontWeight: FontWeight.bold),
+              style: const TextStyle(color: AppColors.textSecondaryDark, fontSize: 11, fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(height: 10),
@@ -245,7 +246,7 @@ class _ChartTabState extends State<_ChartTab> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF16163A),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFF2A2A4A)),
+                  border: Border.all(color: AppColors.darkBgSecondary),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -285,7 +286,7 @@ class _ChartTabState extends State<_ChartTab> {
                             ),
                           ),
                           selected: isSelected,
-                          selectedColor: const Color(0xFF5B4FDB),
+                          selectedColor: AppColors.primaryBurgundy,
                           backgroundColor: const Color(0xFF16163A),
                           onSelected: (selected) {
                             if (selected) setState(() => _selectedDivision = div['code']!);
@@ -345,7 +346,7 @@ class _StyleToggle extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF5B4FDB) : Colors.transparent,
+          color: isSelected ? AppColors.primaryBurgundy : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -463,7 +464,7 @@ class _NorthIndianChartPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final s = size.width;
     final paint = Paint()
-      ..color = const Color(0xFF2A2A4A)
+      ..color = AppColors.darkBgSecondary
       ..strokeWidth = 1.2
       ..style = PaintingStyle.stroke;
 
@@ -559,7 +560,7 @@ class _NorthIndianChartPainter extends CustomPainter {
       'Moon':    Color(0xFFE0E0FF),
       'Mars':    Color(0xFFFF6B6B),
       'Mercury': Color(0xFF64FF8A),
-      'Jupiter': Color(0xFFFFD700),
+      'Jupiter': AppColors.gold,
       'Venus':   Color(0xFFFF9ECD),
       'Saturn':  Color(0xFF87CEEB),
       'Rahu':    Color(0xFFB0B0B0),
@@ -620,7 +621,7 @@ class SouthIndianChart extends StatelessWidget {
               height: size,
               decoration: BoxDecoration(
                 color: const Color(0xFF10102A),
-                border: Border.all(color: const Color(0xFF2A2A4A), width: 1.2),
+                border: Border.all(color: AppColors.darkBgSecondary, width: 1.2),
               ),
             ),
             // Grid lines
@@ -663,7 +664,7 @@ class _SouthIndianGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF2A2A4A)
+      ..color = AppColors.darkBgSecondary
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
     final cell = size.width / 4;
@@ -720,8 +721,8 @@ class _SouthIndianCell extends StatelessWidget {
       child: Container(
         decoration: isAscendant
             ? BoxDecoration(
-                color: const Color(0xFF5B4FDB).withOpacity(0.12),
-                border: Border.all(color: const Color(0xFF7C6EFA), width: 1.5),
+                color: AppColors.primaryBurgundy.withOpacity(0.12),
+                border: Border.all(color: AppColors.primaryBurgundy, width: 1.5),
               )
             : null,
         padding: const EdgeInsets.all(3),
@@ -734,8 +735,8 @@ class _SouthIndianCell extends StatelessWidget {
                   '$signNumber',
                   style: TextStyle(
                     color: isAscendant
-                        ? const Color(0xFF7C6EFA)
-                        : const Color(0xFF3D3266),
+                        ? AppColors.primaryBurgundy
+                        : AppColors.darkBgStrong,
                     fontSize: 9,
                     fontWeight: FontWeight.bold,
                   ),
@@ -744,7 +745,7 @@ class _SouthIndianCell extends StatelessWidget {
                   const SizedBox(width: 2),
                   const Text('Asc',
                       style: TextStyle(
-                          color: Color(0xFF7C6EFA),
+                          color: AppColors.primaryBurgundy,
                           fontSize: 8,
                           fontWeight: FontWeight.bold)),
                 ],
@@ -801,7 +802,7 @@ class _HouseDetailsSheet extends StatelessWidget {
       maxChildSize: 0.75,
       builder: (_, controller) => Container(
         decoration: const BoxDecoration(
-          color: Color(0xFF12122A),
+          color: AppColors.darkBgElevated,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
@@ -812,7 +813,7 @@ class _HouseDetailsSheet extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3D3266),
+                  color: AppColors.darkBgStrong,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -828,16 +829,16 @@ class _HouseDetailsSheet extends StatelessWidget {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF5B4FDB).withOpacity(0.15),
+                          color: AppColors.primaryBurgundy.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                              color: const Color(0xFF5B4FDB).withOpacity(0.4)),
+                              color: AppColors.primaryBurgundy.withOpacity(0.4)),
                         ),
                         child: Center(
                           child: Text(
                             '$houseNumber',
                             style: const TextStyle(
-                              color: Color(0xFF7C6EFA),
+                              color: AppColors.primaryBurgundy,
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
@@ -859,7 +860,7 @@ class _HouseDetailsSheet extends StatelessWidget {
                           Text(
                             _houseNames[houseNumber - 1],
                             style: const TextStyle(
-                                color: Color(0xFF9B93CC), fontSize: 13),
+                                color: AppColors.textSecondaryDark, fontSize: 13),
                           ),
                         ],
                       ),
@@ -868,12 +869,12 @@ class _HouseDetailsSheet extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(
                     'Cusp: ${cusp.toStringAsFixed(2)}°',
-                    style: const TextStyle(color: Color(0xFF6B6B99), fontSize: 12),
+                    style: const TextStyle(color: AppColors.textMutedDark, fontSize: 12),
                   ),
-                  const Divider(color: Color(0xFF2A2A4A), height: 24),
+                  const Divider(color: AppColors.darkBgSecondary, height: 24),
                   if (planets.isEmpty)
                     const Text('No planets in this house.',
-                        style: TextStyle(color: Color(0xFF6B6B99), fontSize: 14))
+                        style: TextStyle(color: AppColors.textMutedDark, fontSize: 14))
                   else
                     ...planets.map((p) => _PlanetDetailRow(planet: p)),
                 ],
@@ -938,7 +939,7 @@ class _PlanetDetailRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   '${planet.zodiacSign} • ${planet.degreeInSign.toStringAsFixed(2)}° • ${planet.nakshatra} Pada ${planet.pada}',
-                  style: const TextStyle(color: Color(0xFF6B6B99), fontSize: 12),
+                  style: const TextStyle(color: AppColors.textMutedDark, fontSize: 12),
                 ),
               ],
             ),
@@ -959,9 +960,9 @@ class _PlanetTable extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF12122A),
+        color: AppColors.darkBgElevated,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF2A2A4A)),
+        border: Border.all(color: AppColors.darkBgSecondary),
       ),
       child: Column(
         children: [
@@ -1025,12 +1026,12 @@ class _PlanetTable extends StatelessWidget {
               flex: 3,
               child: Text('${p.nakshatra} P${p.pada}',
                   style: const TextStyle(
-                      color: Color(0xFF9B93CC), fontSize: 12))),
+                      color: AppColors.textSecondaryDark, fontSize: 12))),
           Expanded(
               flex: 1,
               child: Text('${p.house}',
                   style: const TextStyle(
-                      color: Color(0xFF6B6B99), fontSize: 12))),
+                      color: AppColors.textMutedDark, fontSize: 12))),
         ],
       ),
     );
@@ -1045,7 +1046,7 @@ class _HeaderCell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(text,
         style: const TextStyle(
-            color: Color(0xFF6B6B99),
+            color: AppColors.textMutedDark,
             fontSize: 11,
             fontWeight: FontWeight.bold,
             letterSpacing: 0.5));
@@ -1118,9 +1119,9 @@ class _DashaTabState extends State<_DashaTab> {
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: const Color(0xFF12122A),
+            color: AppColors.darkBgElevated,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF2A2A4A)),
+            border: Border.all(color: AppColors.darkBgSecondary),
           ),
           child: Row(
             children: [
@@ -1130,7 +1131,7 @@ class _DashaTabState extends State<_DashaTab> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text('Birth Nakshatra',
-                      style: TextStyle(color: Color(0xFF6B6B99), fontSize: 11)),
+                      style: TextStyle(color: AppColors.textMutedDark, fontSize: 11)),
                   Text(
                     '${dasha.birthNakshatra}  •  Lord: ${dasha.birthNakshatraLord}',
                     style: const TextStyle(
@@ -1181,7 +1182,7 @@ class _MahaDashaCard extends StatelessWidget {
     'Moon':    Color(0xFFE0E0FF),
     'Mars':    Color(0xFFFF6B6B),
     'Mercury': Color(0xFF64FF8A),
-    'Jupiter': Color(0xFFFFD700),
+    'Jupiter': AppColors.gold,
     'Venus':   Color(0xFFFF9ECD),
     'Saturn':  Color(0xFF87CEEB),
     'Rahu':    Color(0xFFB0B0B0),
@@ -1189,7 +1190,7 @@ class _MahaDashaCard extends StatelessWidget {
   };
 
   Color get _color =>
-      _planetColors[dasha.planet] ?? const Color(0xFF7C6EFA);
+      _planetColors[dasha.planet] ?? AppColors.primaryBurgundy;
 
   @override
   Widget build(BuildContext context) {
@@ -1197,12 +1198,12 @@ class _MahaDashaCard extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF12122A),
+          color: AppColors.darkBgElevated,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isCurrent
                 ? _color.withOpacity(0.6)
-                : const Color(0xFF2A2A4A),
+                : AppColors.darkBgSecondary,
             width: isCurrent ? 1.5 : 1,
           ),
           boxShadow: isCurrent
@@ -1267,11 +1268,11 @@ class _MahaDashaCard extends StatelessWidget {
               subtitle: Text(
                 '${dasha.startDate} → ${dasha.endDate}  (${dasha.durationYears.toStringAsFixed(1)} yr)',
                 style:
-                    const TextStyle(color: Color(0xFF6B6B99), fontSize: 12),
+                    const TextStyle(color: AppColors.textMutedDark, fontSize: 12),
               ),
               trailing: Icon(
                 isExpanded ? Icons.expand_less : Icons.expand_more,
-                color: const Color(0xFF3D3266),
+                color: AppColors.darkBgStrong,
               ),
             ),
             if (isExpanded) _buildAntarDashas(),
@@ -1286,14 +1287,14 @@ class _MahaDashaCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Column(
         children: [
-          const Divider(color: Color(0xFF2A2A4A)),
+          const Divider(color: AppColors.darkBgSecondary),
           ...dasha.antarDashas.map((a) {
             final isCurrentAntar = () {
               final s = DateTime.tryParse(a.startDate);
               final e = DateTime.tryParse(a.endDate);
               return s != null && e != null && today.isAfter(s) && today.isBefore(e);
             }();
-            final ac = _planetColors[a.planet] ?? const Color(0xFF9B93CC);
+            final ac = _planetColors[a.planet] ?? AppColors.textSecondaryDark;
             return _AntarDashaRow(
               antar: a,
               isCurrentAntar: isCurrentAntar,
@@ -1415,14 +1416,14 @@ class _AntarDashaRowState extends State<_AntarDashaRow> {
                       Text(
                         '${a.startDate} → ${a.endDate}',
                         style: const TextStyle(
-                            color: Color(0xFF6B6B99), fontSize: 11),
+                            color: AppColors.textMutedDark, fontSize: 11),
                       ),
                     ],
                   ),
                 ),
                 Icon(
                   _expanded ? Icons.expand_less : Icons.expand_more,
-                  color: const Color(0xFF3D3266),
+                  color: AppColors.darkBgStrong,
                   size: 18,
                 ),
               ],
@@ -1463,7 +1464,7 @@ class _AntarDashaRowState extends State<_AntarDashaRow> {
             final isCurrent = widget.today.isAfter(pd.start) &&
                 widget.today.isBefore(pd.end);
             final pc = _MahaDashaCard._planetColors[pd.planet] ??
-                const Color(0xFF9B93CC);
+                AppColors.textSecondaryDark;
             final fmt = DateFormat('MMM dd, yy');
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 3),
@@ -1529,7 +1530,7 @@ class _LoadingChart extends StatelessWidget {
         children: [
           const Text('🪐', style: TextStyle(fontSize: 56)),
           const SizedBox(height: 20),
-          const CircularProgressIndicator(color: Color(0xFF7C6EFA)),
+          const CircularProgressIndicator(color: AppColors.primaryBurgundy),
           const SizedBox(height: 16),
           Text(
             'Calculating your birth chart\nusing Swiss Ephemeris...',
@@ -1537,7 +1538,7 @@ class _LoadingChart extends StatelessWidget {
             style: Theme.of(context)
                 .textTheme
                 .bodyMedium
-                ?.copyWith(color: const Color(0xFF9B93CC), height: 1.5),
+                ?.copyWith(color: AppColors.textSecondaryDark, height: 1.5),
           ),
         ],
       ),

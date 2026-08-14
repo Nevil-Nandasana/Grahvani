@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/chat_model.dart';
 import '../domain/chat_provider.dart';
 import '../../subscriptions/presentation/paywall_sheet.dart';
+import '../../theme/app_colors.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key, required this.chartId});
@@ -72,9 +73,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     ref.listen(chatNotifierProvider(widget.chartId), (_, __) => _scrollToBottom());
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A1A),
+      backgroundColor: AppColors.darkBg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0A1A),
+        backgroundColor: AppColors.darkBg,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Column(
@@ -83,7 +84,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             Text('Grahvani AI',
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             Text('Grounded Vedic Interpretation',
-                style: TextStyle(color: Color(0xFF6B6B99), fontSize: 11)),
+                style: TextStyle(color: AppColors.textMutedDark, fontSize: 11)),
           ],
         ),
       ),
@@ -134,7 +135,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             Text(
               'Ask about your planetary placements,\ndasha periods, or karmic patterns.\nAll answers are grounded in classical Vedic texts.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFF6B6B99), fontSize: 13, height: 1.6),
+              style: TextStyle(color: AppColors.textMutedDark, fontSize: 13, height: 1.6),
             ),
           ],
         ),
@@ -163,7 +164,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             style: TextButton.styleFrom(padding: EdgeInsets.zero),
             child: const Text('Upgrade',
                 style: TextStyle(
-                    color: Color(0xFF7C6EFA),
+                    color: AppColors.primaryBurgundy,
                     fontWeight: FontWeight.bold,
                     fontSize: 12)),
           ),
@@ -177,7 +178,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       decoration: const BoxDecoration(
         color: Color(0xFF0D0D1F),
-        border: Border(top: BorderSide(color: Color(0xFF2A2A4A))),
+        border: Border(top: BorderSide(color: AppColors.darkBgSecondary)),
       ),
       child: Column(
         children: [
@@ -201,19 +202,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     hintStyle: const TextStyle(color: Color(0xFF4A4A6A)),
                     counterText: '',
                     filled: true,
-                    fillColor: const Color(0xFF12122A),
+                    fillColor: AppColors.darkBgElevated,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: Color(0xFF3D3266)),
+                      borderSide: const BorderSide(color: AppColors.darkBgStrong),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: Color(0xFF3D3266)),
+                      borderSide: const BorderSide(color: AppColors.darkBgStrong),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide:
-                          const BorderSide(color: Color(0xFF7C6EFA), width: 2),
+                          const BorderSide(color: AppColors.primaryBurgundy, width: 2),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 12),
@@ -231,13 +232,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: (isStreaming || quotaExhausted)
-                        ? const Color(0xFF2A2A4A)
-                        : const Color(0xFF5B4FDB),
+                        ? AppColors.darkBgSecondary
+                        : AppColors.primaryBurgundy,
                     boxShadow: (isStreaming || quotaExhausted)
                         ? null
                         : [
                             BoxShadow(
-                              color: const Color(0xFF5B4FDB).withOpacity(0.4),
+                              color: AppColors.primaryBurgundy.withOpacity(0.4),
                               blurRadius: 12,
                               spreadRadius: 1,
                             )
@@ -310,8 +311,8 @@ class _ChatBubble extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                   decoration: BoxDecoration(
                     color: _isUser
-                        ? const Color(0xFF5B4FDB)
-                        : const Color(0xFF12122A),
+                        ? AppColors.primaryBurgundy
+                        : AppColors.darkBgElevated,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
                       topRight: const Radius.circular(16),
@@ -324,7 +325,7 @@ class _ChatBubble extends StatelessWidget {
                     ),
                     border: _isUser
                         ? null
-                        : Border.all(color: const Color(0xFF2A2A4A)),
+                        : Border.all(color: AppColors.darkBgSecondary),
                   ),
                   child: _isUser
                       ? Text(message.content,
@@ -383,7 +384,7 @@ class _ChatBubble extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: const RadialGradient(
-          colors: [Color(0xFF7C6EFA), Color(0xFF3B2FBE)],
+          colors: [AppColors.primaryBurgundy, AppColors.primaryBurgundyDark],
         ),
       ),
       child: const Center(
@@ -398,7 +399,7 @@ class _ChatBubble extends StatelessWidget {
       height: 32,
       decoration: const BoxDecoration(
         shape: BoxShape.circle,
-        color: Color(0xFF2A2A4A),
+        color: AppColors.darkBgSecondary,
       ),
       child: const Icon(Icons.person, color: Colors.white54, size: 16),
     );
@@ -418,15 +419,15 @@ class _CitationChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
-          color: const Color(0xFF5B4FDB).withOpacity(0.15),
+          color: AppColors.primaryBurgundy.withOpacity(0.15),
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-              color: const Color(0xFF5B4FDB).withOpacity(0.4), width: 0.8),
+              color: AppColors.primaryBurgundy.withOpacity(0.4), width: 0.8),
         ),
         child: Text(
           '[${citation.refId}] ${citation.sourceTitle}',
           style: const TextStyle(
-            color: Color(0xFF9B93CC),
+            color: AppColors.textSecondaryDark,
             fontSize: 10,
             fontWeight: FontWeight.w500,
           ),
@@ -446,7 +447,7 @@ class _CitationChip extends StatelessWidget {
         maxChildSize: 0.85,
         builder: (_, controller) => Container(
           decoration: const BoxDecoration(
-            color: Color(0xFF12122A),
+            color: AppColors.darkBgElevated,
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: ListView(
@@ -458,7 +459,7 @@ class _CitationChip extends StatelessWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF3D3266),
+                    color: AppColors.darkBgStrong,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -467,10 +468,10 @@ class _CitationChip extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF5B4FDB).withOpacity(0.1),
+                  color: AppColors.primaryBurgundy.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                      color: const Color(0xFF5B4FDB).withOpacity(0.3)),
+                      color: AppColors.primaryBurgundy.withOpacity(0.3)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -478,7 +479,7 @@ class _CitationChip extends StatelessWidget {
                     Text(
                       citation.sourceTitle,
                       style: const TextStyle(
-                          color: Color(0xFF7C6EFA),
+                          color: AppColors.primaryBurgundy,
                           fontWeight: FontWeight.bold,
                           fontSize: 14),
                     ),
@@ -493,7 +494,7 @@ class _CitationChip extends StatelessWidget {
                               'Śloka ${citation.slokaNumber}',
                           ].join(' • '),
                           style: const TextStyle(
-                              color: Color(0xFF9B93CC), fontSize: 12),
+                              color: AppColors.textSecondaryDark, fontSize: 12),
                         ),
                       ),
                   ],
@@ -502,7 +503,7 @@ class _CitationChip extends StatelessWidget {
               const SizedBox(height: 16),
               const Text('Source Text',
                   style: TextStyle(
-                      color: Color(0xFF6B6B99),
+                      color: AppColors.textMutedDark,
                       fontSize: 11,
                       letterSpacing: 0.5,
                       fontWeight: FontWeight.bold)),
@@ -512,7 +513,7 @@ class _CitationChip extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: const Color(0xFF0D0D1F),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFF2A2A4A)),
+                  border: Border.all(color: AppColors.darkBgSecondary),
                 ),
                 child: SelectableText(
                   citation.content,
@@ -582,7 +583,7 @@ class _TypingIndicatorState extends State<_TypingIndicator>
                   height: 7,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Color(0xFF7C6EFA),
+                    color: AppColors.primaryBurgundy,
                   ),
                 ),
               ),

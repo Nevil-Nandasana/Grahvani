@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../domain/auth_state.dart';
+import '../../theme/app_colors.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -65,7 +66,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A1A),
+      backgroundColor: AppColors.darkBg,
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: SafeArea(
@@ -112,11 +113,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: const RadialGradient(
-              colors: [Color(0xFF7C6EFA), Color(0xFF3B2FBE)],
+              colors: [AppColors.primaryBurgundy, AppColors.primaryBurgundyDark],
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF5B4FDB).withOpacity(0.6),
+                color: AppColors.primaryBurgundy.withOpacity(0.6),
                 blurRadius: 40,
                 spreadRadius: 4,
               ),
@@ -139,7 +140,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         Text(
           'Vedic Astrology, Precisely.',
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: const Color(0xFF9B93CC),
+                color: AppColors.textSecondaryDark,
                 letterSpacing: 0.5,
               ),
         ),
@@ -147,14 +148,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E1B4B),
+            color: AppColors.darkBgSecondary,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF3730A3)),
+            border: Border.all(color: AppColors.darkBgStrong),
           ),
           child: const Text(
             'Sign In / Create Account',
             style: TextStyle(
-              color: Color(0xFFA5B4FC),
+              color: AppColors.textSecondaryDark,
               fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
@@ -220,7 +221,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         const SizedBox(height: 12),
         TextButton(
           onPressed: () => setState(() => _showOtpFlow = false),
-          child: const Text('← Back', style: TextStyle(color: Color(0xFF9B93CC))),
+          child: const Text('← Back', style: TextStyle(color: AppColors.textSecondaryDark)),
         ),
       ],
     );
@@ -336,9 +337,9 @@ class _AuthButton extends StatelessWidget {
       height: 54,
       child: OutlinedButton(
         style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: Color(0xFF3D3266), width: 1.5),
+          side: const BorderSide(color: AppColors.darkBgStrong, width: 1.5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          backgroundColor: const Color(0xFF12122A),
+          backgroundColor: AppColors.darkBgElevated,
         ),
         onPressed: isLoading ? null : onPressed,
         child: isLoading
@@ -347,7 +348,7 @@ class _AuthButton extends StatelessWidget {
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: Color(0xFF7C6EFA),
+                  color: AppColors.primaryBurgundy,
                 ),
               )
             : Row(
@@ -396,18 +397,18 @@ class _StyledTextField extends StatelessWidget {
         hintText: hintText,
         hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
         filled: true,
-        fillColor: const Color(0xFF12122A),
+        fillColor: AppColors.darkBgElevated,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF3D3266)),
+          borderSide: const BorderSide(color: AppColors.darkBgStrong),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF3D3266)),
+          borderSide: const BorderSide(color: AppColors.darkBgStrong),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF7C6EFA), width: 2),
+          borderSide: const BorderSide(color: AppColors.primaryBurgundy, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
