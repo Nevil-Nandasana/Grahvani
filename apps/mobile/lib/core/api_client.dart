@@ -111,11 +111,11 @@ class _EnvelopeInterceptor extends Interceptor {
   void onResponse(Response response, ResponseInterceptorHandler handler) {
     final data = response.data;
 
-    if (data is Map<String, dynamic> && data.containsKey('success')) {
+    if (data is Map && data.containsKey('success')) {
       if (data['success'] == true) {
         response.data = data['data'];
       } else {
-        final error = data['error'] as Map<String, dynamic>? ?? {};
+        final error = data['error'] is Map ? data['error'] as Map : {};
         handler.reject(
           DioException(
             requestOptions: response.requestOptions,

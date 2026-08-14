@@ -32,10 +32,19 @@ class ProfileRepository {
     
     // Then fetch from server and update cache
     try {
-      final response = await _dio.get<List<dynamic>>('/api/v1/profiles');
-      final data = response.data ?? [];
-      final serverProfiles = data
-          .map((e) => BirthProfile.fromJson(e as Map<String, dynamic>))
+      final response = await _dio.get('/api/v1/profiles');
+      final dynamic rawData = response.data;
+      final List listData;
+      if (rawData is List) {
+        listData = rawData;
+      } else if (rawData is Map && rawData['data'] is List) {
+        listData = rawData['data'] as List;
+      } else {
+        listData = [];
+      }
+
+      final serverProfiles = listData
+          .map((e) => BirthProfile.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList();
       
       // Update local cache with server data
@@ -64,7 +73,7 @@ class ProfileRepository {
     required String timezone,
   }) async {
     try {
-      final response = await _dio.post<Map<String, dynamic>>(
+      final response = await _dio.post(
         '/api/v1/profiles',
         data: {
           'name': name,
@@ -76,7 +85,20 @@ class ProfileRepository {
           'timezone': timezone,
         },
       );
-      final profile = BirthProfile.fromJson(response.data!);
+
+      final Map<String, dynamic> responseData;
+      if (response.data is Map) {
+        final rawMap = response.data as Map;
+        if (rawMap.containsKey('data') && rawMap['data'] is Map) {
+          responseData = Map<String, dynamic>.from(rawMap['data'] as Map);
+        } else {
+          responseData = Map<String, dynamic>.from(rawMap);
+        }
+      } else {
+        throw Exception('Invalid profile creation response from server.');
+      }
+
+      final profile = BirthProfile.fromJson(responseData);
       
       // Cache locally
       await _database.upsertProfile(profile);

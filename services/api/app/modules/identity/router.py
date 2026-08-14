@@ -285,6 +285,12 @@ async def create_profile(
         dob_str = body.date_of_birth.strftime("%Y-%m-%d") if hasattr(body.date_of_birth, "strftime") else str(body.date_of_birth)
         tob_str = body.time_of_birth.strftime("%H:%M:%S") if hasattr(body.time_of_birth, "strftime") else str(body.time_of_birth)
 
+        existing_profiles = await db.execute(
+            select(BirthProfile)
+            .where(BirthProfile.user_id == user.id, BirthProfile.deleted_at.is_(None))
+        )
+        is_first = len(existing_profiles.scalars().all()) == 0
+
         profile = BirthProfile(
             id=profile_id,
             user_id=user.id,
@@ -295,7 +301,7 @@ async def create_profile(
             latitude=body.latitude,
             longitude=body.longitude,
             timezone=body.timezone,
-            is_primary=False,
+            is_primary=is_first,
         )
         db.add(profile)
         await db.flush()
@@ -311,7 +317,7 @@ async def create_profile(
                 "latitude": body.latitude,
                 "longitude": body.longitude,
                 "timezone": body.timezone,
-                "is_primary": False,
+                "is_primary": is_first,
             },
         }
     except EntitlementError:

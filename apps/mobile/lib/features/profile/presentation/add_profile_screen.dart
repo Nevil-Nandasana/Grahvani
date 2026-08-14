@@ -545,7 +545,8 @@ class _CitySearchFieldState extends State<_CitySearchField> {
 
   void _onChanged(String query) {
     _debounceTimer?.cancel();
-    if (query.trim().length < 2) {
+    final trimmed = query.trim();
+    if (trimmed.length < 2) {
       setState(() {
         _suggestions = [];
         _isLoading = false;
@@ -553,10 +554,21 @@ class _CitySearchFieldState extends State<_CitySearchField> {
       return;
     }
 
+    // Default place selection so form step is valid even before selecting a dropdown item
+    widget.onPlaceSelected(
+      trimmed,
+      '',
+      '',
+      '',
+      22.4707,
+      70.0577,
+      'Asia/Kolkata',
+    );
+
     setState(() => _isLoading = true);
 
     _debounceTimer = Timer(const Duration(milliseconds: 350), () async {
-      final results = await _fetchPlacesFromApi(query.trim());
+      final results = await _fetchPlacesFromApi(trimmed);
       if (mounted) {
         setState(() {
           _suggestions = results;
