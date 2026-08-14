@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/api_client.dart';
 import '../domain/profile_provider.dart';
+import '../../theme/app_colors.dart';
 
 class AddProfileScreen extends ConsumerStatefulWidget {
   const AddProfileScreen({super.key});
@@ -82,9 +83,9 @@ class _AddProfileScreenState extends ConsumerState<AddProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A1A),
+      backgroundColor: AppColors.darkBg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0A1A),
+        backgroundColor: AppColors.darkBg,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.close, color: Colors.white),
@@ -136,14 +137,14 @@ class _AddProfileScreenState extends ConsumerState<AddProfileScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: isDone
-                        ? const Color(0xFF5B4FDB)
+                        ? AppColors.primaryBurgundy
                         : isActive
                             ? Colors.transparent
                             : Colors.transparent,
                     border: Border.all(
                       color: isDone || isActive
-                          ? const Color(0xFF5B4FDB)
-                          : const Color(0xFF3D3266),
+                          ? AppColors.primaryBurgundy
+                          : AppColors.darkBgStrong,
                       width: 2,
                     ),
                   ),
@@ -154,8 +155,8 @@ class _AddProfileScreenState extends ConsumerState<AddProfileScreen> {
                             '${i + 1}',
                             style: TextStyle(
                               color: isActive
-                                  ? const Color(0xFF7C6EFA)
-                                  : const Color(0xFF3D3266),
+                                  ? AppColors.primaryBurgundy
+                                  : AppColors.darkBgStrong,
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
@@ -167,8 +168,8 @@ class _AddProfileScreenState extends ConsumerState<AddProfileScreen> {
                     child: Container(
                       height: 2,
                       color: isDone
-                          ? const Color(0xFF5B4FDB)
-                          : const Color(0xFF2A2A4A),
+                          ? AppColors.primaryBurgundy
+                          : AppColors.darkBgSecondary,
                     ),
                   ),
               ],
@@ -226,9 +227,9 @@ class _AddProfileScreenState extends ConsumerState<AddProfileScreen> {
               builder: (ctx, child) => Theme(
                 data: ThemeData.dark().copyWith(
                   colorScheme: const ColorScheme.dark(
-                    primary: Color(0xFF5B4FDB),
+                    primary: AppColors.primaryBurgundy,
                     onPrimary: Colors.white,
-                    surface: Color(0xFF12122A),
+                    surface: AppColors.darkBgElevated,
                   ),
                 ),
                 child: child!,
@@ -258,9 +259,9 @@ class _AddProfileScreenState extends ConsumerState<AddProfileScreen> {
               builder: (ctx, child) => Theme(
                 data: ThemeData.dark().copyWith(
                   colorScheme: const ColorScheme.dark(
-                    primary: Color(0xFF5B4FDB),
+                    primary: AppColors.primaryBurgundy,
                     onPrimary: Colors.white,
-                    surface: Color(0xFF12122A),
+                    surface: AppColors.darkBgElevated,
                   ),
                 ),
                 child: child!,
@@ -297,13 +298,13 @@ class _AddProfileScreenState extends ConsumerState<AddProfileScreen> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: const Color(0xFF1A1A30),
+              color: AppColors.darkBgElevated,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF3D3266)),
+              border: Border.all(color: AppColors.darkBgStrong),
             ),
             child: Row(
               children: [
-                const Icon(Icons.location_on, color: Color(0xFF7C6EFA), size: 20),
+                const Icon(Icons.location_on, color: AppColors.primaryBurgundy, size: 20),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -316,7 +317,7 @@ class _AddProfileScreenState extends ConsumerState<AddProfileScreen> {
                       Text(
                         'Lat: ${_latitude.toStringAsFixed(4)}  Lng: ${_longitude.toStringAsFixed(4)}  TZ: $_timezone',
                         style: const TextStyle(
-                            color: Color(0xFF6B6B99), fontSize: 11),
+                            color: AppColors.textMutedDark, fontSize: 11),
                       ),
                     ],
                   ),
@@ -340,7 +341,7 @@ class _AddProfileScreenState extends ConsumerState<AddProfileScreen> {
   }
 
   Widget _stepSubtitle(String text) {
-    return Text(text, style: const TextStyle(color: Color(0xFF6B6B99), fontSize: 14));
+    return Text(text, style: const TextStyle(color: AppColors.textMutedDark, fontSize: 14));
   }
 
   Widget _buildNavigationButtons() {
@@ -350,7 +351,7 @@ class _AddProfileScreenState extends ConsumerState<AddProfileScreen> {
           Expanded(
             child: OutlinedButton(
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFF3D3266)),
+                side: const BorderSide(color: AppColors.darkBgStrong),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(vertical: 14),
@@ -364,7 +365,7 @@ class _AddProfileScreenState extends ConsumerState<AddProfileScreen> {
           flex: 2,
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF5B4FDB),
+              backgroundColor: AppColors.primaryBurgundy,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
@@ -435,18 +436,18 @@ class _StyledField extends StatelessWidget {
         hintText: hint,
         hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
         filled: true,
-        fillColor: const Color(0xFF12122A),
+        fillColor: AppColors.darkBgElevated,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF3D3266)),
+          borderSide: const BorderSide(color: AppColors.darkBgStrong),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF3D3266)),
+          borderSide: const BorderSide(color: AppColors.darkBgStrong),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF7C6EFA), width: 2),
+          borderSide: const BorderSide(color: AppColors.primaryBurgundy, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
@@ -466,17 +467,17 @@ class _DatePickerButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
-          color: const Color(0xFF12122A),
+          color: AppColors.darkBgElevated,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: selectedDate != null
-                ? const Color(0xFF7C6EFA)
-                : const Color(0xFF3D3266),
+                ? AppColors.primaryBurgundy
+                : AppColors.darkBgStrong,
           ),
         ),
         child: Row(
           children: [
-            const Icon(Icons.calendar_today, color: Color(0xFF7C6EFA), size: 20),
+            const Icon(Icons.calendar_today, color: AppColors.primaryBurgundy, size: 20),
             const SizedBox(width: 12),
             Text(
               selectedDate != null
@@ -506,17 +507,17 @@ class _TimePickerButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
-          color: const Color(0xFF12122A),
+          color: AppColors.darkBgElevated,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: selectedTime != null
-                ? const Color(0xFF7C6EFA)
-                : const Color(0xFF3D3266),
+                ? AppColors.primaryBurgundy
+                : AppColors.darkBgStrong,
           ),
         ),
         child: Row(
           children: [
-            const Icon(Icons.access_time, color: Color(0xFF7C6EFA), size: 20),
+            const Icon(Icons.access_time, color: AppColors.primaryBurgundy, size: 20),
             const SizedBox(width: 12),
             Text(
               selectedTime != null
@@ -590,20 +591,20 @@ class _CitySearchFieldState extends State<_CitySearchField> {
             hintText: 'Search city or place...',
             hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
             prefixIcon:
-                const Icon(Icons.search, color: Color(0xFF7C6EFA), size: 20),
+                const Icon(Icons.search, color: AppColors.primaryBurgundy, size: 20),
             filled: true,
-            fillColor: const Color(0xFF12122A),
+            fillColor: AppColors.darkBgElevated,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF3D3266)),
+              borderSide: const BorderSide(color: AppColors.darkBgStrong),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF3D3266)),
+              borderSide: const BorderSide(color: AppColors.darkBgStrong),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF7C6EFA), width: 2),
+              borderSide: const BorderSide(color: AppColors.primaryBurgundy, width: 2),
             ),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -613,9 +614,9 @@ class _CitySearchFieldState extends State<_CitySearchField> {
           Container(
             margin: const EdgeInsets.only(top: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFF12122A),
+              color: AppColors.darkBgElevated,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF3D3266)),
+              border: Border.all(color: AppColors.darkBgStrong),
             ),
             child: Column(
               children: _suggestions
@@ -623,7 +624,7 @@ class _CitySearchFieldState extends State<_CitySearchField> {
                     (p) => ListTile(
                       dense: true,
                       leading: const Icon(Icons.location_on,
-                          color: Color(0xFF7C6EFA), size: 18),
+                          color: AppColors.primaryBurgundy, size: 18),
                       title: Text(
                         p['name'] as String,
                         style: const TextStyle(color: Colors.white, fontSize: 14),

@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../domain/notification_model.dart';
+import '../../theme/app_colors.dart';
 
 // ─── Notification History StateNotifier ───────────────────────────────────────
 // In production this would persist to Drift/Hive; here uses in-memory state.
@@ -118,9 +119,9 @@ class NotificationCenterScreen extends ConsumerWidget {
     final unread = notifications.where((n) => !n.isRead).length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A1A),
+      backgroundColor: AppColors.darkBg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0A1A),
+        backgroundColor: AppColors.darkBg,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         title: Row(
@@ -135,7 +136,7 @@ class NotificationCenterScreen extends ConsumerWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF7C6EFA),
+                  color: AppColors.primaryBurgundy,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -156,7 +157,7 @@ class NotificationCenterScreen extends ConsumerWidget {
               onPressed: () => notifier.markAllAsRead(),
               child: const Text(
                 'Mark all read',
-                style: TextStyle(color: Color(0xFF7C6EFA), fontSize: 12),
+                style: TextStyle(color: AppColors.primaryBurgundy, fontSize: 12),
               ),
             ),
           if (notifications.isNotEmpty)
@@ -236,15 +237,15 @@ class _NotificationCard extends StatelessWidget {
 
   static const _meta = {
     NotificationType.sadeSati: ('🪐', Color(0xFF87CEEB), 'SADE SATI'),
-    NotificationType.dashaTransition: ('⏳', Color(0xFFFFD700), 'DASHA'),
+    NotificationType.dashaTransition: ('⏳', AppColors.gold, 'DASHA'),
     NotificationType.majorTransit: ('🌟', Color(0xFF64FF8A), 'TRANSIT'),
-    NotificationType.test: ('🔔', Color(0xFF9B93CC), 'TEST'),
+    NotificationType.test: ('🔔', AppColors.textSecondaryDark, 'TEST'),
   };
 
   @override
   Widget build(BuildContext context) {
     final (icon, color, label) =
-        _meta[notification.type] ?? ('🔔', const Color(0xFF9B93CC), 'ALERT');
+        _meta[notification.type] ?? ('🔔', AppColors.textSecondaryDark, 'ALERT');
     final isUnread = !notification.isRead;
 
     return Dismissible(
@@ -267,13 +268,13 @@ class _NotificationCard extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: isUnread
-                ? const Color(0xFF12122A)
+                ? AppColors.darkBgElevated
                 : const Color(0xFF0E0E20),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isUnread
                   ? color.withOpacity(0.4)
-                  : const Color(0xFF1A1A30),
+                  : AppColors.darkBgElevated,
               width: isUnread ? 1.2 : 1,
             ),
             boxShadow: isUnread
@@ -336,7 +337,7 @@ class _NotificationCard extends StatelessWidget {
                     Text(
                       notification.body,
                       style: const TextStyle(
-                        color: Color(0xFF6B6B99),
+                        color: AppColors.textMutedDark,
                         fontSize: 12,
                         height: 1.4,
                       ),
@@ -393,7 +394,7 @@ class _EmptyState extends StatelessWidget {
             height: 80,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFF5B4FDB).withOpacity(0.1),
+              color: AppColors.primaryBurgundy.withOpacity(0.1),
             ),
             child: const Center(
               child: Text('🔔', style: TextStyle(fontSize: 36)),
@@ -413,7 +414,7 @@ class _EmptyState extends StatelessWidget {
             'Planetary alerts and dasha transitions\nwill appear here.',
             textAlign: TextAlign.center,
             style: TextStyle(
-                color: Color(0xFF6B6B99), fontSize: 13, height: 1.5),
+                color: AppColors.textMutedDark, fontSize: 13, height: 1.5),
           ),
         ],
       ),

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/api_client.dart';
+import '../../theme/app_colors.dart';
 
 class SadeSatiScreen extends ConsumerStatefulWidget {
   const SadeSatiScreen({super.key, required this.profileId});
@@ -76,7 +77,7 @@ class _SadeSatiScreenState extends ConsumerState<SadeSatiScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('PDF export is a Premium feature.'),
-              backgroundColor: Color(0xFF3B2FBE),
+              backgroundColor: AppColors.primaryBurgundyDark,
             ),
           );
         }
@@ -98,9 +99,9 @@ class _SadeSatiScreenState extends ConsumerState<SadeSatiScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A1A),
+      backgroundColor: AppColors.darkBg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0A1A),
+        backgroundColor: AppColors.darkBg,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Column(
@@ -109,7 +110,7 @@ class _SadeSatiScreenState extends ConsumerState<SadeSatiScreen> {
             Text('Sade Sati Analysis',
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             Text('Saturn 7.5 Year Transit Cycle',
-                style: TextStyle(color: Color(0xFF6B6B99), fontSize: 11)),
+                style: TextStyle(color: AppColors.textMutedDark, fontSize: 11)),
           ],
         ),
         actions: [
@@ -121,19 +122,19 @@ class _SadeSatiScreenState extends ConsumerState<SadeSatiScreen> {
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Color(0xFFFFD700),
+                      color: AppColors.gold,
                     ),
                   ),
                 )
               : IconButton(
-                  icon: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFFFFD700)),
+                  icon: const Icon(Icons.picture_as_pdf_outlined, color: AppColors.gold),
                   tooltip: 'Export PDF',
                   onPressed: _data != null ? () => _exportPdf(context) : null,
                 ),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF7C6EFA)))
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primaryBurgundy))
           : _error != null
               ? Center(
                   child: Text(_error!, style: const TextStyle(color: Colors.redAccent)))
@@ -198,7 +199,7 @@ class _SadeSatiScreenState extends ConsumerState<SadeSatiScreen> {
                           Text(
                             isActive ? 'SADE SATI ACTIVE' : 'NO SADE SATI',
                             style: TextStyle(
-                              color: isActive ? const Color(0xFFFFD700) : Colors.white70,
+                              color: isActive ? AppColors.gold : Colors.white70,
                               fontWeight: FontWeight.bold,
                               fontSize: 12,
                               letterSpacing: 1.2,
@@ -253,7 +254,7 @@ class _SadeSatiScreenState extends ConsumerState<SadeSatiScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.info_outline, color: Color(0xFF7C6EFA), size: 20),
+                const Icon(Icons.info_outline, color: AppColors.primaryBurgundy, size: 20),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -283,7 +284,7 @@ class _SadeSatiScreenState extends ConsumerState<SadeSatiScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.check_circle_outline, color: Color(0xFF5B4FDB), size: 18),
+                      const Icon(Icons.check_circle_outline, color: AppColors.primaryBurgundy, size: 18),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -308,7 +309,7 @@ class _SadeSatiScreenState extends ConsumerState<SadeSatiScreen> {
         const SizedBox(height: 2),
         Row(
           children: [
-            Icon(icon, color: const Color(0xFF9B93CC), size: 14),
+            Icon(icon, color: AppColors.textSecondaryDark, size: 14),
             const SizedBox(width: 4),
             Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
           ],
@@ -332,10 +333,10 @@ class _SadeSatiScreenState extends ConsumerState<SadeSatiScreen> {
             margin: const EdgeInsets.symmetric(horizontal: 4),
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
             decoration: BoxDecoration(
-              color: isCurrent ? const Color(0xFF5B4FDB) : const Color(0xFF16163A),
+              color: isCurrent ? AppColors.primaryBurgundy : const Color(0xFF16163A),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: isCurrent ? const Color(0xFF7C6EFA) : const Color(0xFF2A2A5A),
+                color: isCurrent ? AppColors.primaryBurgundy : const Color(0xFF2A2A5A),
               ),
             ),
             child: Column(

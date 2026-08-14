@@ -23,6 +23,7 @@ import '../features/profile/presentation/profiles_screen.dart';
 import '../features/subscriptions/presentation/paywall_sheet.dart';
 import '../features/subscriptions/presentation/trial_banner.dart';
 import '../features/auth/data/auth_repository.dart';
+import '../../theme/app_colors.dart';
 
 // ─── Route Paths ──────────────────────────────────────────────────────────────────────────────
 class AppRoutes {
@@ -220,7 +221,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ],
 
     errorBuilder: (context, state) => Scaffold(
-      backgroundColor: const Color(0xFF0A0A1A),
+      backgroundColor: AppColors.darkBg,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -236,7 +237,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             const SizedBox(height: 8),
             Text(
               state.uri.toString(),
-              style: const TextStyle(color: Color(0xFF6B6B99), fontSize: 12),
+              style: const TextStyle(color: AppColors.textMutedDark, fontSize: 12),
             ),
             const SizedBox(height: 20),
             TextButton(
@@ -268,11 +269,11 @@ class _SplashScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: const RadialGradient(
-                    colors: [Color(0xFF7C6EFA), Color(0xFF3B2FBE)],
+                    colors: [AppColors.primaryBurgundy, AppColors.primaryBurgundyDark],
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF5B4FDB).withValues(alpha: 0.5),
+                      color: AppColors.primaryBurgundy.withValues(alpha: 0.5),
                       blurRadius: 30,
                       spreadRadius: 4,
                     )
@@ -304,7 +305,7 @@ class _SplashScreen extends StatelessWidget {
                 height: 24,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: Color(0xFF7C6EFA),
+                  color: AppColors.primaryBurgundy,
                 ),
               ),
             ],
@@ -321,9 +322,9 @@ class _HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A1A),
+      backgroundColor: AppColors.darkBg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0A1A),
+        backgroundColor: AppColors.darkBg,
         elevation: 0,
         title: const Row(
           children: [
@@ -342,12 +343,12 @@ class _HomeScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_outlined,
-                color: Color(0xFF9B93CC)),
+                color: AppColors.textSecondaryDark),
             tooltip: 'Notification Center',
             onPressed: () => context.push('/home/notifications/center'),
           ),
           IconButton(
-            icon: const Icon(Icons.workspace_premium, color: Color(0xFF7C6EFA)),
+            icon: const Icon(Icons.workspace_premium, color: AppColors.primaryBurgundy),
             tooltip: 'Upgrade',
             onPressed: () => context.push('/home/upgrade'),
           ),
@@ -370,7 +371,7 @@ class _HomeScreen extends ConsumerWidget {
                 const SizedBox(height: 6),
                 const Text(
                   'Your Vedic birth chart awaits.',
-                  style: TextStyle(color: Color(0xFF6B6B99)),
+                  style: TextStyle(color: AppColors.textMutedDark),
                 ),
                 const SizedBox(height: 16),
                 const TrialBanner(),
@@ -450,15 +451,15 @@ class _HomeCard extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: highlight
               ? const LinearGradient(
-                  colors: [Color(0xFF3B2FBE), Color(0xFF5B4FDB)],
+                  colors: [AppColors.primaryBurgundyDark, AppColors.primaryBurgundy],
                 )
               : null,
-          color: highlight ? null : const Color(0xFF12122A),
+          color: highlight ? null : AppColors.darkBgElevated,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: highlight
-                ? const Color(0xFF7C6EFA)
-                : const Color(0xFF2A2A4A),
+                ? AppColors.primaryBurgundy
+                : AppColors.darkBgSecondary,
           ),
         ),
         child: Row(
@@ -477,11 +478,11 @@ class _HomeCard extends StatelessWidget {
                   const SizedBox(height: 3),
                   Text(subtitle,
                       style: const TextStyle(
-                          color: Color(0xFF9B93CC), fontSize: 12)),
+                          color: AppColors.textSecondaryDark, fontSize: 12)),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: Color(0xFF3D3266)),
+            const Icon(Icons.chevron_right, color: AppColors.darkBgStrong),
           ],
         ),
       ),
@@ -497,7 +498,7 @@ class _PaywallPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A1A),
+      backgroundColor: AppColors.darkBg,
       body: SafeArea(
         child: Column(
           children: [

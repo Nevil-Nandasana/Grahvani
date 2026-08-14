@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../data/transit_repository.dart';
+import '../../theme/app_colors.dart';
 
 class SadeSatiScreen extends ConsumerWidget {
   const SadeSatiScreen({super.key, required this.profileId});
@@ -16,16 +17,16 @@ class SadeSatiScreen extends ConsumerWidget {
     final statusAsync = ref.watch(sadeSatiStatusProvider(profileId));
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A1A),
+      backgroundColor: AppColors.darkBg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0A1A),
+        backgroundColor: AppColors.darkBg,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text('Sade Sati Status',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Color(0xFF7C6EFA)),
+            icon: const Icon(Icons.refresh, color: AppColors.primaryBurgundy),
             tooltip: 'Refresh',
             onPressed: () => ref.refresh(sadeSatiStatusProvider(profileId)),
           ),
@@ -84,7 +85,7 @@ class _SadeSatiContent extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF12122A),
+        color: AppColors.darkBgElevated,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isActive
@@ -133,7 +134,7 @@ class _SadeSatiContent extends StatelessWidget {
               padding: const EdgeInsets.only(top: 8),
               child: Text(
                 '${status.daysRemaining} days remaining in this phase',
-                style: const TextStyle(color: Color(0xFF6B6B99), fontSize: 12),
+                style: const TextStyle(color: AppColors.textMutedDark, fontSize: 12),
               ),
             ),
         ],
@@ -145,7 +146,7 @@ class _SadeSatiContent extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF12122A),
+        color: AppColors.darkBgElevated,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -221,7 +222,7 @@ class _SadeSatiContent extends StatelessWidget {
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color: isCurrent && isActive ? _getPhaseColor(phaseKey) : const Color(0xFF6B6B99),
+                    color: isCurrent && isActive ? _getPhaseColor(phaseKey) : AppColors.textMutedDark,
                     fontSize: 12,
                   ),
                 ),
@@ -253,7 +254,7 @@ class _SadeSatiContent extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF12122A),
+        color: AppColors.darkBgElevated,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -297,7 +298,7 @@ class _SadeSatiContent extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(color: Color(0xFF6B6B99), fontSize: 14),
+          style: const TextStyle(color: AppColors.textMutedDark, fontSize: 14),
         ),
         Text(
           value,
@@ -313,7 +314,7 @@ class _SadeSatiContent extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF12122A),
+        color: AppColors.darkBgElevated,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -339,7 +340,7 @@ class _SadeSatiContent extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.star, color: Color(0xFFFFD700), size: 16),
+                  const Icon(Icons.star, color: AppColors.gold, size: 16),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -359,7 +360,7 @@ class _SadeSatiContent extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF12122A),
+        color: AppColors.darkBgElevated,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -390,7 +391,7 @@ class _SadeSatiContent extends StatelessWidget {
           const SizedBox(height: 16),
           const Text(
             'Note: The effects of Sade Sati vary based on your Moon sign, Saturn placement, and overall chart.',
-            style: TextStyle(color: Color(0xFF6B6B99), fontSize: 12, fontStyle: FontStyle.italic),
+            style: TextStyle(color: AppColors.textMutedDark, fontSize: 12, fontStyle: FontStyle.italic),
           ),
         ],
       ),
@@ -422,7 +423,7 @@ class _SadeSatiContent extends StatelessWidget {
                 ),
                 Text(
                   position,
-                  style: const TextStyle(color: Color(0xFF6B6B99), fontSize: 12),
+                  style: const TextStyle(color: AppColors.textMutedDark, fontSize: 12),
                 ),
                 Text(
                   description,
@@ -446,7 +447,7 @@ class _SadeSatiContent extends StatelessWidget {
       case 'third_phase':
         return const Color(0xFF64FF8A); // Green
       default:
-        return const Color(0xFF7C6EFA); // Purple
+        return AppColors.primaryBurgundy; // Purple
     }
   }
 
@@ -510,11 +511,11 @@ class _LoadingView extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(color: Color(0xFF7C6EFA)),
+          CircularProgressIndicator(color: AppColors.primaryBurgundy),
           SizedBox(height: 16),
           Text(
             'Calculating your Sade Sati status...',
-            style: TextStyle(color: Color(0xFF9B93CC)),
+            style: TextStyle(color: AppColors.textSecondaryDark),
           ),
         ],
       ),
@@ -552,7 +553,7 @@ class _ErrorView extends StatelessWidget {
               icon: const Icon(Icons.refresh, color: Colors.white),
               label: const Text('Retry', style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF7C6EFA),
+                backgroundColor: AppColors.primaryBurgundy,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),

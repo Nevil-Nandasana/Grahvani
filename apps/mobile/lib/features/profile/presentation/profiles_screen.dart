@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../domain/profile_model.dart';
 import '../domain/profile_provider.dart';
+import '../../theme/app_colors.dart';
 
 class ProfilesScreen extends ConsumerWidget {
   const ProfilesScreen({super.key});
@@ -16,9 +17,9 @@ class ProfilesScreen extends ConsumerWidget {
     final profilesAsync = ref.watch(profilesNotifierProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A1A),
+      backgroundColor: AppColors.darkBg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0A1A),
+        backgroundColor: AppColors.darkBg,
         title: const Text(
           'Birth Profiles',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -27,7 +28,7 @@ class ProfilesScreen extends ConsumerWidget {
         elevation: 0,
       ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: const Color(0xFF5B4FDB),
+        backgroundColor: AppColors.primaryBurgundy,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: const Text('Add Profile'),
@@ -35,7 +36,7 @@ class ProfilesScreen extends ConsumerWidget {
       ),
       body: profilesAsync.when(
         loading: () => const Center(
-          child: CircularProgressIndicator(color: Color(0xFF7C6EFA)),
+          child: CircularProgressIndicator(color: AppColors.primaryBurgundy),
         ),
         error: (e, _) => Center(
           child: Column(
@@ -63,7 +64,7 @@ class ProfilesScreen extends ConsumerWidget {
             );
           }
           return RefreshIndicator(
-            color: const Color(0xFF7C6EFA),
+            color: AppColors.primaryBurgundy,
             onRefresh: () => ref.read(profilesNotifierProvider.notifier).refresh(),
             child: ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
@@ -92,17 +93,17 @@ class _ProfileCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: const Color(0xFF12122A),
+          color: AppColors.darkBgElevated,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: profile.isPrimary
-                ? const Color(0xFF5B4FDB).withOpacity(0.7)
-                : const Color(0xFF2A2A4A),
+                ? AppColors.primaryBurgundy.withOpacity(0.7)
+                : AppColors.darkBgSecondary,
           ),
           boxShadow: profile.isPrimary
               ? [
                   BoxShadow(
-                    color: const Color(0xFF5B4FDB).withOpacity(0.15),
+                    color: AppColors.primaryBurgundy.withOpacity(0.15),
                     blurRadius: 20,
                     spreadRadius: 2,
                   )
@@ -119,8 +120,8 @@ class _ProfileCard extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
                   colors: profile.isPrimary
-                      ? [const Color(0xFF7C6EFA), const Color(0xFF3B2FBE)]
-                      : [const Color(0xFF3A3A5C), const Color(0xFF1E1E3C)],
+                      ? [AppColors.primaryBurgundy, AppColors.primaryBurgundyDark]
+                      : [AppColors.darkBgAccent, AppColors.darkBgSecondary],
                 ),
               ),
               child: Center(
@@ -156,13 +157,13 @@ class _ProfileCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 7, vertical: 2),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF5B4FDB).withOpacity(0.2),
+                            color: AppColors.primaryBurgundy.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: const Text(
                             'Primary',
                             style: TextStyle(
-                              color: Color(0xFF9B93CC),
+                              color: AppColors.textSecondaryDark,
                               fontSize: 10,
                               fontWeight: FontWeight.w500,
                             ),
@@ -174,18 +175,18 @@ class _ProfileCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     '${profile.dateOfBirth}  •  ${profile.timeOfBirth.substring(0, 5)}',
-                    style: const TextStyle(color: Color(0xFF6B6B99), fontSize: 13),
+                    style: const TextStyle(color: AppColors.textMutedDark, fontSize: 13),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     profile.placeName,
-                    style: const TextStyle(color: Color(0xFF6B6B99), fontSize: 13),
+                    style: const TextStyle(color: AppColors.textMutedDark, fontSize: 13),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: Color(0xFF3D3266)),
+            const Icon(Icons.chevron_right, color: AppColors.darkBgStrong),
           ],
         ),
       ),
@@ -216,12 +217,12 @@ class _EmptyProfilesView extends StatelessWidget {
           const Text(
             'Add your birth details to generate\nyour Vedic birth chart.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Color(0xFF6B6B99), fontSize: 14, height: 1.5),
+            style: TextStyle(color: AppColors.textMutedDark, fontSize: 14, height: 1.5),
           ),
           const SizedBox(height: 28),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF5B4FDB),
+              backgroundColor: AppColors.primaryBurgundy,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               shape: RoundedRectangleBorder(
