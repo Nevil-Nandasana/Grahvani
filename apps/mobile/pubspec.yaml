@@ -46,13 +46,12 @@ dependencies:
   # In-App Purchase (Google Play + App Store)
   in_app_purchase: ^3.1.13
 
-  # Voice AI (STT + TTS)
-  speech_to_text: ^6.6.2
-  flutter_tts: ^3.8.5
+  # Voice AI (STT + TTS - commented until production audio pipeline integration)
+  # speech_to_text: ^7.0.0
+  # flutter_tts: ^3.8.5
 
   # Security Hardening
   freerasp: ^6.3.0
-  flutter_windowmanager: ^0.2.0
 
   # Code generation
   freezed_annotation: ^2.4.4

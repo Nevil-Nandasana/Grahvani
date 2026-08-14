@@ -118,7 +118,7 @@ class MahaDasha {
       endDate: json['end_date'] as String,
       durationYears: (json['duration_years'] as num).toDouble(),
       antarDashas: (json['antar_dashas'] as List<dynamic>? ?? [])
-          .map((e) => AntarDasha.fromJson(e as Map<String, dynamic>))
+          .map((e) => AntarDasha.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList(),
     );
   }
@@ -141,7 +141,7 @@ class VimshottariDasha {
       birthNakshatra: json['birth_nakshatra'] as String,
       birthNakshatraLord: json['birth_nakshatra_lord'] as String,
       mahaDashas: (json['maha_dashas'] as List<dynamic>? ?? [])
-          .map((e) => MahaDasha.fromJson(e as Map<String, dynamic>))
+          .map((e) => MahaDasha.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList(),
     );
   }
@@ -169,15 +169,15 @@ class BirthChartFacts {
     return BirthChartFacts(
       chartId: chartId,
       ayanamsa: json['ayanamsa'] as String? ?? 'lahiri',
-      ascendant: Ascendant.fromJson(json['ascendant'] as Map<String, dynamic>),
+      ascendant: Ascendant.fromJson(Map<String, dynamic>.from(json['ascendant'] as Map)),
       planets: (json['planets'] as List<dynamic>)
-          .map((e) => PlanetPlacement.fromJson(e as Map<String, dynamic>))
+          .map((e) => PlanetPlacement.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList(),
       houseCusps: (json['house_cusps'] as List<dynamic>)
           .map((e) => (e as num).toDouble())
           .toList(),
       vimshottariDasha: VimshottariDasha.fromJson(
-          json['vimshottari_dasha'] as Map<String, dynamic>),
+          Map<String, dynamic>.from(json['vimshottari_dasha'] as Map)),
     );
   }
 

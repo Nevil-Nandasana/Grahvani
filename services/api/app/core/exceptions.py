@@ -6,6 +6,8 @@ from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from app.config import settings
+
 
 # ─── Custom Exception Classes ─────────────────────────────────────────────────
 
@@ -89,11 +91,12 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception):
         import logging
-        logging.getLogger("app.exceptions").error(f"Unhandled exception: {exc}", exc_info=True)
+        logging.getLogger("app.exceptions").error(f"Unhandled exception on {request.method} {request.url.path}: {exc}", exc_info=True)
+        error_msg = f"{type(exc).__name__}: {str(exc)}" if (settings.DEBUG or settings.APP_ENV == "development") else "An unexpected error occurred. Please try again."
         return _error_response(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             "INTERNAL_SERVER_ERROR",
-            "An unexpected error occurred. Please try again.",
+            error_msg,
         )
 
 

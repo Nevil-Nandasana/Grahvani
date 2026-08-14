@@ -3,7 +3,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:freerasp/freerasp.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grahvani/core/theme/app_theme.dart';
@@ -78,15 +77,6 @@ class GrahvaniApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-
-    // OWASP Hardening: Block screenshots and screen recording on Android
-    if (!kIsWeb) {
-      try {
-        if (Platform.isAndroid) {
-          FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
-        }
-      } catch (_) {}
-    }
 
     final router = ref.watch(appRouterProvider);
     final theme = ref.watch(themeProvider);

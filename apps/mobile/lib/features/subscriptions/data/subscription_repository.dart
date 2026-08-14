@@ -104,11 +104,16 @@ class SubscriptionRepository {
   /// GET /api/v1/billing/entitlements
   Future<Entitlements> getEntitlements() async {
     try {
-      final response = await _dio.get<Map<String, dynamic>>(
+      final response = await _dio.get(
         '/api/v1/billing/entitlements',
       );
-      final data = response.data?['data'] ?? response.data ?? {};
-      return Entitlements.fromJson(data as Map<String, dynamic>);
+      final dynamic raw = response.data;
+      final Map<String, dynamic> data = raw is Map
+          ? (raw.containsKey('data') && raw['data'] is Map
+              ? Map<String, dynamic>.from(raw['data'] as Map)
+              : Map<String, dynamic>.from(raw))
+          : {};
+      return Entitlements.fromJson(data);
     } on DioException catch (e) {
       throw ApiException.fromDioException(e);
     }
@@ -117,11 +122,16 @@ class SubscriptionRepository {
   /// POST /api/v1/billing/trial/activate
   Future<TrialActivationResult> activateTrial() async {
     try {
-      final response = await _dio.post<Map<String, dynamic>>(
+      final response = await _dio.post(
         '/api/v1/billing/trial/activate',
       );
-      final data = response.data?['data'] ?? response.data ?? {};
-      return TrialActivationResult.fromJson(data as Map<String, dynamic>);
+      final dynamic raw = response.data;
+      final Map<String, dynamic> data = raw is Map
+          ? (raw.containsKey('data') && raw['data'] is Map
+              ? Map<String, dynamic>.from(raw['data'] as Map)
+              : Map<String, dynamic>.from(raw))
+          : {};
+      return TrialActivationResult.fromJson(data);
     } on DioException catch (e) {
       throw ApiException.fromDioException(e);
     }

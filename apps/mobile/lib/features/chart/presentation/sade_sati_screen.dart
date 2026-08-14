@@ -33,11 +33,14 @@ class _SadeSatiScreenState extends ConsumerState<SadeSatiScreen> {
       final client = ref.read(apiClientProvider);
       final response = await client.get('/api/v1/transits/sade-sati/${widget.profileId}');
       if (response.statusCode == 200) {
-        final body = response.data is Map<String, dynamic>
-            ? response.data as Map<String, dynamic>
+        final raw = response.data;
+        final Map<String, dynamic> body = raw is Map
+            ? (raw.containsKey('data') && raw['data'] is Map
+                ? Map<String, dynamic>.from(raw['data'] as Map)
+                : Map<String, dynamic>.from(raw))
             : {};
         setState(() {
-          _data = (body['data'] ?? body) as Map<String, dynamic>;
+          _data = body;
           _isLoading = false;
         });
       } else {

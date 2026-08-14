@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../data/auth_repository.dart';
 import '../domain/auth_state.dart';
 import '../../theme/app_colors.dart';
 
@@ -25,13 +26,48 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   // Phone OTP state
   bool _showOtpFlow = false;
   bool _otpSent = false;
-  ConfirmationResult? _confirmationResult;
+  PhoneAuthSession? _phoneAuthSession;
+  String _selectedCountryCode = '+91';
   final _phoneController = TextEditingController();
   final _otpController = TextEditingController();
+
+  static const _countryOptions = [
+    (flag: '🇮🇳', name: 'India', code: '+91', length: 10),
+    (flag: '🇺🇸', name: 'USA', code: '+1', length: 10),
+    (flag: '🇬🇧', name: 'UK', code: '+44', length: 10),
+    (flag: '🇦🇪', name: 'UAE', code: '+971', length: 9),
+    (flag: '🇦🇺', name: 'Australia', code: '+61', length: 9),
+    (flag: '🇨🇦', name: 'Canada', code: '+1', length: 10),
+    (flag: '🇸🇬', name: 'Singapore', code: '+65', length: 8),
+    (flag: '🇩🇪', name: 'Germany', code: '+49', length: 10),
+    (flag: '🌐', name: 'Other', code: '+', length: 10),
+  ];
+
+  String get _cleanPhoneDigits =>
+      _phoneController.text.replaceAll(RegExp(r'\D'), '');
+
+  int get _expectedLength {
+    final country = _countryOptions.firstWhere(
+      (c) => c.code == _selectedCountryCode,
+      orElse: () => (flag: '🌐', name: 'Other', code: _selectedCountryCode, length: 10),
+    );
+    return country.length;
+  }
+
+  bool get _isPhoneValid {
+    final digits = _cleanPhoneDigits;
+    if (_selectedCountryCode == '+91') {
+      return digits.length == 10;
+    }
+    return digits.length >= 7 && digits.length <= 15;
+  }
+
+  String get _fullPhoneNumber => '$_selectedCountryCode$_cleanPhoneDigits';
 
   @override
   void initState() {
     super.initState();
+    _phoneController.addListener(_onPhoneChanged);
     _fadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
@@ -43,9 +79,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     _fadeController.forward();
   }
 
+  void _onPhoneChanged() {
+    var text = _phoneController.text;
+    // Auto-strip leading +91 or + when pasted
+    if (text.startsWith('+91')) {
+      text = text.substring(3).trim();
+      _phoneController.value = TextEditingValue(
+        text: text,
+        selection: TextSelection.collapsed(offset: text.length),
+      );
+      return;
+    }
+    // Auto-strip leading 0
+    if (text.startsWith('0') && text.length > 1) {
+      text = text.substring(1);
+      _phoneController.value = TextEditingValue(
+        text: text,
+        selection: TextSelection.collapsed(offset: text.length),
+      );
+      return;
+    }
+    setState(() {});
+  }
+
   @override
   void dispose() {
     _fadeController.dispose();
+    _phoneController.removeListener(_onPhoneChanged);
     _phoneController.dispose();
     _otpController.dispose();
     super.dispose();
@@ -189,34 +249,154 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     return Column(
       children: [
         Text(
-          'Enter your phone number',
+          'Enter your mobile number',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Colors.white70,
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
               ),
         ),
-        const SizedBox(height: 16),
-        _StyledTextField(
-          controller: _phoneController,
-          hintText: '+91 9876543210',
-          keyboardType: TextInputType.phone,
-          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[+\d]'))],
+        const SizedBox(height: 6),
+        Text(
+          'We will send an OTP to verify your account',
+          style: TextStyle(
+            color: AppColors.textSecondaryDark,
+            fontSize: 13,
+          ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Country Code Selector
+            Container(
+              height: 52,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                color: AppColors.darkBgElevated,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.darkBgStrong),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _selectedCountryCode,
+                  dropdownColor: AppColors.darkBgElevated,
+                  icon: const Icon(Icons.arrow_drop_down, color: Colors.white70, size: 20),
+                  items: _countryOptions.map((c) {
+                    return DropdownMenuItem<String>(
+                      value: c.code,
+                      child: Text(
+                        '${c.flag} ${c.code}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() => _selectedCountryCode = val);
+                    }
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            // Mobile Number Input (10 digits)
+            Expanded(
+              child: _StyledTextField(
+                controller: _phoneController,
+                hintText: _selectedCountryCode == '+91' ? '98765 43210' : 'Mobile number',
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(_expectedLength > 0 ? _expectedLength : 15),
+                ],
+              ),
+            ),
+          ],
+        ),
+        // Dynamic Mobile Number Validator Banner
+        Padding(
+          padding: const EdgeInsets.only(top: 8, left: 4, right: 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    _cleanPhoneDigits.isEmpty
+                        ? Icons.info_outline
+                        : _isPhoneValid
+                            ? Icons.check_circle
+                            : Icons.error_outline,
+                    size: 14,
+                    color: _cleanPhoneDigits.isEmpty
+                        ? AppColors.textSecondaryDark
+                        : _isPhoneValid
+                            ? Colors.greenAccent
+                            : Colors.amberAccent,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    _cleanPhoneDigits.isEmpty
+                        ? 'Enter $_expectedLength-digit number'
+                        : _cleanPhoneDigits.length < _expectedLength
+                            ? 'Number too short (${_cleanPhoneDigits.length}/$_expectedLength digits)'
+                            : _isPhoneValid
+                                ? 'Valid mobile number'
+                                : 'Invalid length',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: _isPhoneValid ? FontWeight.w600 : FontWeight.normal,
+                      color: _cleanPhoneDigits.isEmpty
+                          ? AppColors.textSecondaryDark
+                          : _isPhoneValid
+                              ? Colors.greenAccent
+                              : Colors.amberAccent,
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                '${_cleanPhoneDigits.length}/$_expectedLength',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: _isPhoneValid ? Colors.greenAccent : AppColors.textSecondaryDark,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
         _AuthButton(
           label: 'Send OTP',
           icon: const Icon(Icons.send, color: Colors.white, size: 18),
           isLoading: isLoading,
-          onPressed: () async {
-            final result = await ref
-                .read(authNotifierProvider.notifier)
-                .sendPhoneOtp(_phoneController.text.trim());
-            if (result != null && mounted) {
-              setState(() {
-                _confirmationResult = result;
-                _otpSent = true;
-              });
-            }
-          },
+          onPressed: !_isPhoneValid
+              ? () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Please enter a valid $_expectedLength-digit mobile number'),
+                      backgroundColor: Colors.amber[900],
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              : () async {
+                  final fullNumber = _fullPhoneNumber;
+                  final result = await ref
+                      .read(authNotifierProvider.notifier)
+                      .sendPhoneOtp(fullNumber);
+                  if (result != null && mounted) {
+                    setState(() {
+                      _phoneAuthSession = result;
+                      _otpSent = true;
+                    });
+                  }
+                },
         ),
         const SizedBox(height: 12),
         TextButton(
@@ -231,7 +411,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     return Column(
       children: [
         Text(
-          'Enter the OTP sent to\n${_phoneController.text}',
+          'Enter the OTP sent to\n$_selectedCountryCode $_cleanPhoneDigits',
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 color: Colors.white70,
@@ -253,11 +433,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           icon: const Icon(Icons.verified_user, color: Colors.white, size: 18),
           isLoading: isLoading,
           onPressed: () async {
-            if (_confirmationResult == null) return;
+            if (_phoneAuthSession == null) return;
             await ref
                 .read(authNotifierProvider.notifier)
-                .verifyOtp(_confirmationResult!, _otpController.text.trim());
+                .verifyOtp(_phoneAuthSession!, _otpController.text.trim());
           },
+        ),
+        const SizedBox(height: 12),
+        TextButton(
+          onPressed: () => setState(() {
+            _otpSent = false;
+            _otpController.clear();
+          }),
+          child: const Text('Change Number', style: TextStyle(color: AppColors.textSecondaryDark)),
         ),
       ],
     );

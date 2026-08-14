@@ -78,7 +78,7 @@ class ChatMessage {
       role: json['role'] == 'user' ? ChatRole.user : ChatRole.assistant,
       content: json['content'] as String,
       citations: ((json['citations'] as List<dynamic>?) ?? [])
-          .map((e) => CitationRef.fromJson(e as Map<String, dynamic>))
+          .map((e) => CitationRef.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList(),
       tokensUsed: json['tokens_used'] as int?,
       createdAt: DateTime.parse(json['created_at'] as String),

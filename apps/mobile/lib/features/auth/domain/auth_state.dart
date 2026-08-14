@@ -31,10 +31,10 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
     );
   }
 
-  /// Phone OTP step 1 — returns ConfirmationResult stored locally.
-  Future<ConfirmationResult?> sendPhoneOtp(String phone) async {
+  /// Phone OTP step 1 — returns PhoneAuthSession stored locally.
+  Future<PhoneAuthSession?> sendPhoneOtp(String phone) async {
     state = const AsyncLoading();
-    ConfirmationResult? result;
+    PhoneAuthSession? result;
     state = await AsyncValue.guard(() async {
       result = await _repository.sendPhoneOtp(phone);
     });
@@ -42,10 +42,10 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
   }
 
   /// Phone OTP step 2 — verify SMS code.
-  Future<void> verifyOtp(ConfirmationResult confirmationResult, String code) async {
+  Future<void> verifyOtp(PhoneAuthSession session, String code) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(
-      () => _repository.verifyPhoneOtp(confirmationResult, code),
+      () => _repository.verifyPhoneOtp(session, code),
     );
   }
 }

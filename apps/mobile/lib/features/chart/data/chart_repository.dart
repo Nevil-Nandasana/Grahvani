@@ -42,12 +42,17 @@ class ChartRepository {
   /// Returns immediately with chart_id to poll.
   Future<String> triggerCalculation(String profileId) async {
     try {
-      final response = await _dio.post<Map<String, dynamic>>(
+      final response = await _dio.post(
         '/api/v1/charts/calculate',
         data: {'profile_id': profileId, 'ayanamsa': 'lahiri'},
       );
-      final data = response.data!['data'] as Map<String, dynamic>;
-      return data['chart_id'] as String;
+      final dynamic raw = response.data;
+      final Map<String, dynamic> data = raw is Map
+          ? (raw.containsKey('data') && raw['data'] is Map
+              ? Map<String, dynamic>.from(raw['data'] as Map)
+              : Map<String, dynamic>.from(raw))
+          : {};
+      return (data['chart_id'] ?? '') as String;
     } on DioException catch (e) {
       throw ApiException.fromDioException(e);
     }
@@ -56,11 +61,16 @@ class ChartRepository {
   /// GET /api/v1/charts/{chartId}/status — poll calculation status.
   Future<String> getChartStatus(String chartId) async {
     try {
-      final response = await _dio.get<Map<String, dynamic>>(
+      final response = await _dio.get(
         '/api/v1/charts/$chartId/status',
       );
-      final data = response.data!['data'] as Map<String, dynamic>;
-      return data['status'] as String;
+      final dynamic raw = response.data;
+      final Map<String, dynamic> data = raw is Map
+          ? (raw.containsKey('data') && raw['data'] is Map
+              ? Map<String, dynamic>.from(raw['data'] as Map)
+              : Map<String, dynamic>.from(raw))
+          : {};
+      return (data['status'] ?? 'pending') as String;
     } on DioException catch (e) {
       throw ApiException.fromDioException(e);
     }
@@ -69,11 +79,17 @@ class ChartRepository {
   /// GET /api/v1/charts/{chartId} — fetch completed chart facts & update local cache.
   Future<BirthChartFacts> getChart(String chartId, {String? profileId}) async {
     try {
-      final response = await _dio.get<Map<String, dynamic>>(
+      final response = await _dio.get(
         '/api/v1/charts/$chartId',
       );
-      final data = response.data!['data'] as Map<String, dynamic>;
-      final facts = data['chart_facts'] as Map<String, dynamic>?;
+      final dynamic raw = response.data;
+      final Map<String, dynamic> data = raw is Map
+          ? (raw.containsKey('data') && raw['data'] is Map
+              ? Map<String, dynamic>.from(raw['data'] as Map)
+              : Map<String, dynamic>.from(raw))
+          : {};
+      final dynamic rawFacts = data['chart_facts'];
+      final Map<String, dynamic>? facts = rawFacts is Map ? Map<String, dynamic>.from(rawFacts) : null;
       if (facts == null) throw Exception('Chart not yet calculated.');
 
       final birthChartFacts = BirthChartFacts.fromJson(chartId, facts);

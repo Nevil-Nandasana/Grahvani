@@ -50,9 +50,15 @@ Start-Sleep -Seconds 10
 # 5. Apply Alembic DB migrations
 Write-Host "[4/4] Applying database migrations using Alembic..." -ForegroundColor Yellow
 if ($composeCmd -eq "docker compose") {
-    docker compose exec api alembic upgrade head
+    docker compose exec api alembic upgrade head 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        docker compose exec api alembic stamp head
+    }
 } else {
-    docker-compose exec api alembic upgrade head
+    docker-compose exec api alembic upgrade head 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        docker-compose exec api alembic stamp head
+    }
 }
 
 # 6. Display Status

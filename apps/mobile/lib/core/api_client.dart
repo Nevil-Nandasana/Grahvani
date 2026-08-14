@@ -147,17 +147,25 @@ class ApiException implements Exception {
 
   factory ApiException.fromDioException(DioException e) {
     final response = e.response;
-    final errorBody = response?.data;
-    if (errorBody is Map<String, dynamic> && errorBody.containsKey('error')) {
-      final err = errorBody['error'] as Map<String, dynamic>;
-      return ApiException(
-        code: err['code'] as String? ?? 'UNKNOWN',
-        message: err['message'] as String? ?? e.message ?? 'Request failed',
-        statusCode: response?.statusCode ?? 0,
-      );
+    final dynamic errorBody = response?.data;
+    if (errorBody is Map) {
+      if (errorBody.containsKey('error') && errorBody['error'] is Map) {
+        final err = Map<String, dynamic>.from(errorBody['error'] as Map);
+        return ApiException(
+          code: err['code'] as String? ?? 'UNKNOWN',
+          message: err['message'] as String? ?? e.message ?? 'Request failed',
+          statusCode: response?.statusCode ?? 0,
+        );
+      } else if (errorBody.containsKey('detail')) {
+        return ApiException(
+          code: 'HTTP_ERROR',
+          message: errorBody['detail'].toString(),
+          statusCode: response?.statusCode ?? 0,
+        );
+      }
     }
     return ApiException(
-      code: 'NETWORK_ERROR',
+      code: response != null ? 'HTTP_${response.statusCode}' : 'NETWORK_ERROR',
       message: e.message ?? 'Network error',
       statusCode: response?.statusCode ?? 0,
     );

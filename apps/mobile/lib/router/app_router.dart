@@ -70,10 +70,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final bool? hasConsent = consentNotifier.value;
 
       if (loc == AppRoutes.splash) {
-        if (!isLoggedIn) return AppRoutes.login;
-        if (hasConsent == false) return AppRoutes.consent;
-        if (hasConsent == true) return AppRoutes.home;
-        return null; // Stay on splash while loading/verifying
+        // Let _SplashScreen handle initial auth check and bootstrap navigation
+        return null;
       }
 
       if (!isLoggedIn && loc != AppRoutes.login) {
@@ -253,8 +251,47 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
 // ─── Splash Screen ─────────────────────────────────────────────────────────
 
-class _SplashScreen extends StatelessWidget {
+class _SplashScreen extends ConsumerStatefulWidget {
   const _SplashScreen();
+
+  @override
+  ConsumerState<_SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends ConsumerState<_SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _bootstrap();
+  }
+
+  Future<void> _bootstrap() async {
+    // Smooth splash animation delay
+    await Future.delayed(const Duration(milliseconds: 700));
+    if (!mounted) return;
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      context.go(AppRoutes.login);
+      return;
+    }
+
+    try {
+      await ref.read(authRepositoryProvider).checkCurrentUserSession();
+      final hasConsent = ref.read(authRepositoryProvider).consentStateNotifier.value;
+      if (!mounted) return;
+
+      if (hasConsent == false) {
+        context.go(AppRoutes.consent);
+      } else {
+        context.go(AppRoutes.home);
+      }
+    } catch (_) {
+      if (mounted) {
+        context.go(AppRoutes.home);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(

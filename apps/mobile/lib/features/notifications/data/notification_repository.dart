@@ -30,11 +30,16 @@ class NotificationRepository {
   /// Get notification preferences for a profile
   Future<ProfileNotificationStatus> getNotificationPreferences(String profileId) async {
     try {
-      final response = await _dio.get<Map<String, dynamic>>(
+      final response = await _dio.get(
         '/api/v1/notifications/preferences/$profileId',
       );
-      final data = response.data?['data'] ?? response.data ?? {};
-      return ProfileNotificationStatus.fromJson(data as Map<String, dynamic>);
+      final dynamic raw = response.data;
+      final Map<String, dynamic> data = raw is Map
+          ? (raw.containsKey('data') && raw['data'] is Map
+              ? Map<String, dynamic>.from(raw['data'] as Map)
+              : Map<String, dynamic>.from(raw))
+          : {};
+      return ProfileNotificationStatus.fromJson(data);
     } on DioException catch (e) {
       throw ApiException.fromDioException(e);
     }
@@ -46,12 +51,17 @@ class NotificationRepository {
     NotificationPreferences preferences,
   ) async {
     try {
-      final response = await _dio.patch<Map<String, dynamic>>(
+      final response = await _dio.patch(
         '/api/v1/notifications/preferences/$profileId',
         data: preferences.toJson(),
       );
-      final data = response.data?['data'] ?? response.data ?? {};
-      return ProfileNotificationStatus.fromJson(data as Map<String, dynamic>);
+      final dynamic raw = response.data;
+      final Map<String, dynamic> data = raw is Map
+          ? (raw.containsKey('data') && raw['data'] is Map
+              ? Map<String, dynamic>.from(raw['data'] as Map)
+              : Map<String, dynamic>.from(raw))
+          : {};
+      return ProfileNotificationStatus.fromJson(data);
     } on DioException catch (e) {
       throw ApiException.fromDioException(e);
     }
@@ -60,11 +70,16 @@ class NotificationRepository {
   /// Toggle all notifications for a profile
   Future<ProfileNotificationStatus> toggleNotifications(String profileId) async {
     try {
-      final response = await _dio.post<Map<String, dynamic>>(
+      final response = await _dio.post(
         '/api/v1/notifications/preferences/$profileId/toggle',
       );
-      final data = response.data?['data'] ?? response.data ?? {};
-      return ProfileNotificationStatus.fromJson(data as Map<String, dynamic>);
+      final dynamic raw = response.data;
+      final Map<String, dynamic> data = raw is Map
+          ? (raw.containsKey('data') && raw['data'] is Map
+              ? Map<String, dynamic>.from(raw['data'] as Map)
+              : Map<String, dynamic>.from(raw))
+          : {};
+      return ProfileNotificationStatus.fromJson(data);
     } on DioException catch (e) {
       throw ApiException.fromDioException(e);
     }
@@ -88,13 +103,18 @@ class NotificationRepository {
     int offset = 0,
   }) async {
     try {
-      final response = await _dio.get<Map<String, dynamic>>(
+      final response = await _dio.get(
         '/api/v1/notifications/history/$profileId',
         queryParameters: {'limit': limit, 'offset': offset},
       );
-      final data = response.data?['data'] ?? response.data ?? {};
-      final notifications = (data as Map<String, dynamic>)['notifications'] as List? ?? [];
-      return notifications.map((n) => PushNotification.fromJson(n as Map<String, dynamic>)).toList();
+      final dynamic raw = response.data;
+      final Map<String, dynamic> data = raw is Map
+          ? (raw.containsKey('data') && raw['data'] is Map
+              ? Map<String, dynamic>.from(raw['data'] as Map)
+              : Map<String, dynamic>.from(raw))
+          : {};
+      final notifications = data['notifications'] as List? ?? [];
+      return notifications.map((n) => PushNotification.fromJson(Map<String, dynamic>.from(n as Map))).toList();
     } on DioException catch (e) {
       throw ApiException.fromDioException(e);
     }

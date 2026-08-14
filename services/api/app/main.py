@@ -8,11 +8,22 @@ from fastapi.staticfiles import StaticFiles
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
+import dramatiq
+from dramatiq.brokers.redis import RedisBroker
+from dramatiq.middleware import Retries, TimeLimit
+
 import sentry_sdk
 from app.config import settings
 from app.core.exceptions import add_exception_handlers
 from app.core.middleware import add_middleware
 from app.core.logging import setup_logging
+
+# Initialize Dramatiq broker with configured Redis URL
+broker = RedisBroker(url=settings.REDIS_URL)
+broker.add_middleware(Retries(max_retries=3))
+broker.add_middleware(TimeLimit(time_limit=300_000))
+dramatiq.set_broker(broker)
+
 from app.modules.billing.router import router as billing_router
 from app.modules.birth_chart.router import router as birth_chart_router
 from app.modules.identity.router import router as identity_router

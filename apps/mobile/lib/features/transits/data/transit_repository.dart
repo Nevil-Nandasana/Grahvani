@@ -18,10 +18,20 @@ class TransitRepository {
   /// Get current Sade Sati status for a profile
   Future<SadeSatiStatus> getSadeSatiStatus(String profileId) async {
     try {
-      final response = await _dio.get<Map<String, dynamic>>(
+      final response = await _dio.get(
         '/api/v1/transits/sade-sati/$profileId',
       );
-      final data = response.data!['data'] as Map<String, dynamic>;
+      final dynamic raw = response.data;
+      final Map<String, dynamic> data;
+      if (raw is Map) {
+        if (raw.containsKey('data') && raw['data'] is Map) {
+          data = Map<String, dynamic>.from(raw['data'] as Map);
+        } else {
+          data = Map<String, dynamic>.from(raw);
+        }
+      } else {
+        data = {};
+      }
       return SadeSatiStatus.fromJson(data);
     } on DioException catch (e) {
       throw ApiException.fromDioException(e);

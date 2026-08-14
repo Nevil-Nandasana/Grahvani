@@ -81,7 +81,13 @@ class _KundaliMilanScreenState extends ConsumerState<KundaliMilanScreen>
         },
       );
       
-      final ashtakoot = response.data['ashtakoot'] as Map<String, dynamic>;
+      final dynamic rawData = response.data;
+      final Map<String, dynamic> data = rawData is Map
+          ? (rawData.containsKey('data') && rawData['data'] is Map
+              ? Map<String, dynamic>.from(rawData['data'] as Map)
+              : Map<String, dynamic>.from(rawData))
+          : {};
+      final ashtakoot = data['ashtakoot'] is Map ? Map<String, dynamic>.from(data['ashtakoot'] as Map) : <String, dynamic>{};
       
       final scores = <double>[
         (ashtakoot['varna'] as num).toDouble(),

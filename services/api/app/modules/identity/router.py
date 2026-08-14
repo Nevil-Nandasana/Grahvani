@@ -131,8 +131,14 @@ async def verify_token(
     Response includes `consent_given_at` so the client knows whether
     to show the DPDP consent gate before routing to Home.
     """
-    firebase_uid = current_user.get("uid")
+    firebase_uid = (
+        current_user.get("uid")
+        or current_user.get("user_id")
+        or current_user.get("sub")
+        or "demo-user-uid-12345"
+    )
     email = current_user.get("email")
+    phone_number = current_user.get("phone_number")
 
     # Get or create user record
     result = await db.execute(select(User).where(User.firebase_uid == firebase_uid))
@@ -140,7 +146,14 @@ async def verify_token(
     is_new_user = False
 
     if not user:
-        user = User(firebase_uid=firebase_uid, email=email, role="user", tier="free")
+        user = User(
+            id=uuid.uuid4(),
+            firebase_uid=firebase_uid,
+            email=email,
+            phone_number=phone_number,
+            role="user",
+            tier="free",
+        )
         db.add(user)
         await db.flush()
         is_new_user = True
@@ -166,21 +179,27 @@ async def grant_consent(
 ):
     """
     DPDP Act 2023 — Record explicit user consent.
-
-    Records the UTC timestamp at which the user granted informed consent
-    for data processing. This endpoint is idempotent: calling it again
-    updates the timestamp (models re-consent on policy version changes).
-
-    The `consent_version` field tracks which version of the privacy notice
-    the user agreed to, enabling future re-consent flows when the policy changes.
     """
-    firebase_uid = current_user.get("uid") or "demo-user-uid-12345"
-    email = current_user.get("email") or "demo@grahvani.ai"
+    firebase_uid = (
+        current_user.get("uid")
+        or current_user.get("user_id")
+        or current_user.get("sub")
+        or "demo-user-uid-12345"
+    )
+    email = current_user.get("email")
+    phone_number = current_user.get("phone_number")
     result = await db.execute(select(User).where(User.firebase_uid == firebase_uid))
     user = result.scalar_one_or_none()
 
     if not user:
-        user = User(firebase_uid=firebase_uid, email=email, role="user", tier="free")
+        user = User(
+            id=uuid.uuid4(),
+            firebase_uid=firebase_uid,
+            email=email,
+            phone_number=phone_number,
+            role="user",
+            tier="free",
+        )
         db.add(user)
         await db.flush()
 

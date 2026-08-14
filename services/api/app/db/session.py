@@ -42,6 +42,8 @@ async def init_db_pool() -> None:
             await conn.execute(text("ALTER TABLE birth_profiles ADD COLUMN IF NOT EXISTS is_primary BOOLEAN DEFAULT FALSE;"))
             await conn.execute(text("ALTER TABLE birth_profiles ADD COLUMN IF NOT EXISTS notification_enabled BOOLEAN DEFAULT TRUE;"))
             await conn.execute(text("ALTER TABLE birth_profiles ADD COLUMN IF NOT EXISTS notification_preferences JSONB DEFAULT '{}'::jsonb;"))
+            await conn.execute(text("ALTER TABLE birth_charts ADD COLUMN IF NOT EXISTS pdf_status VARCHAR(32);"))
+            await conn.execute(text("ALTER TABLE birth_charts ADD COLUMN IF NOT EXISTS pdf_url VARCHAR(512);"))
     except Exception:
         async with engine.begin() as conn:
             await conn.run_sync(lambda c: None)  # Warm connection

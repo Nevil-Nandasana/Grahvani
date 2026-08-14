@@ -1,6 +1,7 @@
 /// Auth Data Layer — Firebase Auth + Backend Token Verification
 library;
 
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -8,6 +9,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import 'package:grahvani/core/api_client.dart';
+
+class PhoneAuthSession {
+  final String? verificationId;
+  final ConfirmationResult? confirmationResult;
+  final int? resendToken;
+
+  const PhoneAuthSession({
+    this.verificationId,
+    this.confirmationResult,
+    this.resendToken,
+  });
+
+  bool get isWeb => confirmationResult != null;
+}
 
 final authRepositoryProvider = Provider<AuthRepository>(
   (ref) => AuthRepository(dio: ref.watch(apiClientProvider)),
@@ -57,18 +72,81 @@ class AuthRepository {
     return _verifyWithBackend(userCredential);
   }
 
-  /// Send Phone OTP — Firebase Phone Auth step 1.
-  Future<ConfirmationResult> sendPhoneOtp(String phoneNumber) async {
-    return await _firebaseAuth.signInWithPhoneNumber(phoneNumber);
+  /// Send Phone OTP — supports native Android/iOS (verifyPhoneNumber) and Web (signInWithPhoneNumber).
+  Future<PhoneAuthSession> sendPhoneOtp(String phoneNumber) async {
+    if (kIsWeb) {
+      final confirmationResult =
+          await _firebaseAuth.signInWithPhoneNumber(phoneNumber);
+      return PhoneAuthSession(confirmationResult: confirmationResult);
+    } else {
+      final completer = Completer<PhoneAuthSession>();
+
+      await _firebaseAuth.verifyPhoneNumber(
+        phoneNumber: phoneNumber,
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          try {
+            final userCredential =
+                await _firebaseAuth.signInWithCredential(credential);
+            await _verifyWithBackend(userCredential);
+          } catch (_) {}
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          if (!completer.isCompleted) {
+            completer.completeError(e);
+          }
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          if (!completer.isCompleted) {
+            completer.complete(PhoneAuthSession(
+              verificationId: verificationId,
+              resendToken: resendToken,
+            ));
+          }
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {},
+      );
+
+      return completer.future;
+    }
   }
 
   /// Verify OTP code — Firebase Phone Auth step 2.
   Future<Map<String, dynamic>> verifyPhoneOtp(
-    ConfirmationResult confirmationResult,
+    PhoneAuthSession session,
     String smsCode,
   ) async {
-    final userCredential = await confirmationResult.confirm(smsCode);
+    UserCredential userCredential;
+    if (session.isWeb) {
+      userCredential = await session.confirmationResult!.confirm(smsCode);
+    } else {
+      final credential = PhoneAuthProvider.credential(
+        verificationId: session.verificationId!,
+        smsCode: smsCode,
+      );
+      userCredential = await _firebaseAuth.signInWithCredential(credential);
+    }
     return _verifyWithBackend(userCredential);
+  }
+
+  /// Verify current session with backend on startup.
+  /// Caches consent state from response.
+  Future<void> checkCurrentUserSession() async {
+    final user = _firebaseAuth.currentUser;
+    if (user == null) {
+      consentStateNotifier.value = null;
+      return;
+    }
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/api/v1/auth/verify-token',
+      );
+      final data = response.data ?? {};
+      final userData = data['data'] as Map<String, dynamic>? ?? {};
+      consentStateNotifier.value = userData['consent_given_at'] != null;
+    } catch (_) {
+      // If network is offline or unverified, fallback to true so app doesn't hang
+      consentStateNotifier.value = true;
+    }
   }
 
   /// Call backend /auth/verify-token to create or retrieve the user record.

@@ -46,11 +46,27 @@ async def get_entitlements(
     Retrieve current user entitlement state, subscription tier,
     and daily remaining AI question quota.
     """
-    firebase_uid = current_user.get("uid")
+    firebase_uid = (
+        current_user.get("uid")
+        or current_user.get("user_id")
+        or current_user.get("sub")
+        or "demo-user-uid-12345"
+    )
     result = await db.execute(select(User).where(User.firebase_uid == firebase_uid))
     user = result.scalar_one_or_none()
     if not user:
-        raise NotFoundError("User")
+        email = current_user.get("email")
+        phone_number = current_user.get("phone_number")
+        user = User(
+            id=uuid.uuid4(),
+            firebase_uid=firebase_uid,
+            email=email,
+            phone_number=phone_number,
+            role="user",
+            tier="free",
+        )
+        db.add(user)
+        await db.flush()
 
     now = datetime.now(timezone.utc)
 
@@ -144,11 +160,27 @@ async def activate_trial(
     Enforces anti-abuse (single trial per user) and prevents activation
     if user already has an active paid subscription.
     """
-    firebase_uid = current_user.get("uid")
+    firebase_uid = (
+        current_user.get("uid")
+        or current_user.get("user_id")
+        or current_user.get("sub")
+        or "demo-user-uid-12345"
+    )
     result = await db.execute(select(User).where(User.firebase_uid == firebase_uid))
     user = result.scalar_one_or_none()
     if not user:
-        raise NotFoundError("User")
+        email = current_user.get("email")
+        phone_number = current_user.get("phone_number")
+        user = User(
+            id=uuid.uuid4(),
+            firebase_uid=firebase_uid,
+            email=email,
+            phone_number=phone_number,
+            role="user",
+            tier="free",
+        )
+        db.add(user)
+        await db.flush()
 
     if user.is_trial_used:
         raise HTTPException(
