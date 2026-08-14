@@ -40,6 +40,8 @@ async def init_db_pool() -> None:
             await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS fcm_token VARCHAR(512);"))
             await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_trial_used BOOLEAN DEFAULT FALSE;"))
             await conn.execute(text("ALTER TABLE birth_profiles ADD COLUMN IF NOT EXISTS is_primary BOOLEAN DEFAULT FALSE;"))
+            await conn.execute(text("ALTER TABLE birth_profiles ADD COLUMN IF NOT EXISTS notification_enabled BOOLEAN DEFAULT TRUE;"))
+            await conn.execute(text("ALTER TABLE birth_profiles ADD COLUMN IF NOT EXISTS notification_preferences JSONB DEFAULT '{}'::jsonb;"))
     except Exception:
         async with engine.begin() as conn:
             await conn.run_sync(lambda c: None)  # Warm connection

@@ -32,6 +32,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
 
 def add_middleware(app: FastAPI) -> None:
     """Register CORS and RequestID tracing middleware onto the FastAPI app instance."""
+    app.add_middleware(RequestIDMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.CORS_ALLOWED_ORIGINS,
@@ -40,5 +41,4 @@ def add_middleware(app: FastAPI) -> None:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    app.add_middleware(RequestIDMiddleware)
 

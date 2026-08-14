@@ -64,6 +64,12 @@ apps/mobile/.packages
 apps/mobile/.flutter-plugins
 apps/mobile/.flutter-plugins-dependencies
 apps/mobile/pubspec.lock
+apps/mobile/android/local.properties
+apps/mobile/android/.gradle/
+apps/mobile/ios/Flutter/ephemeral/
+apps/mobile/ios/Pods/
+apps/mobile/linux/flutter/ephemeral/
+apps/mobile/macos/Flutter/ephemeral/
 **/.dart_tool/
 
 # AWS & Cloud / Terraform

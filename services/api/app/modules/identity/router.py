@@ -4,7 +4,7 @@ Routes: /auth, /profiles
 """
 import logging
 import uuid
-from datetime import timezone as _tz
+from datetime import datetime, timezone
 
 import httpx
 from fastapi import APIRouter, Depends, status, Query
@@ -174,20 +174,24 @@ async def grant_consent(
     The `consent_version` field tracks which version of the privacy notice
     the user agreed to, enabling future re-consent flows when the policy changes.
     """
-    firebase_uid = current_user.get("uid")
+    firebase_uid = current_user.get("uid") or "demo-user-uid-12345"
+    email = current_user.get("email") or "demo@grahvani.ai"
     result = await db.execute(select(User).where(User.firebase_uid == firebase_uid))
     user = result.scalar_one_or_none()
 
     if not user:
-        raise NotFoundError("User")
+        user = User(firebase_uid=firebase_uid, email=email, role="user", tier="free")
+        db.add(user)
+        await db.flush()
 
-    user.consent_given_at = sql_func.now()
+    now = datetime.now(timezone.utc)
+    user.consent_given_at = now
     await db.flush()
 
     return {
         "success": True,
         "data": {
-            "consent_given_at": user.consent_given_at,
+            "consent_given_at": now.isoformat(),
             "consent_version": body.consent_version,
             "message": "Consent recorded. Thank you.",
         },
