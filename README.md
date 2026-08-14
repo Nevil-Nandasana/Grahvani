@@ -1,26 +1,38 @@
 # Grahvani 🪐✨
 
-**Production-grade, cross-platform Vedic astrology SaaS application** combining sub-arcsecond deterministic Swiss Ephemeris calculation accuracy with an evidence-grounded RAG (Retrieval-Augmented Generation) AI interpretation layer.
+[![Python](https://img.shields.io/badge/Python-3.12-blue.svg?logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B.svg?logo=flutter&logoColor=white)](https://flutter.dev)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%20%2B%20pgvector-336791.svg?logo=postgresql&logoColor=white)](https://www.postgresql.org)
+[![Redis](https://img.shields.io/badge/Redis-7-DC382D.svg?logo=redis&logoColor=white)](https://redis.io)
+[![Swiss Ephemeris](https://img.shields.io/badge/Astrology-Swiss%20Ephemeris%20(pyswisseph)-purple.svg)](https://www.astro.com/swisseph/)
+[![License](https://img.shields.io/badge/License-Proprietary%20%2F%20Swiss%20Ephemeris-orange.svg)](docs/astrology/LICENSING.md)
+
+**Production-grade, cross-platform Vedic astrology SaaS application** combining sub-arcsecond deterministic Swiss Ephemeris astronomical calculation accuracy with an evidence-grounded RAG (Retrieval-Augmented Generation) AI interpretation layer.
 
 ---
 
 ## 🌟 Key Features
 
-* **🎯 Sub-Arcsecond Ephemeris Engine:** Delivers high-precision astronomical calculations using `pyswisseph` (C-library bindings for Swiss Ephemeris), with support for Lahiri (Chitra Paksha) and custom Ayanamsas, Placidus and Equal house systems, along with D1 (Rasi), D9 (Navamsha), D10, D12, and D60 divisional charts.
+* **🎯 Sub-Arcsecond Ephemeris Engine:** Delivers high-precision astronomical calculations using `pyswisseph` (C-library bindings for Swiss Ephemeris), with support for Lahiri (Chitra Paksha) and custom Ayanamsas (Raman, KP, Fagan-Bradley), Placidus and Equal house systems, Ashtakvarga, planetary dignity scoring, along with D1 (Rasi), D9 (Navamsha), D10 (Dasamsa), D12 (Dwadasamsa), and D60 (Shashtiamsa) divisional charts.
 
-* **📜 Complete Vimshottari Dasha System:** Provides comprehensive multi-level dasha calculations, including Maha Dasha, Antar Dasha, and Pratyantar Dasha, with automatic highlighting of the current dasha and detailed timeline tracking.
+* **📜 Complete Vimshottari Dasha System:** Provides comprehensive multi-level dasha calculations, including Maha Dasha, Antar Dasha, and Pratyantar Dasha, with automatic highlighting of the current dasha and detailed interactive timeline tracking.
 
 * **🧠 Grounded RAG AI Interpretation Layer & BGE Reranker:** Enables token-by-token Server-Sent Events (SSE) streaming responses powered by Google Gemini Flash, utilizing 3-stage hybrid retrieval (BM25 full-text search + `pgvector` HNSW cosine vector similarity with RRF fusion) enhanced by post-retrieval cross-encoder reranking (`BAAI/bge-reranker-large`).
 
-* **📖 Classical Literature Citations:** Displays interactive inline citation chips (e.g., `[BPHS Ch 12]`) that directly reference authentic source shlokas from *Brihat Parashara Hora Shastra*, *Phaladeepika*, and *Saravali*.
+* **📖 Classical Literature Citations & Shloka Modal:** Displays interactive inline citation chips (e.g., `[BPHS Ch 12]`) that directly reference authentic source shlokas from *Brihat Parashara Hora Shastra*, *Phaladeepika*, and *Saravali*.
 
-* **📱 Cross-Platform Mobile Client:** Built with Flutter for Android and iOS, featuring native `CustomPainter`-based North Indian diamond chart rendering, South Indian chart rendering, offline SQLite caching using `Drift`, interactive house-detail bottom sheets, Synastry dual-chart comparison, and Varshaphal annual solar return analysis.
+* **📱 Cross-Platform Mobile Client:** Built with Flutter 3.x for Android and iOS, featuring native `CustomPainter`-based North Indian diamond chart rendering, South Indian chart rendering, offline SQLite caching using `Drift`, interactive house-detail bottom sheets, Synastry dual-chart comparison, Kundali Milan (Ashta Koota 36-point matchmaking), and Varshaphal annual solar return analysis.
 
-* **💳 Multi-Provider Entitlement, Billing & 7-Day Free Trial:** Implements server-side entitlement enforcement with support for Google Play Billing, Apple App Store In-App Purchases (IAP), Razorpay UPI/Web subscription management, and 7-Day Free Premium Trial activation (`/billing/trial/activate`).
+* **🌐 Multi-Language Localization:** Native localized strings and UI support across English (`en`), Hindi (`hi`), and Gujarati (`gu`) using Flutter's `l10n` localization engine.
 
-* **🔒 Enterprise Security & Compliance:** Ensures robust security through Firebase JWT authentication, Redis-based token revocation blacklisting, end-to-end encryption (TLS 1.3 with AWS KMS AES-256), soft-delete data protection, and consent logging compliant with the Indian DPDP Act 2023.
+* **🪐 Transits, Sade Sati & Push Notifications:** Complete Sade Sati Saturn transit calculation and multi-phase tracker (`/transits/sade-sati/{id}`), planetary transit timeline, and Firebase Cloud Messaging (FCM) push notifications for planetary transitions and dasha shifts.
 
-* **🧪 Comprehensive Testing Infrastructure:** Includes 50-vector NASA JPL ephemeris benchmarks, backend pytest integration tests, Locust multi-tier load testing scripts, and Maestro mobile UI E2E test flows.
+* **💳 Multi-Provider Entitlement, Billing & 7-Day Free Trial:** Implements server-side entitlement enforcement with support for Google Play Billing (RTDN), Apple App Store In-App Purchases (Server Notifications v2), Razorpay UPI/Web subscription checkout, and 7-Day Free Premium Trial activation (`/billing/trial/activate`).
+
+* **🔒 Enterprise Security & DPDP Compliance:** Ensures robust security through Firebase JWT authentication, Redis-based token revocation blacklisting, end-to-end encryption (TLS 1.3 with AWS KMS AES-256), soft-delete and hard-purge protection (`DELETE /api/v1/users/me`), and consent logging compliant with the Indian DPDP Act 2023.
+
+* **🧪 Comprehensive Testing Infrastructure:** Includes 50-vector NASA JPL ephemeris benchmarks, backend pytest integration test suite with coverage, Locust multi-tier load testing scripts, and Maestro mobile UI cross-platform E2E test flows.
 
 ---
 
@@ -28,47 +40,50 @@
 
 ```mermaid
 flowchart TB
-    subgraph Client["Mobile Client Layer"]
+    subgraph Client["Mobile Client Layer (Flutter 3.x)"]
         FlutterApp["Flutter Mobile App (iOS / Android)<br/>Riverpod + go_router + Drift SQLite Cache"]
     end
 
-    subgraph Security["Auth & Ingress"]
+    subgraph Security["Auth & Ingress Gateway"]
         FirebaseAuth["Firebase Auth (Google, Apple, Phone OTP)"]
         Ingress["AWS App Runner / Reverse Proxy<br/>(TLS 1.3 Termination, WAF, Security Headers)"]
     end
 
     subgraph Backend["FastAPI Backend (Modular Monolith)"]
-        API["FastAPI Router / OpenAPI"]
+        API["FastAPI Router / OpenAPI Contract"]
         
         subgraph Domains["Domain Modules"]
-            Identity["Identity & Profiles"]
-            AstroEngine["Ephemeris & Chart Engine"]
-            RAG["Grounded RAG Interpretation & BGE Reranker"]
+            Identity["Identity & DPDP Consent"]
+            AstroEngine["Ephemeris & Divisional Charts"]
+            RAG["Grounded RAG & BGE Reranker"]
+            Matchmaking["Kundali Milan & Synastry"]
+            Transits["Sade Sati & Planetary Transits"]
             Billing["Billing, Entitlements & 7-Day Trial"]
+            Notifications["FCM Push Notifications"]
         end
 
         Worker["Dramatiq Worker Process"]
     end
 
-    subgraph Data["State & Storage"]
-        DB[("PostgreSQL 16 + pgvector<br/>(App State & HNSW Embeddings)")]
-        Redis[("Redis 7<br/>(Rate Limits, Revocation, Task Broker)")]
-        S3[("AWS S3 Private Buckets<br/>(PDF Charts & Curated Sources)")]
+    subgraph Data["State & Storage Layer"]
+        DB[("PostgreSQL 16 + pgvector<br/>(App State & 768-dim HNSW Embeddings)")]
+        Redis[("Redis 7<br/>(Rate Limits, Token Revocation, Task Broker)")]
+        S3[("AWS S3 Private Buckets<br/>(PDF Charts & Curated Source Shlokas)")]
     end
 
-    subgraph Engine["External & Calculation Engines"]
-        SwissEph["pyswisseph (Swiss Ephemeris C-Lib)"]
+    subgraph Engine["External Calculation & AI Engines"]
+        SwissEph["pyswisseph (Swiss Ephemeris C-Library)"]
         Gemini["Google Gemini Flash + text-embedding-004 + BGE Reranker"]
     end
 
-    FlutterApp -->|JWT Token| Ingress
+    FlutterApp -->|JWT Bearer Token| Ingress
     FlutterApp -->|Authenticate| FirebaseAuth
     Ingress --> API
-    API --> Identity & AstroEngine & RAG & Billing
+    API --> Identity & AstroEngine & RAG & Matchmaking & Transits & Billing & Notifications
     AstroEngine --> Worker --> SwissEph
     RAG --> DB & Gemini
     API --> Redis
-    Identity & AstroEngine & Billing --> DB
+    Identity & AstroEngine & Billing & Matchmaking & Transits --> DB
 ```
 
 ---
@@ -77,14 +92,14 @@ flowchart TB
 
 | Layer | Technologies & Frameworks |
 | :--- | :--- |
-| **Mobile Client** | Flutter 3.x (Android & iOS), Riverpod (State Management), `go_router`, Drift (SQLite) |
-| **API Backend** | Python 3.12, FastAPI (Modular Monolith), Async SQLAlchemy 2.0, Pydantic v2 |
-| **Astrology Engine** | Swiss Ephemeris via `pyswisseph` (Lahiri Ayanamsa default, NASA JPL precision) |
+| **Mobile Client** | Flutter 3.x (Android & iOS), Riverpod (State Management), `go_router`, Drift (SQLite Offline Cache), `CustomPainter` |
+| **API Backend** | Python 3.12, FastAPI (Modular Monolith), Async SQLAlchemy 2.0, Pydantic v2, Alembic |
+| **Astrology Engine** | Swiss Ephemeris via `pyswisseph` (Lahiri Ayanamsa default, NASA JPL sub-arcsecond precision) |
 | **AI & Vector RAG** | Google Gemini Flash, `text-embedding-004`, `BAAI/bge-reranker-large`, `pgvector` (HNSW Cosine Vector Search + BM25 GIN Full-Text RRF Fusion) |
 | **Task Queue** | Dramatiq + Redis 7 Message Broker |
 | **Database & Cache** | PostgreSQL 16 + `pgvector` 0.6+, Redis 7 (Rate Limiting & Token Revocation) |
 | **PDF Generation** | WeasyPrint + Jinja2 HTML/CSS templates |
-| **QA & Testing** | Pytest, Testcontainers, Locust (Load Testing), Maestro (Mobile E2E Testing) |
+| **QA & Testing** | Pytest, Testcontainers, Locust (Load Testing), Maestro (Mobile Cross-Platform E2E Testing) |
 | **DevOps & Cloud** | Docker & Docker Compose, AWS App Runner, RDS Aurora PostgreSQL Multi-AZ, S3, GitHub Actions CI/CD |
 
 ---
@@ -95,15 +110,15 @@ flowchart TB
 Grahvani/
 ├── apps/
 │   └── mobile/           # Flutter cross-platform mobile application (Android + iOS)
-│       ├── lib/          # App source (features, models, services, providers, UI widgets)
+│       ├── lib/          # App source (features, models, services, providers, UI widgets, l10n)
 │       └── test/         # Flutter unit and widget test suites
 ├── services/
 │   └── api/              # FastAPI modular monolith backend
 │       ├── app/
 │       │   ├── main.py   # ASGI entry point & lifecycle hooks
 │       │   ├── config.py # Centralized Pydantic v2 environment settings
-│       │   ├── core/     # Security, JWT middleware, rate limiting, exception handling
-│       │   ├── modules/  # Domain modules (identity, birth_chart, interpretation, billing, matchmaking)
+│       │   ├── core/     # Security, JWT middleware, rate limiting, exception handling, tracing
+│       │   ├── modules/  # Domain modules (identity, birth_chart, interpretation, billing, matchmaking, transits, notifications)
 │       │   └── tasks/    # Dramatiq background task workers (ephemeris, PDF, retention)
 │       ├── alembic/      # Database schema migrations
 │       └── tests/        # Pytest backend test suite (unit, integration, ephemeris precision, reranker, trial, load)
@@ -240,17 +255,17 @@ maestro test .maestro/flows/chart_calculation_flow.yaml
 ## 📊 Feature Tracking & Progress
 
 The project tracks **71 comprehensive features** across the product lifecycle:
-- ✅ **54 Implemented**: Core ephemeris engine, FastAPI modular monolith, RAG streaming pipeline, BGE cross-encoder reranking, 7-Day Free Premium Trial, native Flutter UI, Synastry dual-chart comparison, Varshaphal annual solar return, Locust load testing, Maestro E2E mobile flows.
+- ✅ **54 Implemented**: Core ephemeris engine, FastAPI modular monolith, RAG streaming pipeline, BGE cross-encoder reranking, 7-Day Free Premium Trial, native Flutter UI, Synastry dual-chart comparison, Varshaphal annual solar return, Kundali Milan matchmaking, Sade Sati transit tracker, multi-language localization, Locust load testing, Maestro E2E mobile flows.
 - 🛡️ **4 Implemented (Scaffold — Compliance Review Required)**: International Stripe/Paddle payment integration, Astrologer Marketplace, Family Plan subscription sharing, Lifetime license entitlement model.
 - 🎯 **13 Planned**: Phase 3/4 expansion features (LangGraph admin ingestion, Swiss Ephemeris commercial license, Flutter Web, Voice AI, Multi-profile overlay, Astrologer Pro tools, Muhurta engine, B2B API, Community forums, Numerology & Tarot, Western Tropical, Horary Prashna, On-device SLM).
 
-Detailed tracking matrix: [FeatTracking/Master Feature Tracking.md](file:///e:/AI-WorkSpace/Projects/Active/Grahvani/FeatTracking/Master%20Feature%20Tracking.md)
+Detailed tracking matrix: [FeatTracking/Master Feature Tracking.md](FeatTracking/Master%20Feature%20Tracking.md)
 
 ---
 
 ## 📚 Technical Documentation
 
-Explore the complete 84+ document technical specification library in [`docs/`](file:///e:/AI-WorkSpace/Projects/Active/Grahvani/docs/README.md):
+Explore the complete 84+ document technical specification library in [`docs/`](docs/README.md):
 
 - 📖 [Project Overview](docs/PROJECT_OVERVIEW.md)
 - 📐 [System Architecture](docs/SYSTEM_ARCHITECTURE.md)
@@ -261,12 +276,12 @@ Explore the complete 84+ document technical specification library in [`docs/`](f
 - 💳 [Entitlements & Billing Engine](docs/billing/ENTITLEMENTS.md)
 - ⚡ [Locust Performance & Load Testing](docs/testing/LOAD_TESTING.md)
 - 📱 [Maestro Mobile E2E Testing](docs/testing/E2E_TESTS.md)
-- 🛡️ [Security & Compliance](docs/security/SECURITY.md)
+- 🛡️ [Security & Compliance Index](docs/security/README.md)
 - 📋 [Master Feature Tracking](FeatTracking/Master%20Feature%20Tracking.md)
 - 📏 [Project Rules & Guidelines](FeatTracking/PROJECT_RULES.md)
 
 ---
 
-## 📄 License
+## 📄 License & Disclaimers
 
 This project contains proprietary software. Swiss Ephemeris C-library components are subject to Astrodienst AG licensing guidelines. See [docs/astrology/LICENSING.md](docs/astrology/LICENSING.md) for details.
