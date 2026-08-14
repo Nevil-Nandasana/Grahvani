@@ -12,6 +12,7 @@ except (ImportError, ModuleNotFoundError):
     class MockSwe:
         SIDM_LAHIRI = 1
         SIDM_RAMAN = 2
+        SIDM_KRISHNAMURTI = 3
         SIDM_KRISHNAMURTHY = 3
         SIDM_FAGAN_BRADLEY = 4
         SUN = 0
@@ -76,10 +77,10 @@ except (ImportError, ModuleNotFoundError):
 
 # ─── Ayanamsa Constants ───────────────────────────────────────────────────────
 AYANAMSA_MAP = {
-    "lahiri":        swe.SIDM_LAHIRI,
-    "raman":         swe.SIDM_RAMAN,
-    "krishnamurti":  swe.SIDM_KRISHNAMURTHY,
-    "fagan_bradley": swe.SIDM_FAGAN_BRADLEY,
+    "lahiri":        getattr(swe, "SIDM_LAHIRI", 1),
+    "raman":         getattr(swe, "SIDM_RAMAN", 2),
+    "krishnamurti":  getattr(swe, "SIDM_KRISHNAMURTI", getattr(swe, "SIDM_KRISHNAMURTHY", 3)),
+    "fagan_bradley": getattr(swe, "SIDM_FAGAN_BRADLEY", 4),
 }
 
 # ─── Planet Constants ─────────────────────────────────────────────────────────

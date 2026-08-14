@@ -16,7 +16,7 @@ engine = create_async_engine(
     pool_timeout=30,        # Seconds to wait for a connection before raising
     pool_recycle=1800,      # Recycle connections every 30 minutes
     pool_pre_ping=True,     # Validate connection liveness before each use
-    echo=settings.DEBUG,    # Log SQL queries in development
+    echo=False,             # Disable raw SQL stdout flooding in development logs
 )
 
 # ─── Session Factory ──────────────────────────────────────────────────────────
@@ -27,10 +27,22 @@ AsyncSessionLocal = async_sessionmaker(
 )
 
 
+from sqlalchemy import text
+
+
 async def init_db_pool() -> None:
-    """Called during FastAPI lifespan startup to warm up the connection pool."""
-    async with engine.begin() as conn:
-        await conn.run_sync(lambda c: None)  # Warm connection
+    """Called during FastAPI lifespan startup to warm up the connection pool and ensure tables exist."""
+    try:
+        from app.db.base import Base
+        import app.modules.identity.models  # noqa: F401
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS fcm_token VARCHAR(512);"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_trial_used BOOLEAN DEFAULT FALSE;"))
+            await conn.execute(text("ALTER TABLE birth_profiles ADD COLUMN IF NOT EXISTS is_primary BOOLEAN DEFAULT FALSE;"))
+    except Exception:
+        async with engine.begin() as conn:
+            await conn.run_sync(lambda c: None)  # Warm connection
 
 
 async def close_db_pool() -> None:

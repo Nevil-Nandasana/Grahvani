@@ -43,8 +43,8 @@ class BirthProfile(Base, TimestampMixin):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    date_of_birth: Mapped[str] = mapped_column(String(10), nullable=False)   # YYYY-MM-DD
-    time_of_birth: Mapped[str] = mapped_column(String(8), nullable=False)    # HH:MM:SS
+    date_of_birth: Mapped[str] = mapped_column(String(32), nullable=False)   # YYYY-MM-DD
+    time_of_birth: Mapped[str] = mapped_column(String(32), nullable=False)    # HH:MM:SS
     place_name: Mapped[str] = mapped_column(String(255), nullable=False)
     latitude: Mapped[float] = mapped_column(nullable=False)
     longitude: Mapped[float] = mapped_column(nullable=False)

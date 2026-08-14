@@ -26,6 +26,12 @@ from app.tasks.transit_monitor import daily_transit_monitor_task as check_daily_
 async def lifespan(app: FastAPI):
     scheduler = None
     try:
+        from app.db.session import init_db_pool
+        await init_db_pool()
+    except Exception as e:
+        logger.warning(f"Database initialization warning: {e}")
+
+    try:
         scheduler = AsyncIOScheduler()
         scheduler.add_job(
             check_daily_transits_task.send,

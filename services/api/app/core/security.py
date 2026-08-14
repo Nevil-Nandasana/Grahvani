@@ -47,23 +47,57 @@ def _init_firebase():
 _init_firebase()
 
 # ─── HTTP Bearer Scheme ───────────────────────────────────────────────────────
-_security_scheme = HTTPBearer(auto_error=True)
+_security_scheme = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
-    credentials: Annotated[HTTPAuthorizationCredentials, Depends(_security_scheme)],
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_security_scheme)] = None,
 ) -> dict[str, Any]:
     """
     FastAPI dependency that verifies the Firebase ID token in the Authorization header.
     Returns the decoded token payload containing firebase_uid, email, phone_number.
-
-    Raises:
-        AuthenticationError: If the token is invalid, expired, or revoked.
+    In development mode, falls back to a demo user if unauthenticated.
     """
-    token = credentials.credentials
+    if credentials and credentials.credentials:
+        token = credentials.credentials
 
-    # Development mode demo token bypass for offline/local testing
-    if settings.APP_ENV == "development" and token.startswith("demo-"):
+        # Development mode demo token bypass for offline/local testing
+        if settings.APP_ENV == "development" and token.startswith("demo-"):
+            return {
+                "uid": "demo-user-uid-12345",
+                "email": "demo@grahvani.ai",
+                "phone_number": "+919999999999",
+                "user_id": "demo-user-uid-12345",
+            }
+
+        try:
+            decoded_token = firebase_auth.verify_id_token(token, check_revoked=True)
+            return decoded_token
+        except firebase_auth.RevokedIdTokenError:
+            raise AuthenticationError("Authentication token has been revoked. Please sign in again.")
+        except firebase_auth.ExpiredIdTokenError:
+            raise AuthenticationError("Authentication token has expired. Please refresh and retry.")
+        except firebase_auth.InvalidIdTokenError:
+            if settings.APP_ENV == "development":
+                return {
+                    "uid": "demo-user-uid-12345",
+                    "email": "demo@grahvani.ai",
+                    "phone_number": "+919999999999",
+                    "user_id": "demo-user-uid-12345",
+                }
+            raise AuthenticationError("Authentication token is invalid.")
+        except Exception as e:
+            if settings.APP_ENV == "development":
+                return {
+                    "uid": "demo-user-uid-12345",
+                    "email": "demo@grahvani.ai",
+                    "phone_number": "+919999999999",
+                    "user_id": "demo-user-uid-12345",
+                }
+            raise AuthenticationError(f"Authentication failed: {str(e)}")
+
+    # Unauthenticated request in development mode
+    if settings.APP_ENV == "development":
         return {
             "uid": "demo-user-uid-12345",
             "email": "demo@grahvani.ai",
@@ -71,17 +105,7 @@ async def get_current_user(
             "user_id": "demo-user-uid-12345",
         }
 
-    try:
-        decoded_token = firebase_auth.verify_id_token(token, check_revoked=True)
-        return decoded_token
-    except firebase_auth.RevokedIdTokenError:
-        raise AuthenticationError("Authentication token has been revoked. Please sign in again.")
-    except firebase_auth.ExpiredIdTokenError:
-        raise AuthenticationError("Authentication token has expired. Please refresh and retry.")
-    except firebase_auth.InvalidIdTokenError:
-        raise AuthenticationError("Authentication token is invalid.")
-    except Exception as e:
-        raise AuthenticationError(f"Authentication failed: {str(e)}")
+    raise AuthenticationError("Missing or invalid Authorization header.")
 
 
 # Convenience type alias for route function signatures

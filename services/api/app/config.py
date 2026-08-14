@@ -17,6 +17,13 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     APP_SECRET_KEY: str = "changeme_32_char_secret"
     CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
+    CORS_ALLOWED_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "http://localhost:8001",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:8000",
+    ]
     PROJECT_NAME: str = "Grahvani API"
     PROJECT_VERSION: str = "1.0.0"
     PROJECT_DESCRIPTION: str = "Vedic Astrology Engine API"

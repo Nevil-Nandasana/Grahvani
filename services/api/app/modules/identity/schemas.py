@@ -31,7 +31,7 @@ class ProfileResponse(BaseModel):
     latitude: float
     longitude: float
     timezone: str
-    is_primary: bool
+    is_primary: bool = False
 
     model_config = {"from_attributes": True}
 

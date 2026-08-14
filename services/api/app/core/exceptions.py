@@ -88,6 +88,8 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception):
+        import logging
+        logging.getLogger("app.exceptions").error(f"Unhandled exception: {exc}", exc_info=True)
         return _error_response(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             "INTERNAL_SERVER_ERROR",
